@@ -7,7 +7,7 @@
 // ── SUPABASE ──
 // ⚠️ COMPILA QUESTI DUE VALORI dal tuo progetto Supabase:
 //    Dashboard → Project Settings → API
-var SUPABASE_URL = "https://yupqbobnqtcajvxjhgjg.supabase.co/rest/v1/";        // es. https://abcdefgh.supabase.co
+var SUPABASE_URL = "https://yupqbobnqtcajvxjhgjg.supabase.co";        // es. https://abcdefgh.supabase.co
 var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1cHFib2JucXRjYWp2eGpoZ2pnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzI0MjEsImV4cCI6MjA5Njg0ODQyMX0.Q4ch-6vbaQYeUaPNiGchLQ_4-uxYhJDT2rIhWthRBTk";      // la chiave "anon / public"
 // Email dell'utente condiviso creato in Authentication → Users.
 // La schermata di login chiede solo la password, come sempre.
