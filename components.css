@@ -1,0 +1,778 @@
+/* ════════════════════════════════════════════════════════
+   TANA DEGLI ORSI — components.css
+   Componenti: card, bottoni, modali, storico, lista, note,
+   debiti, fisse, archivio, tab bar, tema scuro.
+   ════════════════════════════════════════════════════════ */
+
+/* ── SALDO CARD ── */
+.saldo-card{background:var(--brown-d);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-lg);margin-bottom:14px;border:1.5px solid rgba(255,255,255,.06);}
+.saldo-inner{padding:22px 24px 20px;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;position:relative;overflow:hidden;}
+.saldo-left{flex:1;min-width:0;}
+.saldo-lbl{font-size:0.625rem;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.4);font-family:'Nunito',sans-serif;font-weight:700;margin-bottom:6px;}
+.saldo-num{font-size:3.25rem;font-weight:800;letter-spacing:-3px;line-height:1;color:var(--honey);text-shadow:0 3px 10px rgba(0,0,0,.25);transition:color .35s;}
+@keyframes saldoBump{0%{transform:scale(1);}30%{transform:scale(1.10);}65%{transform:scale(.96);}100%{transform:scale(1);}}
+.saldo-num.bump{animation:saldoBump .45s cubic-bezier(.4,0,.2,1);}
+.saldo-num.ale{color:#FF9E80;}.saldo-num.luca{color:#7ECF68;}.saldo-num.pari{color:#7ECF68;}
+.saldo-badge{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:5px 14px;border-radius:20px;font-size:0.8125rem;font-weight:700;font-family:'Nunito',sans-serif;}
+.saldo-badge.ale{background:rgba(255,120,80,.18);color:#FFB299;border:1px solid rgba(255,120,80,.25);}
+.saldo-badge.luca{background:rgba(100,210,80,.15);color:#9EE08A;border:1px solid rgba(100,210,80,.2);}
+.saldo-badge.pari{background:rgba(100,210,80,.15);color:#9EE08A;border:1px solid rgba(100,210,80,.2);}
+.saldo-right-panel{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;}
+
+/* Saldo base box */
+.saldo-base{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:12px 16px;min-width:8.5rem;}
+.saldo-base-lbl{font-size:0.6875rem;color:rgba(255,255,255,.35);font-family:'Nunito',sans-serif;font-weight:600;margin-bottom:6px;letter-spacing:1px;text-transform:uppercase;}
+.saldo-base-val{font-size:1.25rem;font-weight:800;color:rgba(255,255,255,.75);}
+.saldo-base-val span{font-size:0.8125rem;font-weight:500;color:rgba(255,255,255,.35);margin-left:2px;}
+.btn-edit-saldo{display:block;margin-top:8px;width:100%;background:rgba(244,168,39,.18);border:1px solid rgba(244,168,39,.3);border-radius:var(--r-sm);color:var(--honey);font-family:'Baloo 2',cursive;font-size:0.75rem;font-weight:700;padding:4px 0;cursor:pointer;text-align:center;transition:background .15s;}
+.btn-edit-saldo:hover{background:rgba(244,168,39,.28);}
+.edit-saldo-form{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-md);padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0;width:100%;}
+/* In modalità modifica il wrap occupa tutta la riga: il form non si
+   sovrappone più al pannello "Totale Spese del Mese" accanto. */
+#saldo-base-wrap:has(.edit-saldo-form){flex:1 1 100%;width:100%;}
+.edit-saldo-form label{font-size:0.625rem;color:rgba(255,255,255,.4);font-family:'Nunito',sans-serif;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.edit-saldo-form .erow{display:flex;gap:6px;align-items:center;}
+.inp-saldo{flex:1;height:38px;border-radius:var(--r-sm);border:1.5px solid rgba(244,168,39,.4);background:rgba(244,168,39,.1);color:#fff;font-family:'Baloo 2',cursive;font-size:1rem;font-weight:700;padding:0 8px;outline:none;-webkit-appearance:none;}
+.inp-saldo:focus{border-color:var(--honey);}
+.btn-ok{height:38px;border-radius:var(--r-sm);border:none;background:linear-gradient(135deg,var(--honey),var(--honey-d));color:#fff;font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:800;padding:0 14px;cursor:pointer;-webkit-appearance:none;}
+.btn-cancel-sm{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-sm);color:rgba(255,255,255,.5);font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:600;padding:0 10px;height:38px;cursor:pointer;-webkit-appearance:none;}
+
+/* Vaso miele */
+.honey-jar{background:rgba(244,168,39,.12);border:1px solid rgba(244,168,39,.2);border-radius:var(--r-md);padding:12px 16px;min-width:0;text-align:center;}
+.honey-jar-icon{font-size:2rem;display:block;margin-bottom:4px;}
+.honey-jar-lbl{font-size:0.625rem;color:rgba(255,255,255,.35);font-family:'Nunito',sans-serif;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;}
+.honey-jar-val{font-size:1.125rem;font-weight:800;color:var(--honey);}
+
+/* ── SALDO CARD — layout mobile (~S25) ──────────────────────
+   Su schermi stretti i tre pannelli non stanno in fila: si
+   impilano. Numero + badge in alto, poi i pannelli info a
+   larghezza piena, affiancati 50/50 ma liberi di andare a capo. */
+@media(max-width:560px){
+  .saldo-inner{flex-direction:column;align-items:stretch;gap:14px;}
+  .saldo-left{width:100%;}
+  .saldo-right-panel{width:100%;flex-shrink:1;display:flex;gap:10px;}
+  .saldo-right-panel > *{flex:1 1 0;min-width:0;}
+  .saldo-base,.honey-jar{min-width:0;}
+  /* Badge "deve portare": riga piena leggibile, non pillola stretta */
+  .saldo-badge{display:flex;width:100%;justify-content:center;text-align:center;border-radius:var(--r-md);padding:9px 14px;margin-top:12px;line-height:1.35;}
+}
+
+/* ── DEBITI DIRETTI CARD ── */
+.debiti-card{background:var(--card);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow-md);border:1.5px solid var(--purple-brd);margin-top:20px;margin-bottom:14px;position:relative;overflow:hidden;}
+.debiti-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--purple),var(--purple-brd));}
+.debiti-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.debiti-title{font-size:0.625rem;letter-spacing:3px;text-transform:uppercase;color:var(--purple);font-family:'Nunito',sans-serif;font-weight:700;flex:1;}
+.btn-nuovo-debito{height:34px;border-radius:var(--r-sm);border:1.5px solid var(--purple-brd);background:var(--purple-bg);color:var(--purple);font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:800;padding:0 14px;cursor:pointer;transition:all .15s;-webkit-appearance:none;}
+.btn-nuovo-debito:hover{background:var(--purple);color:#fff;}
+.debiti-empty{text-align:center;color:var(--text3);font-size:0.8125rem;padding:12px 0;font-family:'Nunito',sans-serif;font-weight:600;}
+
+/* Debito item */
+.debito-item{background:var(--purple-bg);border:1.5px solid var(--purple-brd);border-radius:var(--r-md);padding:14px;margin-bottom:10px;animation:pop .22s ease-out;}
+.debito-item:last-child{margin-bottom:0;}
+.debito-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
+.debito-ava{flex-shrink:0;line-height:1; display:flex; align-items:center; justify-content:center;}
+.debito-info{flex:1;min-width:0;}
+.debito-nota{font-size:0.875rem;font-weight:700;color:var(--text);}
+.debito-meta{font-size:0.6875rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;margin-top:3px;}
+.debito-amounts{text-align:right;flex-shrink:0;}
+.debito-residuo{font-size:1.0625rem;font-weight:800;color:var(--purple);}
+.debito-originale{font-size:0.6875rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;margin-top:2px;}
+/* progress bar */
+.debito-bar-wrap{height:5px;background:rgba(107,63,160,.15);border-radius:3px;margin-bottom:10px;overflow:hidden;}
+.debito-bar{height:100%;background:linear-gradient(90deg,var(--purple),var(--purple-brd));border-radius:3px;transition:width .4s;}
+/* badge chi deve a chi */
+.debito-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:0.6875rem;font-weight:700;font-family:'Nunito',sans-serif;margin-bottom:10px;}
+.debito-badge.luca-deve{background:rgba(168,50,37,.1);color:var(--berry);border:1px solid rgba(168,50,37,.2);}
+.debito-badge.ale-deve{background:rgba(74,124,64,.1);color:var(--moss);border:1px solid rgba(74,124,64,.2);}
+.debito-badge.saldato{background:rgba(74,124,64,.1);color:var(--moss);border:1px solid rgba(74,124,64,.2);}
+/* azioni debito */
+.debito-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.btn-rimborsa{flex:1;min-width:110px;height:32px;border-radius:var(--r-sm);border:1.5px solid var(--purple-brd);background:#fff;color:var(--purple);font-family:'Baloo 2',cursive;font-size:0.75rem;font-weight:800;padding:0 10px;cursor:pointer;transition:all .15s;-webkit-appearance:none;}
+.btn-rimborsa:hover{background:var(--purple);color:#fff;}
+.btn-storico-rimborsi{height:32px;border-radius:var(--r-sm);border:1.5px solid var(--purple-brd);background:rgba(107,63,160,0.08);color:var(--purple);font-family:'Baloo 2',cursive;font-size:0.75rem;font-weight:700;padding:0 10px;cursor:pointer;transition:all .15s;-webkit-appearance:none;}
+.btn-storico-rimborsi:hover{background:var(--purple);color:#fff;}
+.btn-del-debito{width:32px;height:32px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--card2);color:var(--text3);font-size:0.9375rem;cursor:pointer;flex-shrink:0;transition:all .15s;-webkit-appearance:none;}
+.btn-del-debito:hover{background:var(--berry-bg);border-color:var(--berry-brd);color:var(--berry);}
+/* Nella tab Fisso, fisse-card è il PRIMO elemento: niente margin-top
+   extra (allineamento header coerente con le altre tab) */
+.tab-page[data-tab="fisso"] > #fisse-card{margin-top:0;}
+@media(max-width:560px){
+  /* Grid 2 colonne: i due bottoni testuali occupano una colonna ciascuno
+     sulla prima riga; le due icone (modifica/cestino) vanno sulla seconda
+     riga. Layout identico su qualsiasi font/larghezza, niente orfani. */
+  .debito-actions{display:grid;grid-template-columns:1fr 1fr auto auto;gap:6px;align-items:center;}
+  .btn-rimborsa{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;grid-column:1;}
+  .btn-storico-rimborsi:not(.btn-icona-azione){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;grid-column:2;}
+  .btn-icona-azione{grid-column:3;}
+  .btn-del-debito{grid-column:4;}
+  /* Quando manca "Vedi rimborsi", Segna rimborso si allarga su 2 colonne */
+  .btn-rimborsa:only-of-type{grid-column:1 / 3;}
+}
+/* rimborso inline */
+.rimborso-inline{background:#fff;border:1.5px solid var(--purple-brd);border-radius:var(--r-sm);padding:10px 12px;margin-top:8px;display:flex;gap:8px;align-items:center;animation:pop .18s ease-out;width:100%;}
+.rimborso-inline label{font-size:0.75rem;color:var(--purple);font-weight:700;font-family:'Nunito',sans-serif;white-space:nowrap;}
+.inp-rimborso{flex:1;height:34px;border-radius:var(--r-sm);border:1.5px solid var(--purple-brd);background:var(--purple-bg);color:var(--text);font-family:'Baloo 2',cursive;font-size:1rem;font-weight:700;padding:0 8px;outline:none;-webkit-appearance:none;min-width:0;}
+.inp-rimborso:focus{border-color:var(--purple);}
+.btn-ok-rimborso{height:34px;border-radius:var(--r-sm);border:none;background:var(--purple);color:#fff;font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:800;padding:0 12px;cursor:pointer;-webkit-appearance:none;}
+.btn-cancel-rimborso{height:34px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:transparent;color:var(--text3);font-family:'Baloo 2',cursive;font-size:0.8125rem;padding:0 8px;cursor:pointer;-webkit-appearance:none;}
+/* elimina debito confirm */
+.del-debito-confirm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--berry-bg);border:1.5px solid var(--berry-brd);border-radius:var(--r-sm);padding:10px 12px;margin-top:8px;animation:pop .18s ease-out;width:100%;}
+.del-debito-confirm span{flex:1;color:var(--berry);font-size:0.75rem;font-weight:700;font-family:'Nunito',sans-serif;}
+
+/* ── FORM CARD ── */
+.form-card{background:var(--card);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow-md);border:1.5px solid var(--border);margin-bottom:12px;}
+.section-lbl{font-size:0.625rem;letter-spacing:3px;text-transform:uppercase;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:700;margin-bottom:14px;display:block;}
+.toggle{display:flex;gap:10px;margin-bottom:14px;}
+.toggle-btn{flex:1;padding:11px 8px;border-radius:var(--r-md);border:2px solid var(--border);background:var(--card2);color:var(--text2);cursor:pointer;font-family:'Baloo 2',cursive;font-size:0.9375rem;font-weight:700;transition:all .18s;line-height:1.25;-webkit-appearance:none; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+.toggle-btn div {display:flex; align-items:center; justify-content:center;}
+.toggle-btn sub{display:block;font-size:0.5625rem;font-weight:600;opacity:.6;margin-top:3px;letter-spacing:.5px;text-transform:uppercase;}
+.toggle-btn.luca{background:var(--berry-bg);border-color:var(--berry-brd);color:var(--berry);box-shadow:0 3px 12px rgba(168,50,37,.12);}
+.toggle-btn.ale{background:var(--moss-bg);border-color:var(--moss-brd);color:var(--moss);box-shadow:0 3px 12px rgba(74,124,64,.12);}
+.input-row{display:flex;gap:8px;margin-bottom:8px;}
+.inp{height:48px;border-radius:var(--r-md);border:2px solid var(--border);background:var(--card2);color:var(--text);font-family:'Baloo 2',cursive;font-size:1.0625rem;font-weight:600;padding:0 14px;outline:none;transition:all .18s;-webkit-appearance:none;appearance:none;min-width:0;}
+.inp:focus{border-color:var(--honey);background:var(--card);box-shadow:0 0 0 4px rgba(244,168,39,.12);}
+.inp-euro{width:120px;font-weight:800;}
+.inp-nota{flex:1;font-size:1rem;}
+.preview-box{min-height:0;border-radius:var(--r-sm);padding:0 12px;margin-bottom:8px;font-size:0.8125rem;font-weight:600;font-family:'Nunito',sans-serif;transition:all .2s;}
+.preview-box:not(:empty){padding:7px 12px;}
+.preview-box.visible{background:var(--honey-bg);border:1.5px solid var(--honey-brd);}
+.pv-ale{color:var(--berry);font-weight:700;}.pv-luca{color:var(--moss);font-weight:700;}.pv-pari{color:var(--moss);font-weight:700;}
+.btn-add{width:100%;height:52px;border-radius:var(--r-md);border:none;background:linear-gradient(135deg,var(--brown) 0%,var(--brown-d) 100%);color:var(--honey);font-family:'Baloo 2',cursive;font-size:1.0625rem;font-weight:800;cursor:pointer;box-shadow:0 5px 18px rgba(58,30,10,.28);transition:all .18s;-webkit-appearance:none;}
+.btn-add:hover{opacity:.9;}.btn-add:active{transform:scale(.97);}
+.btn-add:disabled{opacity:.3;cursor:default;box-shadow:none;}
+.btn-add.flash{background:linear-gradient(135deg,var(--moss),#2E5C24);color:#fff;}
+.status-lbl{font-size:0.75rem;text-align:center;margin-top:8px;min-height:18px;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;}
+
+/* ── CHIUDI MESE ── */
+.chiudi-card{background:var(--card);border-radius:var(--r-lg);padding:16px 20px;box-shadow:var(--shadow-sm);border:1.5px dashed var(--honey-brd);margin-bottom:16px;}
+.btn-chiudi{width:100%;height:46px;border-radius:var(--r-md);border:none;background:var(--honey-bg);color:var(--honey-d);font-family:'Baloo 2',cursive;font-size:0.9375rem;font-weight:800;cursor:pointer;transition:all .18s;-webkit-appearance:none;}
+.btn-chiudi:hover{background:var(--honey);color:#fff;box-shadow:0 4px 14px rgba(244,168,39,.35);}
+
+/* ── STORICO ── */
+.storico-wrap{}
+.storico-head{font-size:0.625rem;letter-spacing:3px;text-transform:uppercase;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:700;margin-bottom:12px;display:block;}
+.row-start{display:flex;align-items:center;background:var(--honey-bg);border:2px dashed var(--honey-brd);border-radius:var(--r-md);padding:10px 14px;margin-bottom:8px;}
+.row-start span{flex:1;font-size:0.8125rem;color:var(--text2);font-weight:700;}
+.row-start strong{font-size:0.9375rem;font-weight:800;color:var(--text);}
+.tx{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:var(--r-md);padding:11px 12px;margin-bottom:7px;border:1.5px solid var(--border);border-left:4px solid transparent;box-shadow:var(--shadow-sm);animation:pop .22s ease-out;transition:box-shadow .15s;}
+.tx:hover{box-shadow:var(--shadow-md);}
+@keyframes pop{from{opacity:0;transform:scale(.97) translateY(5px);}to{opacity:1;transform:scale(1) translateY(0);}}
+.tx.luca{border-left-color:var(--berry);}.tx.ale{border-left-color:var(--moss);}
+.tx-ava{width:38px;height:38px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tx-ava.l{background:var(--berry-bg);}.tx-ava.a{background:var(--moss-bg);}
+.tx-body{flex:1;min-width:0;}
+.tx-nota{font-size:0.875rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tx-sub{display:flex;align-items:center;gap:5px;margin-top:2px;}
+.tx-date{font-size:0.6875rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;}
+.tx-who{font-size:0.625rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;}
+.tx-who.l{color:var(--berry);}.tx-who.a{color:var(--moss);}
+.tx-nums{text-align:right;flex-shrink:0;}
+.tx-imp{font-size:1rem;font-weight:800;}
+.tx-imp.l{color:var(--berry);}.tx-imp.a{color:var(--moss);}
+.tx-after{font-size:0.6875rem;font-family:'Nunito',sans-serif;font-weight:600;margin-top:2px;}
+.tx-after.ac{color:var(--berry);}.tx-after.lc{color:var(--moss);}.tx-after.pc{color:var(--text3);}
+.btn-del{background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-sm);cursor:pointer;font-size:0.9375rem;color:var(--text3);padding:6px 9px;line-height:1;flex-shrink:0;transition:all .15s;-webkit-appearance:none;}
+.btn-del:hover{background:var(--berry-bg);border-color:var(--berry-brd);color:var(--berry);}
+.del-confirm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--berry-bg);border:2px solid var(--berry-brd);border-radius:var(--r-md);padding:12px 14px;margin-bottom:7px;animation:pop .18s ease-out;}
+.del-confirm span{flex:1;color:var(--berry);font-size:0.8125rem;font-weight:700;}
+.btn-yes{height:34px;border-radius:var(--r-sm);border:none;background:var(--berry);color:#fff;font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:800;padding:0 14px;cursor:pointer;-webkit-appearance:none;}
+.btn-no{height:34px;border-radius:var(--r-sm);border:2px solid var(--border);background:var(--card);color:var(--text2);font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:700;padding:0 14px;cursor:pointer;-webkit-appearance:none;}
+
+/* ── DATA MANUALE ── */
+.inp-nota-wrap{position:relative;flex:1;display:flex;min-width:0;}
+.inp-nota-wrap .inp-nota{flex:1;padding-right:36px;}
+.btn-data-icon{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:0.9375rem;cursor:pointer;padding:2px;color:var(--text3);transition:color .15s;line-height:1;-webkit-appearance:none;}
+.btn-data-icon:hover,.btn-data-icon.active{color:var(--honey-d);}
+.data-extra-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;animation:pop .18s ease-out;}
+.data-extra-row label{font-size:0.75rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:700;white-space:nowrap;}
+.inp-data-manual{height:40px;flex:1;border-radius:var(--r-md);border:2px solid var(--honey-brd);background:var(--honey-bg);color:var(--text);font-family:'Baloo 2',cursive;font-size:1rem;font-weight:600;padding:0 12px;outline:none;-webkit-appearance:none;}
+.inp-data-manual:focus{border-color:var(--honey);}
+
+/* ── STORICO TOOLBAR (ordina + cestino) ── */
+.storico-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.storico-head-lbl{font-size:0.625rem;letter-spacing:3px;text-transform:uppercase;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:700;flex:1;}
+.btn-sort{height:26px;padding:0 10px;border-radius:20px;border:1.5px solid var(--border);background:var(--card2);color:var(--text3);font-family:'Baloo 2',cursive;font-size:0.6875rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;-webkit-appearance:none;}
+.btn-sort:hover,.btn-sort.active{border-color:var(--honey-brd);background:var(--honey-bg);color:var(--honey-d);}
+.btn-cestino-hd{position:relative;height:26px;padding:0 10px;border-radius:20px;border:1.5px solid var(--border);background:var(--card2);color:var(--text3);font-family:'Baloo 2',cursive;font-size:0.6875rem;font-weight:700;cursor:pointer;transition:all .15s;-webkit-appearance:none;display:inline-flex;align-items:center;gap:4px;}
+.btn-cestino-hd:hover{border-color:var(--berry-brd);background:var(--berry-bg);color:var(--berry);}
+.btn-cestino-hd.pieno{border-color:var(--berry-brd);background:var(--berry-bg);color:var(--berry);}
+.cestino-badge{background:var(--berry);color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:0.625rem;font-weight:800;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;}
+
+/* ── MODALE CESTINO ── */
+.modal-cestino-wrap{max-width:460px;}
+.cestino-list{max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:7px;margin-bottom:14px;}
+.cestino-row{display:flex;align-items:center;gap:10px;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:10px 12px;}
+.cestino-row-body{flex:1;min-width:0;}
+.cestino-row-nota{font-size:0.8125rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cestino-row-meta{font-size:0.6875rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;margin-top:2px;}
+.cestino-row-imp{font-size:0.875rem;font-weight:800;flex-shrink:0;}
+.cestino-row-imp.l{color:var(--berry);}.cestino-row-imp.a{color:var(--moss);}
+.btn-ripristina-voce{height:28px;padding:0 10px;border-radius:var(--r-sm);border:1.5px solid var(--moss-brd);background:var(--moss-bg);color:var(--moss);font-family:'Baloo 2',cursive;font-size:0.6875rem;font-weight:800;cursor:pointer;flex-shrink:0;transition:all .15s;-webkit-appearance:none;}
+.btn-ripristina-voce:hover{background:var(--moss);color:#fff;}
+.btn-svuota{height:36px;padding:0 14px;border-radius:var(--r-sm);border:1.5px solid var(--berry-brd);background:var(--berry-bg);color:var(--berry);font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:800;cursor:pointer;transition:all .15s;-webkit-appearance:none;}
+.btn-svuota:hover{background:var(--berry);color:#fff;}
+.cestino-vuoto{text-align:center;padding:32px 0;color:var(--text3);font-size:0.875rem;font-family:'Nunito',sans-serif;font-weight:600;}
+
+/* ── ARCHIVIO CHIUSURE ── */
+.chiusure-section{margin-top:24px;}
+.chiusure-head-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.chiusure-head{font-size:0.625rem;letter-spacing:3px;text-transform:uppercase;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:700;flex:1;}
+.btn-grafico{height:30px;border-radius:var(--r-sm);border:1.5px solid var(--honey-brd);background:var(--honey-bg);color:var(--honey-d);font-family:'Baloo 2',cursive;font-size:0.75rem;font-weight:700;padding:0 12px;cursor:pointer;white-space:nowrap;transition:all .15s;-webkit-appearance:none;}
+.btn-grafico:hover{background:var(--honey);color:#fff;}
+.chiusura-totale{font-size:0.75rem;color:var(--text2);font-family:'Nunito',sans-serif;font-weight:600;margin-top:6px;padding:5px 10px;background:var(--honey-bg);border-radius:var(--r-sm);}
+.chiusura-totale strong{color:var(--text);font-weight:800;}
+.chiusura-row{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-md);padding:14px;margin-bottom:10px;box-shadow:var(--shadow-sm);}
+.chiusura-top{display:flex;align-items:flex-start;gap:10px;}
+.chiusura-info{flex:1;}
+.chiusura-mese{font-size:0.9375rem;font-weight:800;color:var(--text);}
+.chiusura-meta{font-size:0.6875rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;margin-top:3px;}
+.chiusura-saldo{font-size:1.125rem;font-weight:800;flex-shrink:0;}
+.chiusura-saldo.ale{color:var(--berry);}.chiusura-saldo.luca{color:var(--moss);}.chiusura-saldo.pari{color:var(--moss);}
+.chiusura-desc{font-size:0.75rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;margin-top:6px;}
+.chiusura-btns{display:flex;gap:8px;margin-top:10px;}
+.btn-storico-mese{flex:1;height:36px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--card2);color:var(--text2);font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:700;cursor:pointer;transition:all .15s;-webkit-appearance:none;}
+.btn-storico-mese:hover{border-color:var(--honey-brd);background:var(--honey-bg);color:var(--honey-d);}
+.btn-ripristina{flex:1;height:36px;border-radius:var(--r-sm);border:1.5px solid var(--honey-brd);background:var(--honey-bg);color:var(--honey-d);font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:700;cursor:pointer;transition:all .15s;-webkit-appearance:none;}
+.btn-ripristina:hover{background:var(--honey);color:#fff;border-color:var(--honey);}
+.btn-elimina-arch{height:36px;width:36px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--card2);color:var(--text3);font-size:1rem;cursor:pointer;transition:all .15s;-webkit-appearance:none;flex-shrink:0;}
+.btn-elimina-arch:hover{background:var(--berry-bg);border-color:var(--berry-brd);color:var(--berry);}
+.elimina-arch-confirm{margin-top:10px;background:var(--berry-bg);border:1.5px solid var(--berry-brd);border-radius:var(--r-sm);padding:10px 12px;display:flex;align-items:center;gap:8px;animation:pop .18s ease-out;}
+.elimina-arch-confirm span{flex:1;font-size:0.75rem;color:var(--berry);font-weight:700;font-family:'Nunito',sans-serif;}
+
+/* ── MODALI ── */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(46,26,8,.58);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border-radius:var(--r-xl);padding:24px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(46,26,8,.35);border:2px solid var(--border);animation:popIn .25s ease-out;margin:auto;}
+@keyframes popIn{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.modal-icon{font-size:3rem;text-align:center;margin-bottom:10px;}
+.modal h2{font-size:1.1875rem;font-weight:800;color:var(--text);text-align:center;margin-bottom:6px;}
+.modal p{font-size:0.8125rem;color:var(--text2);text-align:center;line-height:1.6;margin-bottom:16px;font-family:'Nunito',sans-serif;}
+.modal-saldo-box{background:var(--brown-d);border-radius:var(--r-md);padding:14px 18px;text-align:center;margin-bottom:16px;}
+.mlbl{font-size:0.625rem;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);font-family:'Nunito',sans-serif;font-weight:700;margin-bottom:4px;}
+.mval{font-size:2.25rem;font-weight:800;color:var(--honey);}
+.mval.ale{color:#FF9E80;}.mval.luca{color:#7ECF68;}.mval.pari{color:#7ECF68;}
+.msub{font-size:0.75rem;color:rgba(255,255,255,.4);margin-top:4px;font-family:'Nunito',sans-serif;font-weight:600;}
+.modal-input-row{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.modal-input-row label{display:flex;align-items:center;font-size:0.8125rem;color:var(--text2);font-weight:700;font-family:'Nunito',sans-serif;}
+.modal-input-row input,.modal-input-row select{height:44px;border-radius:var(--r-md);border:2px solid var(--border);background:var(--card2);color:var(--text);font-family:'Baloo 2',cursive;font-size:1rem;font-weight:700;padding:0 14px;outline:none;-webkit-appearance:none;}
+.modal-input-row input:focus,.modal-input-row select:focus{border-color:var(--honey);}
+.modal-btns{display:flex;gap:10px;}
+.btn-conferma{flex:1;height:46px;border-radius:var(--r-md);border:none;background:linear-gradient(135deg,var(--brown),var(--brown-d));color:var(--honey);font-family:'Baloo 2',cursive;font-size:0.9375rem;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(58,30,10,.25);transition:opacity .15s;-webkit-appearance:none;}
+.btn-conferma:hover{opacity:.88;}
+.btn-annulla{flex:1;height:46px;border-radius:var(--r-md);border:2px solid var(--border);background:transparent;color:var(--text2);font-family:'Baloo 2',cursive;font-size:0.875rem;font-weight:700;cursor:pointer;-webkit-appearance:none;}
+.modal-storico{max-height:60vh;overflow-y:auto;margin-bottom:16px;}
+.modal-storico .tx{animation:none;}
+.modal-warn{background:var(--berry-bg);border:1.5px solid var(--berry-brd);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:14px;font-size:0.75rem;color:var(--berry);font-family:'Nunito',sans-serif;font-weight:700;text-align:center;}
+
+/* Lista rimborsi dentro la modale */
+.lista-rimborsi{display:flex;flex-direction:column;gap:8px;max-height:240px;overflow-y:auto;margin:12px 0;padding-right:4px;}
+.r-item{display:flex;justify-content:space-between;align-items:center;background:var(--card2);border-radius:var(--r-sm);padding:8px 12px;border:1px solid var(--border);}
+.r-item span{font-family:'Nunito',sans-serif;font-size:0.8125rem;font-weight:600;color:var(--text2);}
+.r-item strong{font-size:0.9375rem;font-weight:800;color:var(--purple);}
+
+/* ── MODAL GRAFICO ── */
+.modal-grafico{max-width:560px;}
+.grafico-wrap{position:relative;width:100%;margin-bottom:12px;}
+.grafico-canvas{width:100%;height:220px;display:block;border-radius:var(--r-md);}
+.grafico-empty{text-align:center;color:var(--text3);font-size:0.875rem;padding:40px 0;font-family:'Nunito',sans-serif;font-weight:600;}
+.grafico-toggle{display:flex;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:12px;}
+.grafico-toggle-btn{flex:1;height:34px;background:none;border:none;font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:700;color:var(--text3);cursor:pointer;transition:all .18s;-webkit-appearance:none;}
+.grafico-toggle-btn.active{background:var(--brown-d);color:var(--honey);}
+.torta-wrap{width:100%;display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:12px;}
+.torta-canvas{width:180px;height:180px;display:block;}
+.torta-legenda{display:flex;flex-direction:column;gap:8px;width:100%;padding:0 8px;}
+.torta-legenda-item{display:flex;align-items:center;gap:10px;font-family:'Nunito',sans-serif;font-size:0.8125rem;font-weight:600;color:var(--text2);}
+.torta-legenda-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+.torta-legenda-val{margin-left:auto;font-weight:800;color:var(--text);}
+
+/* ── SKELETON ── */
+.sk{height:62px;border-radius:var(--r-md);border:1.5px solid var(--border);margin-bottom:7px;overflow:hidden;position:relative;background:var(--card2);}
+.sk::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.55) 50%,transparent 100%);background-size:200% 100%;animation:sh 1.3s infinite;}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+.empty{text-align:center;color:var(--text3);font-size:0.9375rem;padding:48px 0;line-height:2.2;}
+.empty .e-icon{display:block;margin:0 auto 8px;}
+
+/* ── SPESE FISSE ── */
+.fisse-card{background:var(--card);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow-md);border:1.5px solid var(--honey-brd);margin-top:20px;position:relative;overflow:hidden;}
+.fisse-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--honey),var(--honey-d));}
+.fisse-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.fisse-title{font-size:0.625rem;letter-spacing:3px;text-transform:uppercase;color:var(--honey-d);font-family:'Nunito',sans-serif;font-weight:700;flex:1;}
+.btn-nuova-fissa{height:34px;border-radius:var(--r-sm);border:1.5px solid var(--honey-brd);background:var(--honey-bg);color:var(--honey-d);font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:800;padding:0 14px;cursor:pointer;transition:all .15s;-webkit-appearance:none;}
+.btn-nuova-fissa:hover{background:var(--honey);color:#fff;}
+.fissa-item{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:var(--honey-bg);border:1.5px solid var(--honey-brd);border-radius:var(--r-md);padding:11px 14px;margin-bottom:8px;animation:pop .22s ease-out;}
+.fissa-item:last-child{margin-bottom:0;}
+.fissa-icon{font-size:1.375rem;flex-shrink:0;}
+.fissa-body{flex:1;min-width:0;}
+.fissa-nome{font-size:0.875rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fissa-freq{font-size:0.6875rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;margin-top:2px;}
+.fissa-imp{font-size:1rem;font-weight:800;color:var(--honey-d);flex-shrink:0;}
+.btn-edit-fissa{width:30px;height:30px;border-radius:var(--r-sm);border:1.5px solid var(--honey-brd);background:var(--card);color:var(--honey-d);font-size:0.8125rem;cursor:pointer;flex-shrink:0;transition:all .15s;-webkit-appearance:none;}
+.btn-edit-fissa:hover{background:var(--honey);color:#fff;border-color:var(--honey);}
+.btn-del-fissa{width:30px;height:30px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--card2);color:var(--text3);font-size:0.875rem;cursor:pointer;flex-shrink:0;transition:all .15s;-webkit-appearance:none;}
+.btn-del-fissa:hover{background:var(--berry-bg);border-color:var(--berry-brd);color:var(--berry);}
+.fisse-empty{text-align:center;color:var(--text3);font-size:0.8125rem;padding:12px 0;font-family:'Nunito',sans-serif;font-weight:600;}
+.fisse-totale{display:flex;justify-content:space-between;align-items:center;background:var(--honey-bg);border:2px dashed var(--honey-brd);border-radius:var(--r-md);padding:10px 14px;margin-top:12px;}
+.fisse-totale span{font-size:0.8125rem;color:var(--text2);font-weight:700;}
+.fisse-totale strong{font-size:1.0625rem;font-weight:800;color:var(--honey-d);}
+
+/* ── RIEPILOGO MESE ── */
+.riepilogo-card{background:var(--brown-d);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow-lg);margin-top:20px;border:1.5px solid rgba(255,255,255,.06);position:relative;overflow:hidden;}
+.riepilogo-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--honey),var(--honey-d));}
+.riepilogo-title{font-size:0.625rem;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.45);font-family:'Nunito',sans-serif;font-weight:700;margin-bottom:16px;}
+.riepilogo-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07);}
+.riepilogo-row:last-of-type{border-bottom:none;}
+.riepilogo-row-lbl{font-size:0.8125rem;color:rgba(255,255,255,.55);font-family:'Nunito',sans-serif;font-weight:600;}
+.riepilogo-row-val{font-size:1rem;font-weight:800;color:rgba(255,255,255,.85);}
+.riepilogo-totale{display:flex;justify-content:space-between;align-items:center;background:rgba(244,168,39,.12);border:1px solid rgba(244,168,39,.25);border-radius:var(--r-md);padding:14px 16px;margin-top:14px;}
+.riepilogo-totale-lbl{font-size:0.75rem;color:rgba(255,255,255,.5);font-family:'Nunito',sans-serif;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.riepilogo-totale-val{font-size:1.625rem;font-weight:800;color:var(--honey);letter-spacing:-1px;}
+.riepilogo-pro-capite{text-align:center;margin-top:10px;font-size:0.75rem;color:rgba(255,255,255,.35);font-family:'Nunito',sans-serif;font-weight:600;}
+
+/* ── TAB BAR ── */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;z-index:300;background:var(--brown-d);border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:stretch;height:58px;box-shadow:0 -4px 20px rgba(46,26,8,.25);}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:rgba(255,255,255,.38);cursor:pointer;font-family:'Nunito',sans-serif;font-size:0.625rem;font-weight:700;letter-spacing:.3px;padding:6px 4px 10px;transition:color .18s;-webkit-appearance:none;-webkit-tap-highlight-color:transparent;}
+.tab-btn .tab-icon{font-size:1.25rem;line-height:1;transition:transform .18s;}
+.tab-btn.active{color:var(--honey);}
+.tab-btn.active .tab-icon{transform:translateY(-2px);}
+.tab-btn:active .tab-icon{transform:scale(.88);}
+
+/* ── TAB PAGES ── */
+.tab-page{display:none;}
+.tab-page.active{display:contents;}
+@media(min-width:700px) and (min-height:600px){.tab-page.active{display:contents;}}
+
+/* ── MAIN padding bottom per tab bar ── */
+.main{padding-bottom:74px!important;}
+
+/* ── TEMA SCURO ── */
+body.dark{
+  --brown:#8B5E3C;--brown-d:#1A0F05;--honey:#F4A827;--honey-d:#C87D0A;
+  --honey-bg:#2A1F08;--honey-brd:#5A3F10;
+  --moss:#4A7C40;--moss-bg:#0F2010;--moss-brd:#2A5C22;
+  --berry:#C0392B;--berry-bg:#2A0A08;--berry-brd:#6A2018;
+  --purple:#8B6FC0;--purple-bg:#1A1030;--purple-brd:#4A3078;
+  --bg:#120A02;--card:#1E1208;--card2:#261808;
+  --border:#3A2410;--text:#F0DEC0;--text2:#C8A878;--text3:#886848;
+  --shadow-sm:0 2px 8px rgba(0,0,0,.40);
+  --shadow-md:0 4px 20px rgba(0,0,0,.50);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.60);
+}
+.btn-theme{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:var(--r-sm);color:rgba(255,255,255,.45);font-size:0.875rem;padding:4px 8px;cursor:pointer;transition:all .15s;-webkit-appearance:none;line-height:1;}
+.btn-theme:hover{background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);}
+.tab-btn.active::before{content:'';position:absolute;top:0;left:25%;right:25%;height:2px;background:var(--honey);border-radius:0 0 3px 3px;}
+.tab-btn{position:relative;}
+
+/* ── SEGMENTO MESI/ANNI ── */
+.archivio-segment{display:flex;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:16px;}
+.archivio-seg-btn{flex:1;height:40px;background:none;border:none;font-family:'Baloo 2',cursive;font-size:0.875rem;font-weight:700;color:var(--text3);cursor:pointer;transition:all .18s;-webkit-appearance:none;}
+.archivio-seg-btn.active{background:var(--brown-d);color:var(--honey);}
+
+/* ── CARD ANNO ── */
+.anno-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow-sm);}
+.anno-header{display:flex;align-items:center;gap:10px;margin-bottom:6px;cursor:pointer;}
+.anno-label{font-size:1.125rem;font-weight:800;color:var(--text);flex:1;}
+.anno-tot{font-size:1rem;font-weight:800;color:var(--honey-d);}
+.anno-toggle{font-size:0.8125rem;color:var(--text3);transition:transform .2s;}
+.anno-toggle.open{transform:rotate(180deg);}
+.anno-stat-row{font-size:0.75rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;margin-bottom:8px;}
+.anno-stat-row strong{color:var(--text2);}
+.anno-mesi{display:none;border-top:1px solid var(--border);padding-top:10px;margin-top:4px;}
+.anno-mesi.open{display:block;}
+.anno-mese-mini{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);}
+.anno-mese-mini:last-child{border-bottom:none;}
+.anno-mese-mini-nome{font-size:0.8125rem;font-weight:700;color:var(--text);}
+.anno-mese-mini-tot{font-size:0.8125rem;font-weight:800;color:var(--honey-d);}
+.anno-mese-mini-btn{height:26px;padding:0 10px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--card2);color:var(--text2);font-family:'Baloo 2',cursive;font-size:0.6875rem;font-weight:700;cursor:pointer;-webkit-appearance:none;transition:all .15s;}
+.anno-mese-mini-btn:hover{border-color:var(--honey-brd);background:var(--honey-bg);color:var(--honey-d);}
+
+/* ── VALIDAZIONE INPUT ── */
+.inp.invalid{border-color:var(--berry)!important;background:var(--berry-bg)!important;}
+
+/* ── FILTRO CHI ── */
+.filter-chi-wrap{display:flex;gap:6px;align-items:center;}
+.btn-filter-chi{height:26px;padding:0 10px;border-radius:20px;border:1.5px solid var(--border);background:var(--card2);color:var(--text3);font-family:'Baloo 2',cursive;font-size:0.6875rem;font-weight:700;cursor:pointer;transition:all .15s;-webkit-appearance:none;white-space:nowrap;}
+.btn-filter-chi.active-luca{border-color:var(--berry-brd);background:var(--berry-bg);color:var(--berry);}
+.btn-filter-chi.active-ale{border-color:var(--moss-brd);background:var(--moss-bg);color:var(--moss);}
+.btn-filter-chi.active-tutti{border-color:var(--honey-brd);background:var(--honey-bg);color:var(--honey-d);}
+
+/* Snapshot fisse nel dettaglio mese */
+.fisse-snapshot{background:var(--honey-bg);border:1.5px solid var(--honey-brd);border-radius:var(--r-md);padding:10px 14px;margin-top:10px;}
+.fisse-snapshot-title{font-size:0.625rem;letter-spacing:2px;text-transform:uppercase;color:var(--honey-d);font-family:'Nunito',sans-serif;font-weight:700;margin-bottom:8px;}
+.fisse-snapshot-row{display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text2);font-family:'Nunito',sans-serif;font-weight:600;padding:3px 0;}
+.fisse-snapshot-tot{display:flex;justify-content:space-between;font-size:0.8125rem;font-weight:800;color:var(--honey-d);padding-top:6px;margin-top:4px;border-top:1px solid var(--honey-brd);}
+
+/* ── RIQUADRO FISSE IN MODALE CHIUSURA ── */
+.chiudi-fisse-box{background:var(--honey-bg);border:1.5px solid var(--honey-brd);border-radius:var(--r-md);padding:10px 14px;margin-bottom:14px;}
+.chiudi-fisse-title{font-size:0.625rem;letter-spacing:2px;text-transform:uppercase;color:var(--honey-d);font-family:'Nunito',sans-serif;font-weight:700;margin-bottom:8px;}
+.chiudi-fisse-row{display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text2);font-family:'Nunito',sans-serif;font-weight:600;padding:2px 0;}
+.chiudi-fisse-tot{display:flex;justify-content:space-between;font-size:0.8125rem;font-weight:800;color:var(--honey-d);border-top:1px solid var(--honey-brd);margin-top:6px;padding-top:6px;}
+
+/* ══════════════════════════════════════════════════════════
+   LISTA SPESA + NOTE — Aggiunte a style.css
+   Incolla questo blocco IN FONDO al file style.css
+══════════════════════════════════════════════════════════ */
+
+/* Colore Ale (verde muschio) — definito qui se non già presente */
+:root {
+  --moss:     #4a7c59;
+  --moss-bg:  #eef5f0;
+  --moss-brd: #b8d4bf;
+}
+.dark {
+  --moss:     #7dba8f;
+  --moss-bg:  #1a2e20;
+  --moss-brd: #2e5238;
+}
+
+/* Su schermi larghi, lista-content occupa tutta la larghezza della griglia */
+@media(min-width:700px) and (min-height:600px){
+  #lista-content { grid-column:1/-1; }
+  #archivio-tab-content { grid-column:1/-1; }
+}
+
+/* ── Identity bar ── */
+.lista-identity-bar {
+  display:flex;align-items:center;gap:8px;margin-bottom:12px;
+  background:var(--card);border-radius:var(--r-md);padding:10px 14px;
+  border:1.5px solid var(--border);
+}
+.lista-id-lbl {
+  font-size:0.75rem;color:var(--text3);
+  font-family:'Nunito',sans-serif;font-weight:700;flex:1;
+}
+.id-btn {
+  height:30px;padding:0 14px;border-radius:20px;
+  border:1.5px solid var(--border);background:var(--card2);color:var(--text3);
+  font-family:'Baloo 2',cursive;font-size:0.75rem;font-weight:700;
+  cursor:pointer;transition:all .15s;-webkit-appearance:none;
+}
+.id-btn {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+
+.id-btn img {
+  width:18px;
+  height:18px;
+  object-fit:contain;
+}
+.id-btn.active-luca {
+  border-color:var(--berry-brd);background:var(--berry-bg);color:var(--berry);
+}
+.id-btn.active-ale {
+  border-color:var(--moss-brd);background:var(--moss-bg);color:var(--moss);
+}
+
+/* ── Card Lista ── */
+.lista-card {
+  background:var(--card);border-radius:var(--r-lg);padding:20px;
+  box-shadow:var(--shadow-md);border:1.5px solid var(--border);margin-bottom:14px;
+}
+.lista-input-row {
+  display:flex;gap:8px;margin-bottom:14px;align-items:stretch;
+}
+.lista-inp-qty  { width:68px;font-size:0.9375rem;padding:0 10px;flex-shrink:0; }
+.lista-inp-testo { flex:1;font-size:1rem;min-width:0; }
+.btn-add-lista {
+  width:48px;height:48px;border-radius:var(--r-md);border:none;
+  background:linear-gradient(135deg,var(--brown),var(--brown-d));color:var(--honey);
+  font-size:1.75rem;font-weight:800;cursor:pointer;flex-shrink:0;
+  box-shadow:0 3px 10px rgba(58,30,10,.2);transition:all .15s;-webkit-appearance:none;
+  display:flex;align-items:center;justify-content:center;line-height:1;
+}
+.btn-add-lista:active { transform:scale(.9); }
+
+/* Pulsanti "spunta/deseleziona tutti" */
+.lista-check-all-row {
+  display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;
+}
+.btn-check-all {
+  height:28px;padding:0 12px;border-radius:20px;
+  border:1.5px solid var(--border);background:var(--card2);color:var(--text3);
+  font-family:'Baloo 2',cursive;font-size:0.6875rem;font-weight:700;
+  cursor:pointer;transition:all .15s;-webkit-appearance:none;white-space:nowrap;
+}
+.btn-check-all:hover {
+  border-color:var(--honey-brd);background:var(--honey-bg);color:var(--honey-d);
+}
+
+.lista-empty {
+  text-align:center;color:var(--text3);font-size:0.875rem;padding:32px 0;
+  font-family:'Nunito',sans-serif;font-weight:600;
+}
+.lista-completati-sep {
+  font-size:0.625rem;letter-spacing:2px;text-transform:uppercase;
+  color:var(--text3);font-family:'Nunito',sans-serif;font-weight:700;
+  margin:14px 0 8px;
+}
+
+/* ── Item con swipe ── */
+.lista-item {
+  border-radius:var(--r-md);margin-bottom:7px;
+  animation:pop .2s ease-out;
+}
+.lista-delete-bg { display:none; }
+.lista-item-inner {
+  background:var(--card);border:1.5px solid var(--border);
+  border-left:4px solid var(--honey-brd);
+  border-radius:var(--r-md);padding:11px 12px;
+  display:flex;align-items:center;gap:10px;
+  box-shadow:var(--shadow-sm);transition:box-shadow .15s;
+}
+.lista-item-inner:active { box-shadow:var(--shadow-md); }
+.lista-item.completata .lista-item-inner {
+  background:var(--card2);border-left-color:var(--moss-brd);opacity:0.72;
+}
+
+.lista-check-btn {
+  font-size:1.25rem;background:none;border:none;cursor:pointer;
+  flex-shrink:0;padding:0;line-height:1;-webkit-appearance:none;
+  transition:transform .12s;
+}
+.lista-check-btn:active { transform:scale(.82); }
+
+.lista-item-body {
+  flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.lista-qty-tag {
+  background:var(--honey-bg);border:1px solid var(--honey-brd);
+  border-radius:var(--r-sm);padding:2px 8px;
+  font-size:0.6875rem;font-weight:800;color:var(--honey-d);
+  white-space:nowrap;flex-shrink:0;font-family:'Nunito',sans-serif;
+}
+.lista-testo { font-size:0.9375rem;font-weight:700;color:var(--text); }
+.lista-testo.completata { text-decoration:line-through;color:var(--text3); }
+
+.lista-del-btn {
+  width:28px;height:28px;border-radius:var(--r-sm);
+  border:1.5px solid var(--border);background:var(--card2);
+  color:var(--text3);font-size:1rem;cursor:pointer;flex-shrink:0;
+  transition:all .15s;-webkit-appearance:none;
+  display:flex;align-items:center;justify-content:center;
+}
+.lista-del-btn:hover {
+  background:var(--berry-bg);border-color:var(--berry-brd);color:var(--berry);
+}
+
+/* ── Azioni lista ── */
+.lista-actions {
+  display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;
+}
+.btn-clear-done {
+  flex:1;min-width:140px;height:38px;border-radius:var(--r-md);
+  border:1.5px solid var(--moss-brd);background:var(--moss-bg);color:var(--moss);
+  font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:800;
+  cursor:pointer;transition:all .15s;-webkit-appearance:none;
+}
+.btn-clear-done:hover { background:var(--moss);color:#fff; }
+.btn-svuota-lista {
+  height:38px;padding:0 16px;border-radius:var(--r-md);
+  border:1.5px solid var(--berry-brd);background:var(--berry-bg);color:var(--berry);
+  font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:800;
+  cursor:pointer;transition:all .15s;-webkit-appearance:none;
+}
+.btn-svuota-lista:hover { background:var(--berry);color:#fff; }
+
+.svuota-confirm {
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:var(--berry-bg);border:1.5px solid var(--berry-brd);
+  border-radius:var(--r-md);padding:12px 14px;margin-top:10px;
+  animation:pop .18s ease-out;
+}
+.svuota-confirm span {
+  flex:1;color:var(--berry);font-size:0.8125rem;font-weight:700;
+  font-family:'Nunito',sans-serif;
+}
+
+/* ── Note condivise ── */
+.note-card {
+  background:var(--card);border-radius:var(--r-lg);padding:20px;
+  box-shadow:var(--shadow-md);border:1.5px solid var(--honey-brd);
+  position:relative;overflow:hidden;margin-bottom:14px;
+}
+/* Striscia oro in cima */
+.note-card::before {
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--honey),var(--honey-d));
+}
+.note-header {
+  display:flex;align-items:center;gap:10px;margin-bottom:8px;
+}
+.note-title {
+  font-size:0.625rem;letter-spacing:3px;text-transform:uppercase;
+  color:var(--honey-d);font-family:'Nunito',sans-serif;font-weight:700;flex:1;
+}
+.note-status {
+  font-size:0.6875rem;color:var(--text3);
+  font-family:'Nunito',sans-serif;font-weight:600;min-width:80px;text-align:right;
+}
+.note-meta {
+  font-size:0.6875rem;color:var(--text3);
+  font-family:'Nunito',sans-serif;font-weight:600;
+  margin-bottom:10px;cursor:default;
+}
+.note-meta strong { color:var(--text2); }
+.note-textarea {
+  width:100%;min-height:100px;border-radius:var(--r-md);
+  border:2px solid var(--border);background:var(--card2);
+  color:var(--text);font-family:'Nunito',sans-serif;
+  font-size:0.875rem;font-weight:600;padding:12px;outline:none;
+  resize:vertical;transition:border-color .18s;line-height:1.6;
+  -webkit-appearance:none;box-sizing:border-box;
+}
+.note-textarea:focus  { border-color:var(--honey); }
+.note-textarea::placeholder { color:var(--text3); }
+
+/* ══════════════════════════════════════════════════════════
+   HEADER MOBILE — initial-scale:1.0 su schermi ~393px (S25)
+   Il sync sta su una riga propria sotto i bottoni: non serve
+   più nasconderlo. Qui solo compattazioni per non far wrappare.
+══════════════════════════════════════════════════════════ */
+@media(max-width:500px){
+  .header-inner{gap:10px;}
+  .header-actions{gap:6px;}
+  .btn-logout{font-size:0.625rem;padding:3px 8px;}
+  .btn-theme,.btn-pw{padding:3px 6px;}
+  .sync-txt{font-size:0.625rem;}
+}
+
+/* ══════════════════════════════════════════════════════════
+   NOTE CARD — colori per identità autore (Luca=rosso / Ale=verde)
+══════════════════════════════════════════════════════════ */
+.note-card.identity-luca::before{
+  background:linear-gradient(90deg,var(--berry),var(--berry-brd));
+}
+.note-card.identity-ale::before{
+  background:linear-gradient(90deg,var(--moss),var(--moss-brd));
+}
+.note-card.identity-luca .note-textarea:focus{
+  border-color:var(--berry);
+  box-shadow:0 0 0 4px rgba(168,50,37,.08);
+}
+.note-card.identity-ale .note-textarea:focus{
+  border-color:var(--moss);
+  box-shadow:0 0 0 4px rgba(74,124,89,.08);
+}
+
+/* Riga identity dentro la note card */
+.note-identity-row{
+  display:flex;align-items:center;gap:8px;
+  margin:2px 0 10px;flex-wrap:wrap;
+}
+.nota-id-lbl{
+  font-size:0.75rem;color:var(--text3);
+  font-family:'Nunito',sans-serif;font-weight:700;flex:1;white-space:nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TAB PULSE — notifica nuovi elementi in Lista/Note
+═══════════════════════════════════════════════════════ */
+@keyframes tabIconPulse {
+  0%,100%{transform:translateY(-2px) scale(1);opacity:.5;}
+  50%{transform:translateY(-4px) scale(1.22);opacity:1;}
+}
+.tab-btn.pulse .tab-icon {
+  animation:tabIconPulse 1.5s ease-in-out infinite;
+  color:var(--honey);
+}
+/* Badge puntino rosso su tab lista */
+.tab-btn.pulse::after {
+  content:'';position:absolute;top:6px;right:calc(50% - 12px);
+  width:7px;height:7px;border-radius:50%;
+  background:var(--berry);border:1.5px solid var(--brown-d);
+}
+
+/* ══════════════════════════════════════════════════════════
+   ANIMAZIONE CAMBIO TAB — fade + slide leggero
+   La classe .tab-switching viene aggiunta a .main da switchTab()
+   e fa entrare il contenuto della tab attiva con un micro-slide.
+══════════════════════════════════════════════════════════ */
+@keyframes tabEnter{
+  from{opacity:0;transform:translateY(8px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.main.tab-switching .tab-page.active > *{
+  animation:tabEnter .26s cubic-bezier(.22,.61,.36,1);
+}
+/* (la tab-page è display:contents in tutti i casi, quindi animiamo
+   sempre i suoi figli diretti, mai la tab-page stessa) */
+/* ── Entrata a cascata delle righe storico (solo al cambio tab) ──
+   Le prime voci entrano una dopo l'altra con un micro-ritardo. */
+.main.tab-switching .storico-wrap .tx{animation:tabEnter .30s cubic-bezier(.22,.61,.36,1) both;}
+.main.tab-switching .storico-wrap .tx:nth-child(1){animation-delay:.02s;}
+.main.tab-switching .storico-wrap .tx:nth-child(2){animation-delay:.06s;}
+.main.tab-switching .storico-wrap .tx:nth-child(3){animation-delay:.10s;}
+.main.tab-switching .storico-wrap .tx:nth-child(4){animation-delay:.14s;}
+.main.tab-switching .storico-wrap .tx:nth-child(5){animation-delay:.18s;}
+.main.tab-switching .storico-wrap .tx:nth-child(6){animation-delay:.22s;}
+/* ══════════════════════════════════════════════════════════
+   STATI VUOTI — orso buffo + frase casuale (frasi.js)
+══════════════════════════════════════════════════════════ */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;padding:18px 12px;text-align:center;
+  animation:tabEnter .35s cubic-bezier(.22,.61,.36,1) both;
+}
+.empty-state .bear-vuoto{
+  display:block;filter:drop-shadow(0 4px 10px rgba(58,30,10,.18));
+  animation:bearFloat 3.5s ease-in-out infinite;
+}
+.empty-state .empty-msg{
+  color:var(--text3);font-family:'Nunito',sans-serif;font-weight:700;
+  font-size:0.9375rem;line-height:1.4;max-width:240px;
+}
+@keyframes bearFloat{
+  0%,100%{transform:translateY(0) rotate(-1deg);}
+  50%{transform:translateY(-6px) rotate(1deg);}
+}
+/* ══════════════════════════════════════════════════════════
+   SPESE PREVISTE (tab Fisse → toggle Previste)
+══════════════════════════════════════════════════════════ */
+/* Toggle Ricorrenti / Previste */
+.fisse-toggle{display:flex;gap:6px;background:var(--card2);border-radius:var(--r-md);padding:4px;margin-bottom:14px;}
+.fisse-toggle-btn{flex:1;border:none;background:transparent;color:var(--text2);font-family:'Baloo 2',cursive;font-size:0.9375rem;font-weight:700;padding:9px 8px;border-radius:var(--r-sm);cursor:pointer;transition:all .18s;}
+.fisse-toggle-btn.active{background:var(--card);color:var(--honey-d);box-shadow:var(--shadow-sm);}
+
+/* Card previste */
+.previste-card{background:var(--card);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow-md);border:1.5px solid var(--honey-brd);position:relative;overflow:hidden;}
+
+/* Voce prevista */
+.prevista-item{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card2);border-radius:var(--r-md);padding:12px;margin-bottom:8px;border-left:4px solid var(--border);}
+.prevista-item.scad-scaduta{border-left-color:var(--berry);}
+.prevista-item.scad-oggi{border-left-color:var(--berry);}
+.prevista-item.scad-vicina{border-left-color:var(--honey);}
+.prevista-item.scad-lontana{border-left-color:var(--moss-brd);}
+.prevista-body{flex:1;min-width:0;}
+.prevista-nome{font-weight:700;color:var(--text);font-size:1rem;}
+.prevista-scad-badge{font-size:0.75rem;font-family:'Nunito',sans-serif;font-weight:700;margin-top:3px;}
+.prevista-scad-badge.scad-scaduta,.prevista-scad-badge.scad-oggi{color:var(--berry);}
+.prevista-scad-badge.scad-vicina{color:var(--honey-d);}
+.prevista-scad-badge.scad-lontana{color:var(--text3);}
+.prevista-imp{font-weight:800;color:var(--honey-d);font-size:1.0625rem;white-space:nowrap;}
+.prevista-actions{display:flex;gap:6px;align-items:center;width:100%;justify-content:flex-end;}
+.btn-paga-prevista{background:var(--moss-bg);border:1.5px solid var(--moss-brd);color:var(--moss);border-radius:var(--r-sm);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.8125rem;padding:5px 12px;cursor:pointer;margin-right:auto;}
+.btn-paga-prevista:active{transform:scale(.96);}
+
+/* Banner scadenze */
+.previste-banner{background:var(--berry-bg);border:1.5px solid var(--berry-brd);color:var(--berry);border-radius:var(--r-md);padding:11px 14px;margin-bottom:12px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.8125rem;line-height:1.4;}
+
+/* Modale "come è stata pagata" */
+.paga-scelte{display:flex;flex-direction:column;gap:10px;margin:8px 0 4px;}
+.paga-scelta{background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:'Baloo 2',cursive;font-weight:700;font-size:1rem;padding:13px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}
+.paga-scelta:active{transform:scale(.97);}
+.paga-scelta:hover{border-color:var(--honey);background:var(--honey-bg);}
+.paga-scelta.paga-bancomat{border-color:var(--purple-brd);}
+.paga-scelta.paga-bancomat:hover{background:var(--purple-bg);border-color:var(--purple);}
+/* Sezione "pagate col bancomat" in attesa di chiusura */
+.bancomat-section{margin-top:16px;padding-top:14px;border-top:1.5px dashed var(--purple-brd);}
+.bancomat-head{font-family:'Nunito',sans-serif;font-weight:800;font-size:0.8125rem;color:var(--purple);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;}
+.bancomat-item{background:var(--purple-bg);border-left:4px solid var(--purple-brd);opacity:.92;}
+.bancomat-item .prevista-nome{color:var(--purple);}
+.btn-annulla-bancomat{background:transparent;border:1.5px solid var(--purple-brd);color:var(--purple);border-radius:var(--r-sm);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.75rem;padding:4px 10px;cursor:pointer;margin-left:auto;}
+.btn-annulla-bancomat:active{transform:scale(.96);}
+.bancomat-tot{margin-top:8px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.8125rem;color:var(--purple);text-align:right;}
+/* Conferma inline dentro fissa/prevista: va a capo a tutta larghezza */
+.fissa-item .elimina-arch-confirm,
+.prevista-item .elimina-arch-confirm{width:100%;flex-basis:100%;margin-top:8px;}

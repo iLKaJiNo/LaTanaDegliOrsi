@@ -1,0 +1,75 @@
+/* ════════════════════════════════════════════════════════
+   TANA DEGLI ORSI — layout.css
+   Struttura: login, banner, shell, header, main + grid.
+   ════════════════════════════════════════════════════════ */
+
+/* ── LOGIN SCREEN ── */
+#login-screen{display:none;position:fixed;inset:0;z-index:1000;background:var(--brown-d);flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;}
+#login-screen.active{display:flex;}
+.login-bear{margin-bottom:12px;display:inline-block;animation:sniff 4s ease-in-out infinite;}
+.login-title{font-size:1.625rem;font-weight:800;color:var(--honey);margin-bottom:6px;text-align:center;}
+.login-sub{font-size:0.8125rem;color:rgba(255,255,255,.4);font-family:'Nunito',sans-serif;font-weight:600;margin-bottom:32px;text-align:center;line-height:1.5;}
+.login-form{width:100%;max-width:320px;display:flex;flex-direction:column;gap:12px;}
+.login-inp-wrap{position:relative;}
+.login-inp{width:100%;height:52px;border-radius:var(--r-md);border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:#fff;font-family:'Baloo 2',cursive;font-size:1.0625rem;font-weight:600;padding:0 48px 0 16px;outline:none;-webkit-appearance:none;transition:border-color .2s;}
+.login-inp:focus{border-color:var(--honey);}
+.login-inp::placeholder{color:rgba(255,255,255,.3);}
+.toggle-pw{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.4);font-size:1.125rem;cursor:pointer;padding:4px;line-height:1;}
+.login-btn{width:100%;height:52px;border-radius:var(--r-md);border:none;background:linear-gradient(135deg,var(--honey),var(--honey-d));color:#fff;font-family:'Baloo 2',cursive;font-size:1.0625rem;font-weight:800;cursor:pointer;box-shadow:0 5px 18px rgba(244,168,39,.35);transition:all .18s;-webkit-appearance:none;}
+.login-btn:active{transform:scale(.97);}
+.login-btn:disabled{opacity:.5;cursor:default;}
+.login-error{font-size:0.8125rem;color:#FF9E80;font-family:'Nunito',sans-serif;font-weight:700;text-align:center;min-height:20px;}
+.login-loading{font-size:0.8125rem;color:rgba(255,255,255,.4);font-family:'Nunito',sans-serif;font-weight:600;text-align:center;min-height:20px;}
+
+/* ── INSTALL BANNER ── */
+#install-banner{display:none;align-items:center;gap:10px;background:var(--brown);color:#fff;padding:10px 16px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));position:relative;z-index:300;font-size:0.875rem;font-weight:700;width:100%;box-sizing:border-box;}
+#install-banner span{flex:1; display:flex; align-items:center; gap:8px;}
+.btn-install{background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:20px;padding:5px 16px;font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:700;cursor:pointer;}
+.btn-close-banner{background:none;border:none;color:rgba(255,255,255,.5);font-size:1.25rem;cursor:pointer;padding:2px 6px;line-height:1;}
+
+/* ── SHELL ── */
+.shell{display:grid;grid-template-rows:auto 1fr;grid-template-columns:minmax(0,1fr);min-height:100vh;min-height:100dvh;position:relative;z-index:1;width:100%;max-width:100%;overflow-x:hidden;}
+
+/* ── HEADER ── */
+.header{background:var(--brown-d);padding:16px 24px 14px;padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right));position:sticky;top:0;z-index:200;box-shadow:0 3px 16px rgba(58,30,10,.35);}
+.header::after{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(90deg,transparent,transparent 60px,rgba(255,255,255,.015) 60px,rgba(255,255,255,.015) 61px);}
+.header-inner{max-width:1000px;margin:0 auto;display:flex;align-items:center;gap:14px;position:relative;z-index:1;}
+.header-bear{line-height:1;flex-shrink:0;display:inline-block;animation:sniff 4s ease-in-out infinite;}
+@keyframes sniff{0%,100%{transform:rotate(-6deg);}50%{transform:rotate(6deg) translateY(-3px);}}
+.header-titles h1{font-size:1.25rem;font-weight:800;color:var(--honey);letter-spacing:-.2px;text-shadow:0 2px 6px rgba(0,0,0,.3);}
+.header-titles p{font-size:0.75rem;color:rgba(255,255,255,.4);font-family:'Nunito',sans-serif;font-weight:600;margin-top:1px;}
+.header-right{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
+.header-actions{display:flex;align-items:center;gap:8px;}
+.header-sync{display:flex;align-items:center;gap:6px;}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--honey);transition:background .4s;flex-shrink:0;}
+/* Mentre sincronizza (nessuna classe ok/err) il pallino pulsa dolcemente */
+.sync-dot:not(.ok):not(.err){animation:syncPulse 1s ease-in-out infinite;}
+@keyframes syncPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);}}
+.sync-dot.ok{background:#6FCF5A;}.sync-dot.err{background:#E05A4A;}
+.sync-txt{font-size:0.6875rem;color:rgba(255,255,255,.38);font-family:'Nunito',sans-serif;font-weight:600;white-space:nowrap;}
+.btn-logout{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-sm);color:rgba(255,255,255,.45);font-family:'Baloo 2',cursive;font-size:0.6875rem;font-weight:700;padding:4px 10px;cursor:pointer;transition:all .15s;-webkit-appearance:none;}
+.btn-logout:hover{background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);}
+.btn-pw{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:var(--r-sm);color:rgba(255,255,255,.35);font-family:'Baloo 2',cursive;font-size:0.6875rem;font-weight:700;padding:4px 8px;cursor:pointer;transition:all .15s;-webkit-appearance:none;}
+.btn-pw:hover{background:rgba(255,255,255,.12);color:rgba(255,255,255,.6);}
+.cp-errore{font-size:0.75rem;color:var(--berry);font-family:'Nunito',sans-serif;font-weight:700;text-align:center;min-height:18px;margin-bottom:8px;}
+
+/* ── MAIN ── */
+.main{padding:20px 16px 80px;max-width:1000px;margin:0 auto;width:100%;min-height:100%;}
+@media(min-width:700px) and (min-height:600px){
+  .main{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto auto auto 1fr;column-gap:20px;padding:28px 24px 60px;}
+  .saldo-card{grid-column:1/-1;grid-row:1;}
+  .form-card{grid-column:1;grid-row:3;}
+  .chiudi-card{grid-column:1;grid-row:4;}
+  .storico-wrap{grid-column:2;grid-row:3/7;}
+  .debiti-card{grid-column:1/-1;grid-row:7;margin-top:0;}
+  .fisse-card{grid-column:1/-1;grid-row:8;margin-top:0;}
+  .riepilogo-card{grid-column:1/-1;grid-row:9;margin-top:0;}
+  /* Tab Fisse: la tratto come blocco a colonna singola centrato, così
+     toggle + ricorrenti/previste restano allineati e congrui su desktop
+     (le altre tab restano in griglia 2 colonne). */
+  .tab-page[data-tab="fisso"].active{display:block !important;grid-column:1/-1;max-width:680px;margin:0 auto;width:100%;}
+  .tab-page[data-tab="fisso"].active .fisse-card,
+  .tab-page[data-tab="fisso"].active .riepilogo-card,
+  .tab-page[data-tab="fisso"].active .previste-card{grid-column:auto;margin-top:14px;}
+}
+

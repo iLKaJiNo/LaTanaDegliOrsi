@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="La Tana">
+<meta name="theme-color" content="#6B3F1F">
+<title>Tana degli Orsi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./bear-192.png">
+<link rel="stylesheet" href="./variables.css">
+<link rel="stylesheet" href="./layout.css">
+<link rel="stylesheet" href="./components.css">
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js').catch(function(err){ console.log("Errore SW:", err); });
+  });
+}
+</script>
+</head>
+<body>
+
+<div id="login-screen">
+  <img src="./bear.svg" class="login-bear" alt="Orso" style="width:4.5rem;height:4.5rem;">
+  <div class="login-title">Tana degli Orsi</div>
+  <div class="login-sub">Solo gli Orsi autorizzati<br>possono accedere alla Tana</div>
+  <div class="login-form">
+    <div class="login-inp-wrap">
+      <input class="login-inp" type="password" id="login-pw" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="toggle-pw" onclick="togglePwVisibility()" tabindex="-1">&#x1F441;</button>
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()"><img src="./bear.svg" style="width:1.125rem;height:1.125rem;vertical-align:middle;margin-right:6px;" alt=""> Entra nella Tana</button>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-loading" id="login-loading"></div>
+  </div>
+</div>
+
+<div id="install-banner">
+  <span><img src="./bear.svg" style="width:1rem;height:1rem;vertical-align:middle;margin-right:4px;" alt=""> Installa La Tana come app!</span>
+  <button class="btn-install" onclick="installApp()">Installa</button>
+  <button class="btn-close-banner" onclick="this.parentElement.style.display='none'">&#215;</button>
+</div>
+
+<div class="shell">
+  <header class="header">
+    <div class="header-inner">
+      <img src="./bear.svg" class="header-bear" alt="Orso" style="width:2.25rem;height:2.25rem;">
+      <div class="header-titles">
+        <h1>Tana degli Orsi</h1>
+        <p>Luca &amp; Ale &mdash; cassa comune &#x1F36F;</p>
+      </div>
+      <div class="header-right">
+        <div class="header-actions">
+          <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Tema">🌙</button>
+          <button class="btn-pw" onclick="openCambioPassword()" title="Cambia password">🔑</button>
+          <button class="btn-logout" onclick="logout()" title="Esci">&#x1F512; Esci</button>
+        </div>
+        <div class="header-sync">
+          <div class="sync-dot" id="dot"></div>
+          <span class="sync-txt" id="sync-txt">...</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- ══════════════════════════════════════
+         TAB 1 — TANA (saldo, form, storico, debiti)
+    ══════════════════════════════════════ -->
+    <div class="tab-page active" data-tab="tana">
+
+      <div class="saldo-card">
+        <div class="saldo-inner">
+          <div class="saldo-left">
+            <div class="saldo-lbl">Debito con la cassa</div>
+            <div class="saldo-num" id="saldo-num">---</div>
+            <div id="saldo-badge"></div>
+          </div>
+          <div class="saldo-right-panel">
+            <div id="saldo-base-wrap"></div>
+            <div class="honey-jar">
+              <span class="honey-jar-icon">&#x1F36F;</span>
+              <div class="honey-jar-lbl">Totale Spese del Mese</div>
+              <div class="honey-jar-val" id="honey-jar-val">--- &#x20ac;</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <span class="section-lbl">Nuova voce nella Tana</span>
+        <div class="toggle">
+          <button class="toggle-btn luca" id="btn-luca" onclick="setChi('Luca')">
+            <div><img src="./bear.svg" style="width:1.125rem;height:1.125rem;vertical-align:middle;margin-right:6px;" alt=""> Luca</div>
+            <sub>&#8593; Ale &nbsp;&#8595; Luca</sub>
+          </button>
+          <button class="toggle-btn" id="btn-ale" onclick="setChi('Ale')">
+            <div><img src="./bear.svg" style="width:1.125rem;height:1.125rem;vertical-align:middle;margin-right:6px;" alt=""> Ale</div>
+            <sub>&#8595; Ale &nbsp;&#8593; Luca</sub>
+          </button>
+        </div>
+        <div class="input-row">
+          <input class="inp inp-euro" type="number" id="imp" placeholder="0.00" min="0" step="0.01" inputmode="decimal" oninput="updatePreview()" onkeydown="if(event.key==='Enter')addTx()">
+          <div class="inp-nota-wrap">
+            <input class="inp inp-nota" type="text" id="nota" placeholder="Spesa, Biscotti, Miele..." onkeydown="if(event.key==='Enter')addTx()">
+            <button class="btn-data-icon" id="btn-data-icon" onclick="toggleDataManuale()" title="Data diversa da oggi">📅</button>
+          </div>
+        </div>
+        <div class="data-extra-row" id="data-extra-row" style="display:none;">
+          <label>📅 Data:</label>
+          <input class="inp-data-manual" type="date" id="inp-data-manual">
+          <button class="btn-cancel-sm" onclick="toggleDataManuale()" style="height:40px;padding:0 10px;">✕</button>
+        </div>
+        <div class="preview-box" id="preview"></div>
+        <button class="btn-add" id="btn-add" onclick="addTx()"><img src="./bear.svg" style="width:1.125rem;height:1.125rem;vertical-align:middle;margin-right:6px;" alt=""> Aggiungi alla Tana</button>
+        <div class="status-lbl" id="status"></div>
+      </div>
+
+      <div class="chiudi-card">
+        <button class="btn-chiudi" onclick="openChiudi()">&#x1F319; Chiudi mese &amp; azzera storico</button>
+      </div>
+
+      <div class="storico-wrap" id="storico"></div>
+
+      <div class="debiti-card">
+        <div class="debiti-header">
+          <span class="debiti-title">&#x1F91D; Prestiti diretti tra Orsi</span>
+          <button class="btn-nuovo-debito" onclick="openNuovoDebito()">+ Nuovo prestito</button>
+        </div>
+        <div id="debiti-list"></div>
+      </div>
+
+    </div><!-- /tab tana -->
+
+    <!-- ══════════════════════════════════════
+         TAB 2 — ARCHIVIO (mesi chiusi + grafico)
+    ══════════════════════════════════════ -->
+    <div class="tab-page" data-tab="archivio">
+
+      <div class="archivio-tab-wrap" id="archivio-tab-content">
+        <!-- Popolato da renderArchivioTab() -->
+      </div>
+
+    </div><!-- /tab archivio -->
+
+    <!-- ══════════════════════════════════════
+         TAB 3 — FISSO (spese fisse + riepilogo)
+    ══════════════════════════════════════ -->
+    <div class="tab-page" data-tab="fisso">
+
+      <!-- Toggle Ricorrenti / Previste -->
+      <div class="fisse-toggle" id="fisse-toggle">
+        <button class="fisse-toggle-btn active" data-seg="ricorrenti" onclick="switchFisseSeg('ricorrenti')">📌 Ricorrenti</button>
+        <button class="fisse-toggle-btn" data-seg="previste" onclick="switchFisseSeg('previste')">📅 Previste</button>
+      </div>
+
+      <!-- ── SEGMENTO RICORRENTI (fisse + riepilogo) ── -->
+      <div id="seg-ricorrenti">
+        <div class="fisse-card" id="fisse-card">
+          <div class="fisse-header">
+            <span class="fisse-title">📌 Spese fisse mensili</span>
+            <button class="btn-nuova-fissa" onclick="openNuovaFissa()">+ Aggiungi</button>
+          </div>
+          <div id="fisse-list"></div>
+        </div>
+
+        <div class="riepilogo-card" id="riepilogo-card">
+          <div class="riepilogo-title">📊 Riepilogo mese corrente</div>
+          <div class="riepilogo-row">
+            <span class="riepilogo-row-lbl">🛒 Spese comuni (cassa)</span>
+            <span class="riepilogo-row-val" id="riepilogo-comuni">--- €</span>
+          </div>
+          <div class="riepilogo-row">
+            <span class="riepilogo-row-lbl">📌 Spese fisse</span>
+            <span class="riepilogo-row-val" id="riepilogo-fisse">--- €</span>
+          </div>
+          <div class="riepilogo-totale">
+            <div>
+              <div class="riepilogo-totale-lbl">Totale reale del mese</div>
+              <div class="riepilogo-pro-capite" id="riepilogo-pro-capite"></div>
+            </div>
+            <div class="riepilogo-totale-val" id="riepilogo-totale">--- €</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SEGMENTO PREVISTE ── -->
+      <div id="seg-previste" style="display:none;">
+        <div class="previste-card" id="previste-card">
+          <div class="fisse-header">
+            <span class="fisse-title">📅 Spese previste</span>
+            <button class="btn-nuova-fissa" onclick="openNuovaPrevista()">+ Aggiungi</button>
+          </div>
+          <div id="previste-list"></div>
+        </div>
+      </div>
+
+    </div><!-- /tab fisso -->
+
+    <!-- TAB 4 — LISTA SPESA + NOTE -->
+<div class="tab-page" data-tab="lista">
+  <div id="lista-content">
+    <!-- Popolato da renderLista() -->
+  </div>
+</div>
+  </main>
+
+  <!-- TAB BAR -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="tana" onclick="switchTab('tana')">
+      <span class="tab-icon"><img src="./bear.svg" style="width:1.25rem;height:1.25rem;vertical-align:middle;" id="tab-icon-tana"></span>
+      <span>Tana</span>
+    </button>
+    <button class="tab-btn" data-tab="archivio" onclick="switchTab('archivio')">
+      <span class="tab-icon">🐾</span>
+      <span>Archivio</span>
+    </button>
+    <button class="tab-btn" data-tab="fisso" onclick="switchTab('fisso')">
+      <span class="tab-icon">🍯</span>
+      <span>Fisse</span>
+    </button>
+    <button class="tab-btn" data-tab="lista" onclick="switchTab('lista')">
+  <span class="tab-icon">🧺</span>
+  <span>Lista</span>
+</button>
+  </nav>
+
+</div><!-- /shell -->
+
+<!-- ══ MODALI (fuori dal main, sempre disponibili) ══ -->
+
+<!-- MODALE CAMBIO PASSWORD -->
+<div class="modal-overlay" id="modal-cambio-pw" onclick="if(event.target===this)closeCambioPassword()">
+  <div class="modal">
+    <div class="modal-icon">🔑</div>
+    <h2>Cambia password</h2>
+    <p>La nuova password sarà condivisa su tutti i dispositivi.</p>
+    <div class="modal-input-row">
+      <label>🔒 Password attuale</label>
+      <input type="password" id="cp-attuale" placeholder="Password attuale" autocomplete="current-password">
+    </div>
+    <div class="modal-input-row">
+      <label>🆕 Nuova password</label>
+      <input type="password" id="cp-nuova" placeholder="Min. 6 caratteri" autocomplete="new-password">
+    </div>
+    <div class="modal-input-row">
+      <label>✅ Conferma nuova</label>
+      <input type="password" id="cp-conferma" placeholder="Ripeti la nuova password" autocomplete="new-password" onkeydown="if(event.key==='Enter')confermaCambioPassword()">
+    </div>
+    <div class="cp-errore" id="cp-errore"></div>
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closeCambioPassword()">Annulla</button>
+      <button class="btn-conferma" id="btn-conferma-pw" onclick="confermaCambioPassword()">🔑 Cambia password</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE MODIFICA DEBITO -->
+<div class="modal-overlay" id="modal-edit-debito" onclick="if(event.target===this)closeEditDebito()">
+  <div class="modal">
+    <div class="modal-icon">✏️</div>
+    <h2>Modifica prestito</h2>
+    <p>Aggiorna i dati di questo prestito diretto.</p>
+    <div class="modal-input-row">
+      <label><img src="./bear.svg" style="width:1rem;height:1rem;vertical-align:middle;margin-right:6px;" alt=""> Chi presta?</label>
+      <select id="ed-prestatore">
+        <option value="Luca">Luca presta ad Ale</option>
+        <option value="Ale">Ale presta a Luca</option>
+      </select>
+    </div>
+    <div class="modal-input-row">
+      <label>💰 Importo originale (€)</label>
+      <input type="number" id="ed-importo" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
+    </div>
+    <div class="modal-input-row">
+      <label>📝 Descrizione</label>
+      <input type="text" id="ed-nota" placeholder="es. cena, biglietto...">
+    </div>
+    <div class="modal-input-row">
+      <label>📅 Data</label>
+      <input type="date" id="ed-data">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closeEditDebito()">Annulla</button>
+      <button class="btn-conferma" onclick="saveEditDebito()">✏️ Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE NUOVO PRESTITO -->
+<div class="modal-overlay" id="modal-debito" onclick="if(event.target===this)closeNuovoDebito()">
+  <div class="modal">
+    <div class="modal-icon">&#x1F91D;</div>
+    <h2>Nuovo prestito diretto</h2>
+    <p>Questo prestito &egrave; tra voi due, <strong>separato dalla cassa comune</strong>.</p>
+    <div class="modal-input-row">
+      <label><img src="./bear.svg" style="width:1rem;height:1rem;vertical-align:middle;margin-right:6px;" alt=""> Chi presta?</label>
+      <select id="debito-prestatore">
+        <option value="Luca">Luca presta ad Ale</option>
+        <option value="Ale">Ale presta a Luca</option>
+      </select>
+    </div>
+    <div class="modal-input-row">
+      <label>&#x1F4B0; Importo (&#x20ac;)</label>
+      <input type="number" id="debito-importo" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
+    </div>
+    <div class="modal-input-row">
+      <label>&#x1F4DD; Descrizione</label>
+      <input type="text" id="debito-nota" placeholder="es. cena, biglietto, emergenza...">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closeNuovoDebito()">Annulla</button>
+      <button class="btn-conferma" onclick="aggiungiDebito()">&#x1F91D; Registra prestito</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE CHIUDI MESE -->
+<div class="modal-overlay" id="modal-chiudi" onclick="if(event.target===this)closeChiudi()">
+  <div class="modal">
+    <div class="modal-icon">&#x1F319;</div>
+    <h2>Chiusura mese</h2>
+    <p>Il saldo attuale diventer&#224; il <strong>nuovo saldo di partenza</strong>. Lo storico verr&#224; salvato nell'archivio e azzerato.</p>
+    <div class="modal-saldo-box">
+      <div class="mlbl">Debito riportato al mese nuovo</div>
+      <div class="mval" id="modal-val">---</div>
+      <div class="msub" id="modal-sub"></div>
+    </div>
+    <div class="modal-input-row">
+      <label>&#x1F4C5; Nome mese</label>
+      <input type="text" id="modal-mese" placeholder="es. Maggio 2025" onkeydown="if(event.key==='Enter')chiudiMese()">
+    </div>
+    <div id="modal-chiudi-fisse"></div>
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closeChiudi()">Annulla</button>
+      <button class="btn-conferma" onclick="chiudiMese()"><img src="./bear.svg" style="width:1rem;height:1rem;vertical-align:middle;margin-right:4px;" alt=""> Conferma chiusura</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE STORICO MESE -->
+<div class="modal-overlay" id="modal-storico-mese" onclick="if(event.target===this)closeStoricoMese()">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-icon">&#x1F4E6;</div>
+    <h2 id="modal-storico-titolo">Storico mese</h2>
+    <p id="modal-storico-sub" style="margin-bottom:12px;"></p>
+    <div class="modal-storico" id="modal-storico-body"></div>
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closeStoricoMese()">Chiudi</button>
+      <button class="btn-conferma" id="btn-pdf-mese" style="background:linear-gradient(135deg,#C0392B,#922B21);">📄 PDF</button>
+      <button class="btn-conferma" id="btn-ripristina-da-storico">&#x1F504; Ripristina</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE STORICO RIMBORSI -->
+<div class="modal-overlay" id="modal-storico-rimborsi" onclick="if(event.target===this)closeStoricoRimborsi()">
+  <div class="modal">
+    <div class="modal-icon">&#x1F4DC;</div>
+    <h2>Storico rimborsi</h2>
+    <p>Tutti i rimborsi registrati per questo prestito diretto</p>
+    <div class="lista-rimborsi" id="modal-rimborsi-body"></div>
+    <div class="modal-btns">
+      <button class="btn-conferma" onclick="closeStoricoRimborsi()">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE RIPRISTINO -->
+<div class="modal-overlay" id="modal-ripristino" onclick="if(event.target===this)closeRipristino()">
+  <div class="modal">
+    <div class="modal-icon">&#x1F504;</div>
+    <h2>Ripristina mese</h2>
+    <p id="modal-rip-txt"></p>
+    <div class="modal-saldo-box">
+      <div class="mlbl">Debito iniziale che verr&#224; ripristinato</div>
+      <div class="mval" id="modal-rip-val">---</div>
+      <div class="msub" id="modal-rip-sub"></div>
+    </div>
+    <div class="modal-warn">&#9888;&#65039; Lo storico attuale verr&#224; sostituito con le voci di quel mese.</div>
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closeRipristino()">Annulla</button>
+      <button class="btn-conferma" onclick="confermaRipristino()">&#x1F504; Ripristina</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE GRAFICO -->
+<div class="modal-overlay" id="modal-grafico" onclick="if(event.target===this)closeGrafico()">
+  <div class="modal modal-grafico">
+    <div class="modal-icon">&#x1F4CA;</div>
+    <h2>Spese mensili</h2>
+    <div id="grafico-stats" style="font-size:13px;font-family:'Nunito',sans-serif;font-weight:600;color:var(--text2);text-align:center;margin-bottom:10px;"></div>
+    <div class="grafico-toggle">
+      <button class="grafico-toggle-btn active" data-vista="barre" onclick="setGraficoVista('barre')">📊 Per mese</button>
+      <button class="grafico-toggle-btn" data-vista="torta" onclick="setGraficoVista('torta')">🥧 Luca vs Ale</button>
+    </div>
+    <div id="grafico-barre-wrap" class="grafico-wrap">
+      <canvas class="grafico-canvas" id="grafico-canvas"></canvas>
+    </div>
+    <div id="grafico-torta-wrap" class="torta-wrap" style="display:none;">
+      <canvas class="torta-canvas" id="grafico-torta-canvas"></canvas>
+      <div class="torta-legenda" id="grafico-torta-legenda"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-conferma" onclick="closeGrafico()">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE SPESA FISSA -->
+<div class="modal-overlay" id="modal-fissa" onclick="if(event.target===this)closeNuovaFissa()">
+  <div class="modal">
+    <div class="modal-icon">📌</div>
+    <h2 id="modal-fissa-titolo">Nuova spesa fissa</h2>
+    <p>Verrà inclusa nel riepilogo mensile ma <strong>non tocca il saldo</strong> della cassa comune.</p>
+    <div class="modal-input-row">
+      <label>🏷️ Nome</label>
+      <input type="text" id="fissa-nome" placeholder="es. Mutuo, Luce, Gas...">
+    </div>
+    <div class="modal-input-row">
+      <label>💰 Importo mensile (€)</label>
+      <input type="number" id="fissa-imp" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
+    </div>
+    <div class="modal-input-row">
+      <label>🎨 Icona</label>
+      <select id="fissa-icona">
+        <option value="🏠">🏠 Mutuo / Affitto</option>
+        <option value="💡">💡 Luce</option>
+        <option value="🔥">🔥 Gas</option>
+        <option value="💧">💧 Acqua</option>
+        <option value="📱">📱 Telefono / Internet</option>
+        <option value="🚗">🚗 Auto / Assicurazione</option>
+        <option value="🏥">🏥 Salute / Assicurazione</option>
+        <option value="📺">📺 Abbonamenti</option>
+        <option value="📌">📌 Altro</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closeNuovaFissa()">Annulla</button>
+      <button class="btn-conferma" onclick="salvaFissa()">📌 Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE NUOVA / MODIFICA SPESA PREVISTA -->
+<div class="modal-overlay" id="modal-prevista" onclick="if(event.target===this)closeNuovaPrevista()">
+  <div class="modal">
+    <div class="modal-icon">📅</div>
+    <h2 id="modal-prevista-titolo">Nuova spesa prevista</h2>
+    <p>Una spesa futura con una scadenza. Quando la paghi, scegli se l'ha pagata Luca/Ale o il Conto Comune BPM.</p>
+    <div class="modal-input-row">
+      <label>🏷️ Nome</label>
+      <input type="text" id="prevista-nome" placeholder="es. Bollo auto, Assicurazione...">
+    </div>
+    <div class="modal-input-row">
+      <label>💰 Importo (€)</label>
+      <input type="number" id="prevista-imp" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
+    </div>
+    <div class="modal-input-row">
+      <label>📅 Scadenza</label>
+      <input type="date" id="prevista-scad">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closeNuovaPrevista()">Annulla</button>
+      <button class="btn-conferma" onclick="salvaPrevista()">📅 Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE SEGNA PAGATA (scelta come) -->
+<div class="modal-overlay" id="modal-paga-prevista" onclick="if(event.target===this)closePagaPrevista()">
+  <div class="modal">
+    <div class="modal-icon">✅</div>
+    <h2>Come è stata pagata?</h2>
+    <p id="paga-prevista-desc">Scegli chi ha pagato questa spesa.</p>
+    <div class="paga-scelte">
+      <button class="paga-scelta" onclick="pagaPrevista('Luca')"><img src="./bear.svg" style="width:1.5rem;height:1.5rem;vertical-align:middle;margin-right:6px;">Pagata da Luca</button>
+      <button class="paga-scelta" onclick="pagaPrevista('Ale')"><img src="./bear.svg" style="width:1.5rem;height:1.5rem;vertical-align:middle;margin-right:6px;">Pagata da Ale</button>
+      <button class="paga-scelta paga-bancomat" onclick="pagaPrevista('bancomat')">💳 Conto Comune BPM</button>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closePagaPrevista()">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE MODIFICA VOCE -->
+<div class="modal-overlay" id="modal-edit-tx" onclick="if(event.target===this)closeEditTx()">
+  <div class="modal">
+    <div class="modal-icon">✏️</div>
+    <h2>Modifica voce</h2>
+    <p>Aggiorna i dati di questa spesa.</p>
+    <div class="modal-input-row">
+      <label><img src="./bear.svg" style="width:1rem;height:1rem;vertical-align:middle;margin-right:6px;" alt=""> Chi ha pagato?</label>
+      <select id="edit-chi"><option value="Luca">Luca</option><option value="Ale">Ale</option></select>
+    </div>
+    <div class="modal-input-row">
+      <label>💰 Importo (€)</label>
+      <input type="number" id="edit-imp" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
+    </div>
+    <div class="modal-input-row">
+      <label>📝 Nota</label>
+      <input type="text" id="edit-nota" placeholder="es. spesa, biscotti...">
+    </div>
+    <div class="modal-input-row">
+      <label>📅 Data</label>
+      <input type="date" id="edit-data">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closeEditTx()">Annulla</button>
+      <button class="btn-conferma" onclick="saveEditTx()">✏️ Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE CESTINO -->
+<div class="modal-overlay" id="modal-cestino" onclick="if(event.target===this)closeCestino()">
+  <div class="modal modal-cestino-wrap">
+    <div class="modal-icon">🗑️</div>
+    <h2>Cestino</h2>
+    <p>Voci eliminate di recente — puoi ripristinarle.</p>
+    <div class="cestino-list" id="cestino-list"></div>
+    <div class="modal-btns">
+      <button class="btn-svuota" id="btn-svuota-cestino" onclick="svuotaCestino()">🗑️ Svuota</button>
+      <button class="btn-conferma" onclick="closeCestino()">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<script src="./utils.js"></script>
+<script src="./frasi.js"></script>
+<script src="./api.js"></script>
+<script src="./ui.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

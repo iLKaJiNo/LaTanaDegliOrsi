@@ -1,0 +1,40 @@
+/* ════════════════════════════════════════════════════════
+   TANA DEGLI ORSI — variables.css
+   Variabili :root, reset di base, sfondo body.
+   ════════════════════════════════════════════════════════ */
+
+html{font-size:16px;}
+/* Mobile (~S25 393px): base rem ridotta → tutto il layout in rem
+   si compatta uniformemente del ~25%, ricreando l'ariosità che
+   prima dava initial-scale:0.7, ma con viewport onesto a 1.0.
+   Sopra i 600px torna a 16px (tablet/desktop invariati). */
+@media(max-width:600px){
+  html{font-size:12px;}
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --brown:#6B3F1F;--brown-d:#4A2A0F;--honey:#F4A827;--honey-d:#C87D0A;
+  --honey-bg:#FEF5DC;--honey-brd:#F4C55A;
+  --moss:#4A7C40;--moss-bg:#EAF2E8;--moss-brd:#89C082;
+  --berry:#A83225;--berry-bg:#FAEAE8;--berry-brd:#E08078;
+  --purple:#6B3FA0;--purple-bg:#F0EAF8;--purple-brd:#B89CD8;
+  --bg:#FDF3E7;--card:#FFFDF8;--card2:#F5EDE0;
+  --border:#E8D5BC;--text:#2E1A08;--text2:#7A5538;--text3:#B8956A;
+  --shadow-sm:0 2px 8px rgba(58,30,10,.10);
+  --shadow-md:0 4px 20px rgba(58,30,10,.13);
+  --shadow-lg:0 8px 32px rgba(58,30,10,.18);
+  --r-sm:10px;--r-md:16px;--r-lg:22px;--r-xl:28px;
+}
+html{scroll-behavior:smooth;overflow-x:hidden;width:100%;}
+body{font-family:'Baloo 2',cursive;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overflow-x:hidden;width:100%;max-width:100%;}
+/* Rete di sicurezza mobile: card e contenitori principali non
+   superano mai la larghezza dello schermo, qualunque contenuto
+   abbiano. Evita lo sforamento orizzontale a livello di pagina. */
+@media(max-width:560px){
+  .saldo-card,.form-card,.debiti-card,.fisse-card,.riepilogo-card,
+  .storico-wrap,.chiudi-card,.note-card,.lista-card,.lista-identity-bar,
+  .archivio-tab-wrap{max-width:100%;overflow-x:hidden;}
+  .lista-input-row,.toggle,.input-row,.saldo-inner,.note-header{max-width:100%;}
+}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 60% 40% at 90% 10%,rgba(244,168,39,.09) 0%,transparent 100%),radial-gradient(ellipse 50% 50% at 10% 85%,rgba(74,124,64,.07) 0%,transparent 100%);}
+

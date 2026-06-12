@@ -1,0 +1,22 @@
+{
+  "name": "Tana degli Orsi",
+  "short_name": "La Tana",
+  "description": "Cassa comune Luca & Ale",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FDF3E7",
+  "theme_color": "#6B3F1F",
+  "icons": [
+    {
+      "src": "./bear-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./bear-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
