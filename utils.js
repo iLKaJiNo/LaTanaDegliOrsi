@@ -4,16 +4,17 @@
 //  Caricato per PRIMO: definisce ciò che gli altri file usano.
 // ════════════════════════════════════════════════════════
 
-// ── LINK E COSTANTI ──
-var GS = "https://script.google.com/macros/s/AKfycbzyMmaDl__D2JxBZFSbPCMZaWcUDo5nBS83dmchKf5lFhs26uxawKqKfsrQsS9nz6uX/exec"; 
-var EXPECTED_HASH = "219bdf69254cc2376c843fb2cc5fe99549159e4cf49732e44fc667d90a02aa7f";
-var SESSION_KEY = "tana_session";
-var HASH_KEY = "tana_pw_hash"; // cache locale dell'hash corrente
+// ── SUPABASE ──
+// ⚠️ COMPILA QUESTI DUE VALORI dal tuo progetto Supabase:
+//    Dashboard → Project Settings → API
+var SUPABASE_URL = "https://yupqbobnqtcajvxjhgjg.supabase.co/rest/v1/";        // es. https://abcdefgh.supabase.co
+var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1cHFib2JucXRjYWp2eGpoZ2pnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzI0MjEsImV4cCI6MjA5Njg0ODQyMX0.Q4ch-6vbaQYeUaPNiGchLQ_4-uxYhJDT2rIhWthRBTk";      // la chiave "anon / public"
+// Email dell'utente condiviso creato in Authentication → Users.
+// La schermata di login chiede solo la password, come sempre.
+var TANA_EMAIL = "orsi@tana.casa";
 
-// Restituisce l'hash da usare: quello salvato localmente (post cambio pw) o il default
-function getCurrentHash(){
-  return localStorage.getItem(HASH_KEY) || EXPECTED_HASH;
-}
+// Client Supabase (la libreria è caricata in index.html prima di questo file)
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ── STATO GLOBALE ──────────────────────────────────────
 // ── STATO GLOBALE ──
@@ -47,17 +48,9 @@ var pagaPrevistaId=null;
 var delPrevistaConfirmId=null;
 var delFissaConfirmId=null;
 
-// ── AUTH / SESSIONE / CRYPTO ───────────────────────────
-
-// ── AUTH E LOGIN ──
-async function sha256(str){
-  var buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,"0");}).join("");
-}
-function getSession(){return localStorage.getItem(SESSION_KEY);}
-function setSession(t){localStorage.setItem(SESSION_KEY,t);}
-function clearSession(){localStorage.removeItem(SESSION_KEY);}
-function genToken(){var a=new Uint8Array(24);crypto.getRandomValues(a);return Array.from(a).map(function(b){return b.toString(16).padStart(2,"0");}).join("");}
+// ── AUTH / SESSIONE ────────────────────────────────────
+// La sessione è gestita da Supabase (token salvato e rinnovato
+// automaticamente). Niente più hash nel codice sorgente.
 function togglePwVisibility(){var i=document.getElementById("login-pw");i.type=i.type==="password"?"text":"password";}
 
 async function doLogin(){
@@ -67,23 +60,22 @@ async function doLogin(){
   btn.disabled=true;
   document.getElementById("login-error").textContent="";
   document.getElementById("login-loading").textContent="Verifica in corso...";
-  var hash=await sha256(pw);
-  if(hash!==getCurrentHash()){
-    document.getElementById("login-loading").textContent="";
-    document.getElementById("login-error").textContent="Password errata. Riprova.";
+  var res=await sb.auth.signInWithPassword({email:TANA_EMAIL,password:pw});
+  document.getElementById("login-loading").textContent="";
+  if(res.error){
+    document.getElementById("login-error").textContent=
+      res.error.message.indexOf("credentials")>-1 ? "Password errata. Riprova." : "Errore di rete. Riprova.";
     document.getElementById("login-pw").value="";
     btn.disabled=false;
     return;
   }
-  var token=genToken();setSession(token);
-  try{await post({action:"setToken",token:token,hash:hash});}catch(e){}
-  document.getElementById("login-loading").textContent="";
   document.getElementById("login-screen").classList.remove("active");
   appStart();
 }
-function logout(){clearSession();location.reload();}
-function authInit(){
-  if(getSession()){appStart();}
+function logout(){sb.auth.signOut().then(function(){location.reload();});}
+async function authInit(){
+  var res=await sb.auth.getSession();
+  if(res.data&&res.data.session){appStart();}
   else{document.getElementById("login-screen").classList.add("active");setTimeout(function(){document.getElementById("login-pw").focus();},300);}
 }
 

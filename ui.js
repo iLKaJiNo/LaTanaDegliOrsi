@@ -622,23 +622,23 @@ async function confermaCambioPassword(){
   if(!attuale||!nuova||!conferma){errEl.textContent="Compila tutti i campi.";return;}
   if(nuova.length<6){errEl.textContent="La nuova password deve avere almeno 6 caratteri.";return;}
   if(nuova!==conferma){errEl.textContent="Le due password non corrispondono.";return;}
-  var hashAttuale=await sha256(attuale);
-  if(hashAttuale!==getCurrentHash()){errEl.textContent="Password attuale errata.";return;}
-  var hashNuova=await sha256(nuova);
   var btn=document.getElementById("btn-conferma-pw");
   btn.disabled=true;btn.textContent="Salvataggio...";
   try{
-    var esito=await post({action:"changePassword",oldHash:hashAttuale,newHash:hashNuova});
-    if(esito&&esito.trim()==="unauthorized"){
+    // Verifico la password attuale rifacendo il login
+    var check=await sb.auth.signInWithPassword({email:TANA_EMAIL,password:attuale});
+    if(check.error){
       errEl.textContent="Password attuale errata.";
       btn.disabled=false;btn.textContent="🔑 Cambia password";
       return;
     }
-    localStorage.setItem(HASH_KEY,hashNuova);
-    // Il server ha invalidato tutti i token: ne registro subito uno nuovo
-    // con la nuova password, così resto loggato senza essere buttato fuori.
-    var nuovoToken=genToken();setSession(nuovoToken);
-    await post({action:"setToken",token:nuovoToken,hash:hashNuova});
+    // Aggiorno la password sull'utente condiviso
+    var upd=await sb.auth.updateUser({password:nuova});
+    if(upd.error){
+      errEl.textContent="Errore: "+upd.error.message;
+      btn.disabled=false;btn.textContent="🔑 Cambia password";
+      return;
+    }
     closeCambioPassword();
     alert("✅ Password cambiata con successo!");
   }catch(e){

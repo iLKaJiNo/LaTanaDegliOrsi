@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tana-v39';
+const CACHE_NAME = 'tana-v40';
 const ASSETS = [
   './',
   './index.html',
@@ -15,6 +15,7 @@ const ASSETS = [
   './bear-empty.png',
   './bear-192.png',
   './bear-512.png',
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
   'https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;700&display=swap'
 ];
 
@@ -36,7 +37,8 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   var u = e.request.url;
-  if (u.includes('script.google.com')) return;
+  if (u.includes('script.google.com') || u.includes('.supabase.co')) return;
+  if (e.request.method !== 'GET') return;
   e.respondWith(
     caches.open(CACHE_NAME).then(c => {
       return c.match(e.request).then(r => {
