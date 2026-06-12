@@ -11,7 +11,8 @@ var SUPABASE_URL = "https://yupqbobnqtcajvxjhgjg.supabase.co";        // es. htt
 var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1cHFib2JucXRjYWp2eGpoZ2pnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzI0MjEsImV4cCI6MjA5Njg0ODQyMX0.Q4ch-6vbaQYeUaPNiGchLQ_4-uxYhJDT2rIhWthRBTk";      // la chiave "anon / public"
 // Email dell'utente condiviso creato in Authentication → Users.
 // La schermata di login chiede solo la password, come sempre.
-var TANA_EMAIL = "orsi@tana.casa";
+// var TANA_EMAIL = "orsi@tana.casa";
+var TANA_EMAIL = "prova@tana.db";
 
 // Client Supabase (la libreria è caricata in index.html prima di questo file)
 var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
