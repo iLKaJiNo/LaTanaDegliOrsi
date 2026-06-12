@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════
-//  TANA DEGLI ORSI — utils.js
+//  La Tana degli Orsi — utils.js
 //  Costanti, stato globale, helper puri, tema, sessione.
 //  Caricato per PRIMO: definisce ciò che gli altri file usano.
 // ════════════════════════════════════════════════════════

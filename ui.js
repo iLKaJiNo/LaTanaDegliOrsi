@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════
-//  TANA DEGLI ORSI — ui.js
+//  La Tana degli Orsi — ui.js
 //  Tutta la logica di interfaccia: render, modali, grafici,
 //  PDF, lista spesa, note, tab e swipe.
 //  Dipende da: utils.js + api.js.
@@ -1579,7 +1579,7 @@ function _generaPDF(c){
   doc.rect(0,0,W,28,"F");
   doc.setTextColor(HONEY[0],HONEY[1],HONEY[2]);
   doc.setFontSize(18);doc.setFont("helvetica","bold");
-  doc.text("Tana degli Orsi",margin,12);
+  doc.text("La Tana degli Orsi",margin,12);
   doc.setFontSize(9);doc.setFont("helvetica","normal");
   doc.setTextColor(255,255,255);
   doc.text("Luca & Ale — cassa comune",margin,19);
@@ -1688,7 +1688,7 @@ function _generaPDF(c){
   doc.line(margin,y,W-margin,y);y+=5;
   doc.setFontSize(8);doc.setFont("helvetica","normal");
   doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
-  doc.text("Tana degli Orsi — "+c.mese,margin,y);
+  doc.text("La Tana degli Orsi — "+c.mese,margin,y);
   doc.text("Pagina 1",W-margin,y,{align:"right"});
   doc.save("tana-"+c.mese.replace(/\s+/g,"-").toLowerCase()+".pdf");
 }

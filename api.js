@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════
-//  TANA DEGLI ORSI — api.js (versione Supabase)
+//  La Tana degli Orsi — api.js (versione Supabase)
 //  Sync, azioni, coda offline, realtime.
 //  Dipende da: utils.js (client sb, stato S, helper).
 //  Il "contratto" con ui.js è invariato: post({action:...})
