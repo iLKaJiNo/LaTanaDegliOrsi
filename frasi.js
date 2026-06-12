@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════
-//  TANA DEGLI ORSI — frasi.js
+//  La Tana degli Orsi — frasi.js
 //  FRASI DEGLI STATI VUOTI — modificabili liberamente! 🐻
 //
 //  Ogni stato (tana, lista, cestino, fisse, debiti, rimborsi,
@@ -11,7 +11,8 @@
 //   • Aggiungi una nuova frase: vai a capo, scrivi "la tua frase",
 //     e metti una virgola alla fine della riga precedente
 //   • Togli una frase: cancella la sua riga
-//   • Le emoji 🐻🍯🐾 si possono usare liberamente
+//   • Le emoji 🍯🐾📅 si possono usare liberamente
+//   • Scrivi {orso} per inserire l'icona bear.svg (al posto dell'emoji 🐻)
 //   • Attenzione: NON usare virgolette doppie " dentro la frase
 //     (se ti servono, usa quelle singole ' oppure chiedi a Claude)
 // ════════════════════════════════════════════════════════════
@@ -20,7 +21,7 @@ var FRASI_VUOTO = {
 
   // Tab Tana — nessuna spesa nel mese corrente
   tana: [
-    "La tana è tranquilla 🐻",
+    "La tana è tranquilla {orso}",
     "Nessuna spesa... gli orsi riposano 🍯",
     "Tutto in ordine nella tana!",
     "Silenzio in cassa... per ora 🐾",
@@ -50,7 +51,7 @@ var FRASI_VUOTO = {
   // Tab Fisse — nessuna spesa fissa
   fisse: [
     "Nessuna spesa fissa — aggiungine una! 📌",
-    "Niente fisse per ora 🐻",
+    "Niente fisse per ora {orso}",
     "Mutuo, bollette... aggiungi le ricorrenti!",
     "Sono Carina! ...tutti lo dicono"
   ],
@@ -58,7 +59,7 @@ var FRASI_VUOTO = {
   // Debiti diretti — nessun prestito tra Luca e Ale
   debiti: [
     "Gli Orsi sono pari tra loro! 🤝",
-    "Nessun prestito in giro 🐻",
+    "Nessun prestito in giro {orso}",
     "Conti in pari, Orsi salvi 🍯",
     "Sono Carina! ...tutti lo dicono"
   ],
@@ -72,14 +73,14 @@ var FRASI_VUOTO = {
 
   // Storico di un mese chiuso — nessuna voce
   mese: [
-    "Nessuna voce in questo mese 🐻",
+    "Nessuna voce in questo mese {orso}",
     "Mese tranquillo, niente spese!",
     "Sono Carina! ...tutti lo dicono"
   ],
 
   // Tab Fisse → Previste — nessuna spesa in arrivo
   previste: [
-    "Nessuna spesa in arrivo 🐻",
+    "Nessuna spesa in arrivo {orso}",
     "Niente scadenze all'orizzonte 📅",
     "Aggiungi una spesa futura da non scordare!",
     "Sono Carina! ...tutti lo dicono"
@@ -88,9 +89,11 @@ var FRASI_VUOTO = {
 };
 
 // Restituisce una frase a caso per il contesto richiesto.
+// Il segnaposto {orso} viene sostituito con l'icona bear.svg.
 // Se il contesto non esiste, torna una stringa vuota (innocuo).
 function fraseVuoto(contesto){
   var arr = FRASI_VUOTO[contesto];
   if(!arr || !arr.length) return "";
-  return arr[Math.floor(Math.random() * arr.length)];
+  var frase = arr[Math.floor(Math.random() * arr.length)];
+  return frase.replace(/\{orso\}/g, '<img src="./bear.svg" style="width:1.1em;height:1.1em;vertical-align:-0.2em;">');
 }
