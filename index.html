@@ -109,7 +109,10 @@ if("serviceWorker" in navigator){
           </button>
         </div>
         <div class="input-row">
-          <input class="inp inp-euro" type="number" id="imp" placeholder="0.00" min="0" step="0.01" inputmode="decimal" oninput="updatePreview()" onkeydown="if(event.key==='Enter')addTx()">
+          <div class="inp-euro-wrap">
+            <input class="inp inp-euro" type="number" id="imp" placeholder="0.00" min="0" step="0.01" inputmode="decimal" oninput="updatePreview()" onkeydown="if(event.key==='Enter')addTx()">
+            <button type="button" class="btn-calc-icon" onclick="openCalc('imp')" title="Calcolatrice">🧮</button>
+          </div>
           <div class="inp-nota-wrap">
             <input class="inp inp-nota" type="text" id="nota" placeholder="Spesa, Biscotti, Miele..." onkeydown="if(event.key==='Enter')addTx()">
             <button class="btn-data-icon" id="btn-data-icon" onclick="toggleDataManuale()" title="Data diversa da oggi">📅</button>
@@ -212,6 +215,12 @@ if("serviceWorker" in navigator){
     <!-- Popolato da renderLista() -->
   </div>
 </div>
+
+<div class="tab-page" data-tab="solo">
+  <div id="solo-content">
+    <!-- Popolato da renderSolo(): gate PIN oppure contabilità personale -->
+  </div>
+</div>
   </main>
 
   <!-- TAB BAR -->
@@ -232,6 +241,10 @@ if("serviceWorker" in navigator){
   <span class="tab-icon">🧺</span>
   <span>Lista</span>
 </button>
+    <button class="tab-btn tab-solo" data-tab="solo" onclick="switchTab('solo')">
+      <span class="tab-icon" id="tab-icon-solo">🐻‍❄️</span>
+      <span>Solo</span>
+    </button>
   </nav>
 
 </div><!-- /shell -->
@@ -239,6 +252,74 @@ if("serviceWorker" in navigator){
 <!-- ══ MODALI (fuori dal main, sempre disponibili) ══ -->
 
 <!-- MODALE CAMBIO PASSWORD -->
+<!-- MODALE GRAFICI SOLO -->
+<div class="modal-overlay" id="modal-solo-grafici" onclick="if(event.target===this)closeSoloGrafici()">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-icon" style="text-align:center;">📊</div>
+    <h2 style="text-align:center;">I tuoi grafici</h2>
+    <div class="solo-graf-toggle">
+      <button class="solo-graf-btn active" data-gv="cat" onclick="setSoloGrafVista('cat')">🍰 Per categoria</button>
+      <button class="solo-graf-btn" data-gv="mesi" onclick="setSoloGrafVista('mesi')">📈 Andamento</button>
+    </div>
+    <div id="solo-graf-body"></div>
+    <div class="modal-btns"><button class="btn-conferma" onclick="closeSoloGrafici()">🐾 Chiudi</button></div>
+  </div>
+</div>
+
+<!-- MODALE CHIUSURA SOLO -->
+<div class="modal-overlay" id="modal-solo-chiudi" onclick="if(event.target===this)closeSoloChiudi()">
+  <div class="modal">
+    <div class="modal-icon">📸</div>
+    <h2>Chiudi il mese personale</h2>
+    <p>Salvo una fotografia di entrate, uscite e saldo di questo periodo. Le voci <strong>restano</strong> nel registro: è solo un riepilogo da consultare.</p>
+    <input class="inp" type="text" id="solo-chiudi-mese" placeholder="Es. Giugno 2026" style="width:100%;margin:12px 0;">
+    <div id="solo-chiudi-anteprima"></div>
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closeSoloChiudi()">Annulla</button>
+      <button class="btn-conferma" onclick="soloConfermaChiudi()">📸 Salva fotografia</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE GESTIONE CATEGORIE SOLO -->
+<div class="modal-overlay" id="modal-solo-cat" onclick="if(event.target===this)closeSoloCategorie()">
+  <div class="modal" style="max-width:380px;text-align:left;">
+    <div class="modal-icon" style="text-align:center;">🏷️</div>
+    <h2 style="text-align:center;">Categorie</h2>
+    <p style="text-align:center;font-size:0.85rem;">Tocca l'icona per cambiarla, il nome per rinominarla.</p>
+    <div id="modal-solo-cat-body"></div>
+    <div class="modal-btns"><button class="btn-conferma" onclick="closeSoloCategorie()">🐾 Fatto</button></div>
+  </div>
+</div>
+
+<!-- MODALE CALCOLATRICE (somma scontrini, solo + e −) -->
+<div class="modal-overlay" id="modal-calc" onclick="if(event.target===this)closeCalc()">
+  <div class="modal" style="max-width:300px;">
+    <div class="calc-display">
+      <div class="calc-expr" id="calc-expr">&nbsp;</div>
+      <div class="calc-result" id="calc-result">0</div>
+    </div>
+    <div class="calc-grid">
+      <button type="button" class="calc-key" onclick="calcDigit('7')">7</button>
+      <button type="button" class="calc-key" onclick="calcDigit('8')">8</button>
+      <button type="button" class="calc-key" onclick="calcDigit('9')">9</button>
+      <button type="button" class="calc-key calc-op" onclick="calcOp('+')">+</button>
+      <button type="button" class="calc-key" onclick="calcDigit('4')">4</button>
+      <button type="button" class="calc-key" onclick="calcDigit('5')">5</button>
+      <button type="button" class="calc-key" onclick="calcDigit('6')">6</button>
+      <button type="button" class="calc-key calc-op" onclick="calcOp('-')">−</button>
+      <button type="button" class="calc-key" onclick="calcDigit('1')">1</button>
+      <button type="button" class="calc-key" onclick="calcDigit('2')">2</button>
+      <button type="button" class="calc-key" onclick="calcDigit('3')">3</button>
+      <button type="button" class="calc-key calc-back" onclick="calcBack()">←</button>
+      <button type="button" class="calc-key" onclick="calcDigit('0')">0</button>
+      <button type="button" class="calc-key" onclick="calcDigit('.')">,</button>
+      <button type="button" class="calc-key calc-clear" onclick="calcClear()">C</button>
+      <button type="button" class="calc-key calc-eq" onclick="calcConferma()">✓</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODALE BENVENUTO (slide al primo accesso) -->
 <div class="modal-overlay" id="modal-benvenuto" onclick="if(event.target===this)chiudiBenvenuto()">
   <div class="modal" style="text-align:center;">

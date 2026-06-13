@@ -16,6 +16,7 @@ function appStart(){
   initTheme();
   initTabSwipe();
   maybeBenvenuto();
+  caricaSoloProfili();
   // Ripristino l'ultimo stato salvato per mostrare subito qualcosa
   var cached = localStorage.getItem(CACHE_DATI);
   if(cached){
@@ -214,6 +215,42 @@ async function runAction(p){
         ? await sb.from("lista").delete().eq("completata",true)
         : await sb.from("lista").delete().neq("id","");
       break;
+
+    // — Orso Solo: PIN —
+    case "setSoloPin":
+      r=await sb.from("solo_profili").update({pin_hash:p.pinHash}).eq("proprietario",p.proprietario); break;
+
+    // — Orso Solo: voci registro —
+    case "addSoloVoce":
+      r=await sb.from("solo_voci").insert({id:p.voce.id,proprietario:p.voce.proprietario,tipo:p.voce.tipo,
+        importo:p.voce.importo,categoria:p.voce.categoria,nota:p.voce.nota||"",data:p.voce.data,origine:p.voce.origine||null}); break;
+    case "deleteSoloVoce":
+      r=await sb.from("solo_voci").delete().eq("id",p.id); break;
+
+    // — Orso Solo: ricorrenti —
+    case "addSoloRicorrente":
+      r=await sb.from("solo_ricorrenti").insert({id:p.ric.id,proprietario:p.ric.proprietario,nome:p.ric.nome,
+        tipo:p.ric.tipo,importo:p.ric.importo,categoria:p.ric.categoria,ogni_quanto:p.ric.ogniQuanto,
+        unita:p.ric.unita,prossima_scadenza:p.ric.prossimaScadenza}); break;
+    case "updateSoloRicorrenteScadenza":
+      r=await sb.from("solo_ricorrenti").update({prossima_scadenza:p.prossimaScadenza}).eq("id",p.id); break;
+    case "deleteSoloRicorrente":
+      r=await sb.from("solo_ricorrenti").delete().eq("id",p.id); break;
+
+    // — Orso Solo: categorie —
+    case "addSoloCategoria":
+      r=await sb.from("solo_categorie").insert({id:p.cat.id,proprietario:p.cat.proprietario,icona:p.cat.icona,nome:p.cat.nome,ordine:p.cat.ordine}); break;
+    case "updateSoloCategoria":
+      r=await sb.from("solo_categorie").update({icona:p.icona,nome:p.nome}).eq("id",p.id); break;
+    case "updateSoloCategoriaOrdine":
+      r=await sb.from("solo_categorie").update({ordine:p.ordine}).eq("id",p.id); break;
+    case "deleteSoloCategoria":
+      r=await sb.from("solo_categorie").delete().eq("id",p.id); break;
+
+    // — Orso Solo: chiusure informative —
+    case "addSoloChiusura":
+      r=await sb.from("solo_chiusure").insert({id:p.ch.id,proprietario:p.ch.proprietario,mese:p.ch.mese,
+        tot_entrate:p.ch.totEntrate,tot_uscite:p.ch.totUscite,saldo:p.ch.saldo,data:p.ch.data}); break;
 
     default:
       // Azioni legacy del vecchio backend GAS: non servono più

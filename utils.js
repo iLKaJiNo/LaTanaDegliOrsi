@@ -47,6 +47,19 @@ var editPrevistaId=null;
 var pagaPrevistaId=null;
 var delPrevistaConfirmId=null;
 var delFissaConfirmId=null;
+// ── ORSO SOLO (contabilità personale) ──
+var soloChi=null;          // "Luca"/"Ale": chi è sbloccato in questa sessione (null = bloccato)
+var soloSbloccato=false;   // true dopo PIN corretto; si azzera a ogni riapertura app
+var soloProfili={Luca:null, Ale:null};  // pin_hash dei due, caricati dal DB
+var soloData={voci:[], ricorrenti:[], chiusure:[], categorie:[]};  // dati dell'orso sbloccato
+var soloCategorie=["Mutuo Tana","Stipendio","TasseTasseTasse!","Moto","Altro"]; // editabili
+var _soloPinBuffer="";     // cifre digitate nel tastierino PIN
+var soloTipoNuova="uscita"; // tipo della voce in inserimento
+var soloDelConfirmId=null;  // id voce in attesa di conferma eliminazione
+var soloSegmento="registro"; // "registro" | "ricorrenti"
+var soloRicTipo="uscita";    // tipo nuova ricorrente
+var soloRicDelId=null;       // id ricorrente in attesa conferma elim.
+var soloCatDelId=null;       // id categoria in attesa conferma elim.
 
 // ── AUTH / SESSIONE ────────────────────────────────────
 // La sessione è gestita da Supabase (token salvato e rinnovato
@@ -107,10 +120,22 @@ function installApp(){if(!deferredPrompt)return;deferredPrompt.prompt();deferred
 
 // ── HELPER DI FORMATO/CALCOLO ──────────────────────────
 // ── HELPERS ──
-function saldo(){return S.txs.reduce(function(a,t){return t.chi==="Luca"?a+t.importo:a-t.importo;},S.saldoIniziale);}
+function saldo(){return Math.round(S.txs.reduce(function(a,t){return t.chi==="Luca"?a+t.importo:a-t.importo;},S.saldoIniziale)*100)/100;}
 function fmt(iso){if(!iso)return"";var d=new Date(iso);return isNaN(d)?iso:String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");}
 function fmtLong(iso){if(!iso)return"";var d=new Date(iso);return isNaN(d)?iso:d.toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});}
 var eur=function(n){return Math.abs(Math.round(n*100)/100).toFixed(2).replace(".",",")+"\u00a0\u20ac";};
-var eurInt=function(n){return Math.abs(Math.round(n))+" \u20ac";};
+// Importo "compatto": interi senza decimali (12 €), non-tondi sempre
+// a DUE decimali (5,30 €). Non arrotonda mai all'intero.
+var eurInt=function(n){
+  var v=Math.round(Math.abs(n)*100)/100;       // pulisco il floating, al centesimo
+  var s=(v % 1 === 0) ? String(v) : v.toFixed(2).replace(".",",");
+  return s+" \u20ac";
+};
 function saldoCls(n){return n>0?"ale":n<0?"luca":"pari";}
 function saldoDesc(n){return n>0?"Ale Orsa deve "+eurInt(n)+" di miele":n<0?"Luca Orso deve "+eurInt(Math.abs(n))+" di miele":"Gli orsi sono in pari \uD83C\uDF6F";}
+
+// Hash SHA-256 (usato per il PIN dell'area Solo). Restituisce hex.
+async function sha256(str){
+  var buf=await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,"0");}).join("");
+}

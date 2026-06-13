@@ -31,11 +31,11 @@
    sovrappone più al pannello "Totale Spese del Mese" accanto. */
 #saldo-base-wrap:has(.edit-saldo-form){flex:1 1 100%;width:100%;}
 .edit-saldo-form label{font-size:0.625rem;color:rgba(255,255,255,.4);font-family:'Nunito',sans-serif;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
-.edit-saldo-form .erow{display:flex;gap:6px;align-items:center;}
-.inp-saldo{flex:1;height:38px;border-radius:var(--r-sm);border:1.5px solid rgba(244,168,39,.4);background:rgba(244,168,39,.1);color:#fff;font-family:'Baloo 2',cursive;font-size:1rem;font-weight:700;padding:0 8px;outline:none;-webkit-appearance:none;}
+.edit-saldo-form .erow{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;}
+.inp-saldo{flex:1 1 0;min-width:0;height:38px;border-radius:var(--r-sm);border:1.5px solid rgba(244,168,39,.4);background:rgba(244,168,39,.1);color:#fff;font-family:'Baloo 2',cursive;font-size:1rem;font-weight:700;padding:0 8px;outline:none;-webkit-appearance:none;}
 .inp-saldo:focus{border-color:var(--honey);}
-.btn-ok{height:38px;border-radius:var(--r-sm);border:none;background:linear-gradient(135deg,var(--honey),var(--honey-d));color:#fff;font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:800;padding:0 14px;cursor:pointer;-webkit-appearance:none;}
-.btn-cancel-sm{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-sm);color:rgba(255,255,255,.5);font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:600;padding:0 10px;height:38px;cursor:pointer;-webkit-appearance:none;}
+.btn-ok{flex:0 0 auto;height:38px;border-radius:var(--r-sm);border:none;background:linear-gradient(135deg,var(--honey),var(--honey-d));color:#fff;font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:800;padding:0 14px;cursor:pointer;-webkit-appearance:none;}
+.btn-cancel-sm{flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-sm);color:rgba(255,255,255,.5);font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:600;padding:0 10px;height:38px;cursor:pointer;-webkit-appearance:none;}
 
 /* Vaso miele */
 .honey-jar{background:rgba(244,168,39,.12);border:1px solid rgba(244,168,39,.2);border-radius:var(--r-md);padding:12px 16px;min-width:0;text-align:center;}
@@ -776,3 +776,151 @@ body.dark{
 /* Conferma inline dentro fissa/prevista: va a capo a tutta larghezza */
 .fissa-item .elimina-arch-confirm,
 .prevista-item .elimina-arch-confirm{width:100%;flex-basis:100%;margin-top:8px;}
+
+/* ── CALCOLATRICE ── */
+.inp-euro-wrap{position:relative;width:120px;flex:0 0 auto;}
+.inp-euro-wrap .inp-euro{width:100%;padding-right:32px;}
+.btn-calc-icon{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1rem;cursor:pointer;padding:2px;line-height:1;opacity:.5;transition:opacity .15s;}
+.btn-calc-icon:hover,.btn-calc-icon:active{opacity:1;}
+.calc-display{background:var(--brown-d);border-radius:var(--r-md);padding:14px 18px;margin-bottom:16px;text-align:right;min-height:74px;display:flex;flex-direction:column;justify-content:center;gap:2px;}
+.calc-expr{font-size:0.875rem;color:rgba(255,255,255,.45);font-family:'Nunito',sans-serif;font-weight:600;min-height:18px;}
+.calc-result{font-size:1.75rem;color:var(--honey);font-weight:800;line-height:1.1;word-break:break-all;}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.calc-key{height:52px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--card2);color:var(--text);font-family:'Baloo 2',cursive;font-size:1.25rem;font-weight:700;cursor:pointer;transition:transform .1s,background .15s;-webkit-appearance:none;}
+.calc-key:active{transform:scale(.93);}
+.calc-op{background:var(--honey-bg);border-color:var(--honey-brd);color:var(--honey-d);}
+.calc-back{background:var(--card2);color:var(--text2);font-size:1.1rem;}
+.calc-clear{background:var(--berry-bg);border-color:var(--berry-brd);color:var(--berry);}
+.calc-eq{background:linear-gradient(135deg,var(--honey),var(--honey-d));border:none;color:#fff;font-size:1.4rem;}
+body.dark .calc-key{background:rgba(255,255,255,.06);}
+
+/* ── EDIT SALDO: selettore "chi è in debito" ── */
+.edit-saldo-chi{display:flex;gap:8px;margin-bottom:8px;}
+.esc-btn{flex:1;height:34px;border-radius:var(--r-sm);border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:rgba(255,255,255,.55);font-family:'Baloo 2',cursive;font-size:0.9375rem;font-weight:700;cursor:pointer;-webkit-appearance:none;transition:all .15s;}
+.esc-btn.on{background:linear-gradient(135deg,var(--honey),var(--honey-d));border-color:transparent;color:#fff;}
+
+/* ════════════════════════════════════════════════════════
+   ORSO SOLO
+   ════════════════════════════════════════════════════════ */
+/* La 5a tab ha un filo di separazione per dire "sezione a parte" */
+.tab-solo{position:relative;}
+.tab-solo::before{content:'';position:absolute;left:0;top:22%;height:56%;width:1px;background:var(--border);opacity:.5;}
+
+/* GATE (scelta orso + PIN) */
+.solo-gate{display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px 16px;max-width:340px;margin:0 auto;}
+.solo-gate-icon{font-size:3.5rem;line-height:1;margin-bottom:10px;}
+.solo-gate-title{font-size:1.5rem;font-weight:800;color:var(--text);margin-bottom:6px;}
+.solo-gate-sub{font-size:0.875rem;color:var(--text2);font-family:'Nunito',sans-serif;font-weight:600;line-height:1.5;margin-bottom:22px;}
+.solo-gate-chi{display:flex;gap:12px;width:100%;}
+.solo-chi-btn{flex:1;height:64px;border-radius:var(--r-md);border:2px solid var(--honey-brd);background:var(--honey-bg);color:var(--honey-d);font-family:'Baloo 2',cursive;font-size:1.25rem;font-weight:800;cursor:pointer;transition:transform .1s,background .15s;-webkit-appearance:none;}
+.solo-chi-btn:active{transform:scale(.95);background:var(--honey);color:#fff;}
+
+/* PIN */
+.solo-pin-dots{font-size:1.5rem;letter-spacing:14px;color:var(--honey-d);height:32px;margin-bottom:4px;padding-left:14px;}
+.solo-pin-err{font-size:0.8125rem;color:var(--berry);font-family:'Nunito',sans-serif;font-weight:700;min-height:20px;margin-bottom:10px;}
+.solo-pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:280px;}
+.solo-pin-key{height:60px;border-radius:var(--r-md);border:2px solid var(--border);background:var(--card2);color:var(--text);font-family:'Baloo 2',cursive;font-size:1.5rem;font-weight:700;cursor:pointer;transition:transform .1s,background .15s;-webkit-appearance:none;}
+.solo-pin-key:active{transform:scale(.92);background:var(--honey-bg);}
+.solo-pin-back{color:var(--text2);font-size:1.25rem;}
+.solo-pin-annulla{color:var(--berry);background:var(--berry-bg);border-color:var(--berry-brd);}
+body.dark .solo-pin-key,body.dark .solo-chi-btn{background:rgba(255,255,255,.06);}
+
+/* APP sbloccata */
+.solo-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.solo-head-chi{font-size:1.125rem;font-weight:800;color:var(--text);}
+.solo-lock-btn{background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-sm);color:var(--text2);font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:700;padding:6px 12px;cursor:pointer;-webkit-appearance:none;}
+.solo-saldo-card{background:var(--brown-d);border-radius:var(--r-lg);padding:20px;text-align:center;box-shadow:var(--shadow-md);}
+.solo-saldo-lbl{font-size:0.75rem;color:rgba(255,255,255,.5);font-family:'Nunito',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.solo-saldo-val{font-size:2rem;font-weight:800;}
+.solo-saldo-val.pos{color:#6FCF5A;}
+.solo-saldo-val.neg{color:#E0905A;}
+
+/* ── RIEPILOGO MESE (storico archiviato): 3 totali scorporati ── */
+.riepilogo-mese{margin-top:14px;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:12px 14px;}
+.riepilogo-mese-row{display:flex;justify-content:space-between;align-items:center;font-size:0.875rem;font-weight:700;color:var(--text2);padding:4px 0;}
+.riepilogo-mese-row.tot{border-top:1.5px solid var(--border);margin-top:4px;padding-top:8px;font-size:1rem;color:var(--text);}
+.riepilogo-mese-row.tot span:last-child{color:var(--honey-d);font-weight:800;}
+
+/* ── ORSO SOLO: form voce + storico ── */
+.solo-form-card{background:var(--card);border:2px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-top:14px;box-shadow:var(--shadow-sm);}
+.solo-tipo-toggle{display:flex;gap:8px;margin-bottom:12px;}
+.solo-tipo-btn{flex:1;height:42px;border-radius:var(--r-md);border:2px solid var(--border);background:var(--card2);color:var(--text2);font-family:'Baloo 2',cursive;font-size:1rem;font-weight:700;cursor:pointer;transition:all .15s;-webkit-appearance:none;}
+.solo-tipo-btn.on-uscita{background:var(--berry-bg);border-color:var(--berry-brd);color:var(--berry);}
+.solo-tipo-btn.on-entrata{background:var(--moss-bg);border-color:var(--moss-brd);color:var(--moss);}
+.solo-cat-sel{width:100%;height:44px;margin-bottom:12px;cursor:pointer;font-family:'Baloo 2',cursive;}
+.solo-add-btn{width:100%;height:48px;border-radius:var(--r-md);border:none;background:var(--brown-d);color:var(--honey);font-family:'Baloo 2',cursive;font-size:1.0625rem;font-weight:800;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .1s;-webkit-appearance:none;}
+.solo-add-btn:active{transform:scale(.98);}
+.solo-storico{margin-top:18px;}
+.solo-storico-head{font-size:0.75rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-left:4px;}
+.solo-voce{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-md);padding:10px 12px;margin-bottom:8px;position:relative;border-left-width:4px;}
+.solo-voce.entrata{border-left-color:var(--moss);}
+.solo-voce.uscita{border-left-color:var(--berry);}
+.solo-voce-cat{font-size:0.625rem;font-weight:700;color:var(--text3);font-family:'Nunito',sans-serif;text-transform:uppercase;letter-spacing:.5px;background:var(--card2);padding:3px 7px;border-radius:8px;white-space:nowrap;flex-shrink:0;}
+.solo-voce-body{flex:1;min-width:0;}
+.solo-voce-nota{font-size:0.9375rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.solo-voce-data{font-size:0.6875rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;}
+.solo-voce-imp{font-size:1rem;font-weight:800;white-space:nowrap;flex-shrink:0;}
+.solo-voce-imp.pos{color:var(--moss);}
+.solo-voce-imp.neg{color:var(--berry);}
+.solo-voce-del{background:none;border:none;font-size:1rem;cursor:pointer;opacity:.5;padding:2px 4px;flex-shrink:0;}
+.solo-voce-del:active{opacity:1;}
+.solo-voce-confirm{display:flex;gap:4px;flex-shrink:0;}
+.svc-si,.svc-no{border:none;border-radius:8px;font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:700;padding:4px 10px;cursor:pointer;-webkit-appearance:none;}
+.svc-si{background:var(--berry);color:#fff;}
+.svc-no{background:var(--card2);color:var(--text2);}
+body.dark .solo-tipo-btn,body.dark .solo-cat-sel{background:rgba(255,255,255,.06);}
+
+/* ── ORSO SOLO: segmento, ricorrenti, categorie ── */
+.solo-seg{display:flex;gap:8px;margin-top:14px;}
+.solo-seg-btn{flex:1;height:40px;border-radius:var(--r-md);border:2px solid var(--border);background:var(--card2);color:var(--text2);font-family:'Baloo 2',cursive;font-size:0.9375rem;font-weight:700;cursor:pointer;transition:all .15s;-webkit-appearance:none;position:relative;}
+.solo-seg-btn.on{background:var(--brown-d);color:var(--honey);border-color:transparent;}
+.solo-badge-pulse{display:inline-block;background:var(--berry);color:#fff;font-size:0.6875rem;font-weight:800;border-radius:999px;padding:1px 6px;margin-left:4px;animation:soloPulse 1.4s ease-in-out infinite;}
+@keyframes soloPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.15);opacity:.7;}}
+.solo-cat-row{display:flex;gap:8px;margin-bottom:12px;}
+.solo-cat-row .solo-cat-sel{flex:1;margin-bottom:0;}
+.solo-cat-manage{flex:0 0 auto;width:44px;border-radius:var(--r-md);border:2px solid var(--border);background:var(--card2);font-size:1.1rem;cursor:pointer;-webkit-appearance:none;}
+.solo-freq-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:0.9375rem;font-weight:700;color:var(--text2);}
+.solo-freq-n{width:64px;flex:0 0 auto;text-align:center;}
+.solo-freq-u{flex:1;}
+.solo-voce.scaduta{border-left-color:var(--honey);background:var(--honey-bg);}
+.solo-ric-paga{flex:0 0 auto;width:32px;height:32px;border-radius:50%;border:none;background:var(--moss);color:#fff;font-size:1rem;font-weight:800;cursor:pointer;-webkit-appearance:none;margin-right:2px;}
+/* Gestione categorie (modale) */
+.solo-cat-list{margin:10px 0;}
+.solo-cat-item{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.solo-cat-ic{flex:0 0 auto;width:42px;height:42px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--card2);font-size:1.25rem;cursor:pointer;-webkit-appearance:none;}
+.solo-cat-nome{flex:1;min-width:0;height:42px;}
+.solo-cat-add{margin-top:6px;}
+body.dark .solo-seg-btn,body.dark .solo-cat-manage,body.dark .solo-cat-ic{background:rgba(255,255,255,.06);}
+
+/* Orso Solo: gruppo bottoni header (cambia PIN + blocca) */
+.solo-head-btns{display:flex;gap:6px;align-items:center;}
+
+/* Frecce riordino categorie */
+.solo-cat-ord{display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.solo-cat-arr{width:24px;height:19px;border:1px solid var(--border);background:var(--card2);border-radius:6px;font-size:0.625rem;cursor:pointer;color:var(--text2);-webkit-appearance:none;line-height:1;padding:0;}
+.solo-cat-arr:disabled{opacity:.3;cursor:default;}
+body.dark .solo-cat-arr{background:rgba(255,255,255,.06);}
+
+/* Categoria di sistema protetta (lucchetto al posto del cestino) */
+.solo-cat-lock{flex-shrink:0;font-size:0.9rem;opacity:.5;padding:2px 4px;}
+
+/* ── ORSO SOLO: azioni saldo, grafici, chiusura ── */
+.solo-saldo-actions{display:flex;gap:8px;margin-top:12px;}
+.solo-saldo-act{flex:1;height:36px;border-radius:var(--r-sm);border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:700;cursor:pointer;-webkit-appearance:none;}
+.solo-graf-toggle{display:flex;gap:8px;margin:6px 0 14px;}
+.solo-graf-btn{flex:1;height:38px;border-radius:var(--r-sm);border:2px solid var(--border);background:var(--card2);color:var(--text2);font-family:'Baloo 2',cursive;font-size:0.875rem;font-weight:700;cursor:pointer;-webkit-appearance:none;}
+.solo-graf-btn.active{background:var(--brown-d);color:var(--honey);border-color:transparent;}
+.solo-graf-canvas-wrap{display:flex;justify-content:center;padding:10px 0;}
+.solo-graf-legenda{margin-top:10px;}
+.solo-graf-leg-row{display:flex;align-items:center;gap:8px;font-size:0.875rem;padding:4px 0;color:var(--text2);font-weight:700;}
+.solo-graf-dot{width:12px;height:12px;border-radius:3px;display:inline-block;flex-shrink:0;}
+.solo-graf-leg-nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.solo-graf-leg-val{color:var(--text);font-weight:800;white-space:nowrap;}
+.grafico-empty{text-align:center;color:var(--text3);padding:30px 12px;font-size:0.9375rem;line-height:1.5;}
+.solo-graf-barre{display:flex;align-items:flex-end;justify-content:space-around;gap:6px;height:160px;padding:10px 0;border-bottom:2px solid var(--border);}
+.solo-graf-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;}
+.solo-graf-bars{display:flex;align-items:flex-end;gap:2px;height:100%;width:100%;justify-content:center;}
+.solo-graf-bar{width:40%;border-radius:4px 4px 0 0;min-height:2px;transition:height .3s;}
+.solo-graf-bar.entrata{background:var(--moss);}
+.solo-graf-bar.uscita{background:var(--berry);}
+.solo-graf-bar-lbl{font-size:0.6875rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:700;margin-top:4px;text-transform:capitalize;}
