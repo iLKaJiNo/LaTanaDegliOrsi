@@ -15,6 +15,7 @@ function skeletons(){document.getElementById("storico").innerHTML='<span class="
 function appStart(){
   initTheme();
   initTabSwipe();
+  maybeBenvenuto();
   // Ripristino l'ultimo stato salvato per mostrare subito qualcosa
   var cached = localStorage.getItem(CACHE_DATI);
   if(cached){

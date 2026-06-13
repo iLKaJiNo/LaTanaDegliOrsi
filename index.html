@@ -59,6 +59,7 @@ if("serviceWorker" in navigator){
       <div class="header-right">
         <div class="header-actions">
           <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Tema">🌙</button>
+          <button class="btn-pw" onclick="openGuida()" title="Guida della Tana">❓</button>
           <button class="btn-pw" onclick="openCambioPassword()" title="Cambia password">🔑</button>
           <button class="btn-logout" onclick="logout()" title="Esci">&#x1F512; Esci</button>
         </div>
@@ -80,7 +81,7 @@ if("serviceWorker" in navigator){
       <div class="saldo-card">
         <div class="saldo-inner">
           <div class="saldo-left">
-            <div class="saldo-lbl">Debito con la cassa</div>
+            <div class="saldo-lbl">Debito con la cassa <span class="guida-i" onclick="openGuida('cassa')" title="Come funziona?" style="cursor:pointer;opacity:.65;font-size:.85em;">ⓘ</span></div>
             <div class="saldo-num" id="saldo-num">---</div>
             <div id="saldo-badge"></div>
           </div>
@@ -238,6 +239,94 @@ if("serviceWorker" in navigator){
 <!-- ══ MODALI (fuori dal main, sempre disponibili) ══ -->
 
 <!-- MODALE CAMBIO PASSWORD -->
+<!-- MODALE BENVENUTO (slide al primo accesso) -->
+<div class="modal-overlay" id="modal-benvenuto" onclick="if(event.target===this)chiudiBenvenuto()">
+  <div class="modal" style="text-align:center;">
+    <div class="modal-icon" id="bv-icona" style="text-align:center;"><img src="./bear.svg" alt="Orso" style="width:2.5rem;height:2.5rem;"></div>
+    <h2 id="bv-titolo">Benvenuto nella Tana!</h2>
+    <p id="bv-testo" style="min-height:5.5em;line-height:1.5;"></p>
+    <div id="bv-dots" style="margin:10px 0 14px;letter-spacing:6px;font-size:.8rem;"></div>
+    <div class="modal-btns">
+      <button class="btn-annulla" id="bv-salta" onclick="chiudiBenvenuto()">Salta</button>
+      <button class="btn-conferma" id="bv-avanti" onclick="benvenutoAvanti()">Avanti 🐾</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE GUIDA DELLA TANA -->
+<div class="modal-overlay" id="modal-guida" onclick="if(event.target===this)closeGuida()">
+  <div class="modal" style="max-height:85vh;overflow-y:auto;text-align:left;">
+    <div class="modal-icon" style="text-align:center;">📖</div>
+    <h2 style="text-align:center;">Guida della Tana</h2>
+    <p style="text-align:center;">Come funziona la vita tra Orsi <img src="./bear.svg" alt="" style="width:1rem;height:1rem;vertical-align:middle;"> Toccauna sezione per aprirla.</p>
+
+    <details class="guida-sez" id="guida-cassa" style="border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:8px;background:var(--card2);">
+      <summary style="cursor:pointer;font-weight:700;color:var(--text);">🍯 La cassa comune e il saldo</summary>
+      <div style="margin-top:8px;font-size:.9rem;color:var(--text2);line-height:1.5;">
+        Ogni spesa fatta <strong>per la casa</strong> va registrata da chi l'ha pagata, scegliendo il proprio nome in alto.
+        L'app somma quanto ha speso ciascuno: chi ha speso meno risulta <strong>in debito con la cassa</strong> verso l'altro, per la differenza divisa a metà... anzi no: per la differenza intera, perché qui la cassa è una bilancia! Se Luca spende 100&nbsp;€ e Ale 60&nbsp;€, il saldo dice che Ale deve 40&nbsp;€ di miele.
+        Il <strong>saldo di partenza</strong> è il debito ereditato dai mesi precedenti: si somma alle spese del mese in corso.
+      </div>
+    </details>
+
+    <details class="guida-sez" id="guida-chiusura" style="border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:8px;background:var(--card2);">
+      <summary style="cursor:pointer;font-weight:700;color:var(--text);">🌙 La chiusura del mese</summary>
+      <div style="margin-top:8px;font-size:.9rem;color:var(--text2);line-height:1.5;">
+        A fine mese si va in letargo contabile: con <strong>"Chiudi mese"</strong> lo storico viene fotografato e salvato
+        nell'<strong>Archivio</strong> (con grafici e PDF), le spese si azzerano, e il debito risultante diventa il
+        <strong>nuovo saldo di partenza</strong> del mese dopo. Non si perde nulla: dall'archivio ogni mese si può
+        riaprire, consultare o perfino <strong>ripristinare</strong> se la chiusura era un errore.
+        Le spese fisse vengono conteggiate automaticamente nella chiusura.
+      </div>
+    </details>
+
+    <details class="guida-sez" id="guida-debiti" style="border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:8px;background:var(--card2);">
+      <summary style="cursor:pointer;font-weight:700;color:var(--text);"><img src="./bear.svg" alt="" style="width:1.1rem;height:1.1rem;vertical-align:middle;margin-right:4px;"> I debiti diretti</summary>
+      <div style="margin-top:8px;font-size:.9rem;color:var(--text2);line-height:1.5;">
+        Sono i <strong>prestiti personali</strong> tra Orsi, separati dalla cassa comune: "ti anticipo io i biglietti del
+        concerto" non c'entra con la spesa di casa. Si registra chi presta, chi riceve e quanto; si possono segnare
+        <strong>rimborsi parziali</strong> nel tempo, e ogni prestito tiene la sua storia finché non torna a zero.
+      </div>
+    </details>
+
+    <details class="guida-sez" id="guida-fisse" style="border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:8px;background:var(--card2);">
+      <summary style="cursor:pointer;font-weight:700;color:var(--text);">📌 Spese fisse e 📅 previste</summary>
+      <div style="margin-top:8px;font-size:.9rem;color:var(--text2);line-height:1.5;">
+        Le <strong>fisse</strong> sono le ricorrenti di ogni mese (affitto, bollette, abbonamenti): si inseriscono una
+        volta e vengono incluse automaticamente nel totale alla chiusura del mese.
+        Le <strong>previste</strong> sono spese future con una scadenza (la rata del condominio, il regalo): quando arriva il momento si
+        possono pagare <strong>dalla cassa</strong> (diventano una spesa normale) oppure segnare come
+        <strong>pagate col bancomat</strong> condiviso, ed entrano nel conteggio della chiusura.
+      </div>
+    </details>
+
+    <details class="guida-sez" id="guida-lista" style="border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:8px;background:var(--card2);">
+      <summary style="cursor:pointer;font-weight:700;color:var(--text);">🧺 Lista della spesa e nota</summary>
+      <div style="margin-top:8px;font-size:.9rem;color:var(--text2);line-height:1.5;">
+        Lista e nota sono <strong>condivise in tempo reale</strong>: ciò che scrive un Orso appare subito all'altro.
+        Scegli con chi stai scrivendo ("scrivi come..."), spunta gli acquisti fatti, e svuota la lista quando torni
+        dalla spesa. La nota è una lavagnetta libera: promemoria, conti al volo, dichiarazioni d'amore.
+      </div>
+    </details>
+
+    <details class="guida-sez" id="guida-archivio" style="border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:8px;background:var(--card2);">
+      <summary style="cursor:pointer;font-weight:700;color:var(--text);">🗑️ Cestino, archivio e ritocchi</summary>
+      <div style="margin-top:8px;font-size:.9rem;color:var(--text2);line-height:1.5;">
+        Hai cancellato una spesa per sbaglio? È nel <strong>cestino</strong> e puoi ripristinarla.
+        Ogni spesa si può <strong>modificare</strong> (importo, nota, data, persino chi l'ha fatta) toccandola.
+        Nell'<strong>Archivio</strong> trovi tutti i mesi chiusi con grafici, lo storico completo e l'<strong>export PDF</strong>
+        da conservare o stampare. L'app funziona anche <strong>offline</strong>: le operazioni si mettono in coda e
+        partono da sole appena torna la rete 📥
+      </div>
+    </details>
+
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closeGuida();avviaBenvenuto();">🔄 Rivedi il benvenuto</button>
+      <button class="btn-conferma" onclick="closeGuida()">🐾 Tutto chiaro!</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-cambio-pw" onclick="if(event.target===this)closeCambioPassword()">
   <div class="modal">
     <div class="modal-icon">🔑</div>
@@ -328,7 +417,7 @@ if("serviceWorker" in navigator){
   <div class="modal">
     <div class="modal-icon">&#x1F319;</div>
     <h2>Chiusura mese</h2>
-    <p>Il saldo attuale diventer&#224; il <strong>nuovo saldo di partenza</strong>. Lo storico verr&#224; salvato nell'archivio e azzerato.</p>
+    <p>Il saldo attuale diventer&#224; il <strong>nuovo saldo di partenza</strong>. Lo storico verr&#224; salvato nell'archivio e azzerato. <span class="guida-i" onclick="openGuida('chiusura')" title="Come funziona?" style="cursor:pointer;opacity:.65;">ⓘ</span></p>
     <div class="modal-saldo-box">
       <div class="mlbl">Debito riportato al mese nuovo</div>
       <div class="mval" id="modal-val">---</div>

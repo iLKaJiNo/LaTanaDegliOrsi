@@ -625,8 +625,10 @@ async function confermaCambioPassword(){
   var btn=document.getElementById("btn-conferma-pw");
   btn.disabled=true;btn.textContent="Salvataggio...";
   try{
-    // Verifico la password attuale rifacendo il login
-    var check=await sb.auth.signInWithPassword({email:TANA_EMAIL,password:attuale});
+    // Verifico la password attuale rifacendo il login con l'email di CHI è loggato
+    var ses=await sb.auth.getSession();
+    var mioEmail=(ses.data&&ses.data.session&&ses.data.session.user.email)||TANA_EMAILS[0];
+    var check=await sb.auth.signInWithPassword({email:mioEmail,password:attuale});
     if(check.error){
       errEl.textContent="Password attuale errata.";
       btn.disabled=false;btn.textContent="🔑 Cambia password";
@@ -2029,4 +2031,67 @@ function switchTab(tab) {
     void main.offsetWidth; // forza il reflow per re-triggerare l'animazione
     main.classList.add("tab-switching");
   }
+}
+
+// ── GUIDA DELLA TANA ──
+// openGuida() apre la guida; openGuida("cassa") apre direttamente quella sezione.
+function openGuida(sezione){
+  var m=document.getElementById("modal-guida");
+  m.classList.add("open");
+  // Chiudo tutte le sezioni, poi apro quella richiesta
+  m.querySelectorAll("details.guida-sez").forEach(function(d){d.open=false;});
+  if(sezione){
+    var sez=document.getElementById("guida-"+sezione);
+    if(sez){
+      sez.open=true;
+      setTimeout(function(){sez.scrollIntoView({behavior:"smooth",block:"nearest"});},120);
+    }
+  }
+}
+function closeGuida(){document.getElementById("modal-guida").classList.remove("open");}
+
+// ── BENVENUTO (slide al primo accesso) ──
+var BENVENUTO_KEY="tana_benvenuto_visto";
+var _bvSlides=[
+  {icona:"bear",titolo:"Benvenuto nella Tana!",testo:"Questa è la tana digitale dove gli Orsi tengono i conti di casa: spese comuni, prestiti, lista della spesa. Tutto condiviso, tutto in tempo reale. Due minuti di tour?"},
+  {icona:"🍯",titolo:"La cassa comune",testo:"Ogni spesa per la casa va registrata da chi l'ha pagata. L'app fa la bilancia: chi ha speso meno risulta in debito di miele verso la cassa comune. Il saldo si aggiorna da solo, sempre."},
+  {icona:"🐾",titolo:"I debiti diretti",testo:"I prestiti personali (\"ti anticipo io i biglietti\") restano separati dalla cassa: si registrano a parte e si possono rimborsare anche un po' alla volta."},
+  {icona:"🌙",titolo:"La chiusura del mese",testo:"A fine mese si chiude: lo storico finisce in archivio (con grafici e PDF), le spese si azzerano e il debito riparte da lì. Per tutto il resto c'è la guida ❓ in alto. Buona Tana!"}
+];
+var _bvIdx=0;
+
+function avviaBenvenuto(){
+  _bvIdx=0;
+  bvMostra();
+  document.getElementById("modal-benvenuto").classList.add("open");
+}
+function bvMostra(){
+  var s=_bvSlides[_bvIdx];
+  document.getElementById("bv-icona").innerHTML = s.icona==="bear"
+  ? '<img src="./bear.svg" alt="Orso" style="width:2.5rem;height:2.5rem;">'
+  : s.icona;
+  document.getElementById("bv-titolo").textContent=s.titolo;
+  document.getElementById("bv-testo").textContent=s.testo;
+  // Pallini di avanzamento
+  var dots="";
+  for(var i=0;i<_bvSlides.length;i++) dots+=(i===_bvIdx?"●":"○");
+  document.getElementById("bv-dots").textContent=dots;
+  // Sull'ultima slide il bottone cambia
+  var ultima=_bvIdx===_bvSlides.length-1;
+  document.getElementById("bv-avanti").innerHTML=ultima
+  ? 'Entra nella Tana <img src="./bear.svg" alt="" style="width:1rem;height:1rem;vertical-align:middle;">'
+  : "Avanti 🐾";
+  document.getElementById("bv-salta").style.visibility=ultima?"hidden":"visible";
+}
+function benvenutoAvanti(){
+  if(_bvIdx<_bvSlides.length-1){_bvIdx++;bvMostra();}
+  else chiudiBenvenuto();
+}
+function chiudiBenvenuto(){
+  document.getElementById("modal-benvenuto").classList.remove("open");
+  try{localStorage.setItem(BENVENUTO_KEY,"1");}catch(e){}
+}
+// Chiamata all'avvio: mostra il benvenuto solo se mai visto su questo dispositivo
+function maybeBenvenuto(){
+  if(!localStorage.getItem(BENVENUTO_KEY)) avviaBenvenuto();
 }
