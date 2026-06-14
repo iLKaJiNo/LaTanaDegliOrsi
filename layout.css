@@ -71,6 +71,6 @@
   .tab-page[data-tab="fisso"].active .fisse-card,
   .tab-page[data-tab="fisso"].active .riepilogo-card,
   .tab-page[data-tab="fisso"].active .previste-card{grid-column:auto;margin-top:14px;}
-  .tab-page[data-tab="solo"].active{display:block !important;grid-column:1/-1;max-width:560px;margin:0 auto;width:100%;}
+  .tab-page[data-tab="solo"].active{display:block !important;grid-column:1/-1;max-width:680px;margin:0 auto;width:100%;}
 }
 

@@ -219,6 +219,8 @@ async function runAction(p){
     // — Orso Solo: PIN —
     case "setSoloPin":
       r=await sb.from("solo_profili").update({pin_hash:p.pinHash}).eq("proprietario",p.proprietario); break;
+    case "setSoloSaldoPartenza":
+      r=await sb.from("solo_profili").update({saldo_partenza:p.valore}).eq("proprietario",p.proprietario); break;
 
     // — Orso Solo: voci registro —
     case "addSoloVoce":
@@ -231,9 +233,13 @@ async function runAction(p){
     case "addSoloRicorrente":
       r=await sb.from("solo_ricorrenti").insert({id:p.ric.id,proprietario:p.ric.proprietario,nome:p.ric.nome,
         tipo:p.ric.tipo,importo:p.ric.importo,categoria:p.ric.categoria,ogni_quanto:p.ric.ogniQuanto,
-        unita:p.ric.unita,prossima_scadenza:p.ric.prossimaScadenza}); break;
+        unita:p.ric.unita,prossima_scadenza:p.ric.prossimaScadenza,
+        fine_data:p.ric.fineData||null,volte_rimaste:p.ric.volteRimaste,attiva:p.ric.attiva!==false}); break;
     case "updateSoloRicorrenteScadenza":
       r=await sb.from("solo_ricorrenti").update({prossima_scadenza:p.prossimaScadenza}).eq("id",p.id); break;
+    case "updateSoloRicorrente":
+      r=await sb.from("solo_ricorrenti").update({prossima_scadenza:p.ric.prossimaScadenza,
+        fine_data:p.ric.fineData||null,volte_rimaste:p.ric.volteRimaste,attiva:p.ric.attiva!==false}).eq("id",p.ric.id); break;
     case "deleteSoloRicorrente":
       r=await sb.from("solo_ricorrenti").delete().eq("id",p.id); break;
 
@@ -250,7 +256,10 @@ async function runAction(p){
     // — Orso Solo: chiusure informative —
     case "addSoloChiusura":
       r=await sb.from("solo_chiusure").insert({id:p.ch.id,proprietario:p.ch.proprietario,mese:p.ch.mese,
-        tot_entrate:p.ch.totEntrate,tot_uscite:p.ch.totUscite,saldo:p.ch.saldo,data:p.ch.data}); break;
+        tot_entrate:p.ch.totEntrate,tot_uscite:p.ch.totUscite,saldo:p.ch.saldo,data:p.ch.data,
+        voci:p.ch.voci||[],torta:p.ch.torta||[]}); break;
+    case "deleteSoloChiusura":
+      r=await sb.from("solo_chiusure").delete().eq("id",p.id); break;
 
     default:
       // Azioni legacy del vecchio backend GAS: non servono più

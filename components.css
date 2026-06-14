@@ -924,3 +924,37 @@ body.dark .solo-cat-arr{background:rgba(255,255,255,.06);}
 .solo-graf-bar.entrata{background:var(--moss);}
 .solo-graf-bar.uscita{background:var(--berry);}
 .solo-graf-bar-lbl{font-size:0.6875rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:700;margin-top:4px;text-transform:capitalize;}
+
+/* ── ORSO SOLO L-3: segmento a 3, archivi ── */
+.solo-seg-3 .solo-seg-btn{font-size:0.8125rem;padding:0 4px;}
+.solo-chiudi-mese-btn{width:100%;height:44px;margin-top:14px;border-radius:var(--r-md);border:2px dashed var(--honey-brd);background:var(--honey-bg);color:var(--honey-d);font-family:'Baloo 2',cursive;font-size:0.9375rem;font-weight:800;cursor:pointer;-webkit-appearance:none;}
+.solo-archivi{margin-top:16px;}
+.solo-anno-group{margin-bottom:10px;}
+.solo-anno-head{width:100%;display:flex;align-items:center;gap:8px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-md);padding:12px 14px;cursor:pointer;-webkit-appearance:none;font-family:'Baloo 2',cursive;}
+.solo-anno-head.aperto{border-color:var(--honey-brd);background:var(--honey-bg);}
+.solo-anno-titolo{font-size:1.0625rem;font-weight:800;color:var(--text);}
+.solo-anno-meta{margin-left:auto;font-size:0.75rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:700;}
+.solo-anno-chev{font-size:0.875rem;color:var(--text2);margin-left:6px;}
+.solo-anno-body{padding:10px 4px 4px;}
+.solo-anno-graf-btn{width:100%;height:40px;border-radius:var(--r-sm);border:none;background:var(--brown-d);color:var(--honey);font-family:'Baloo 2',cursive;font-size:0.875rem;font-weight:700;cursor:pointer;-webkit-appearance:none;margin-bottom:8px;}
+.solo-mese-row{width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:6px;cursor:pointer;-webkit-appearance:none;font-family:'Baloo 2',cursive;}
+.solo-mese-nome{font-size:0.9375rem;font-weight:700;color:var(--text);}
+.solo-mese-saldo{font-size:0.9375rem;font-weight:800;}
+.solo-mese-saldo.pos{color:var(--moss);}
+.solo-mese-saldo.neg{color:var(--berry);}
+body.dark .solo-anno-head,body.dark .solo-mese-row{background:rgba(255,255,255,.06);}
+
+/* Ricorrente conclusa: spenta */
+.solo-voce.conclusa{opacity:.55;}
+.solo-voce.conclusa .solo-voce-imp{text-decoration:line-through;}
+
+/* ── STORICO MESE: split Luca vs Ale (torta mensile come barra) ── */
+.storico-split{margin-top:14px;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:12px 14px;}
+.storico-split-title{font-size:0.875rem;font-weight:700;color:var(--text2);margin-bottom:8px;}
+.storico-split-bar{display:flex;height:18px;border-radius:9px;overflow:hidden;margin-bottom:8px;background:var(--border);}
+.storico-split-l{background:var(--berry);}
+.storico-split-a{background:var(--moss);}
+.storico-split-legenda{display:flex;justify-content:space-between;font-size:0.8125rem;font-weight:700;color:var(--text2);}
+.storico-split-legenda .ss-dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle;}
+.storico-split-legenda .ss-dot.l{background:var(--berry);}
+.storico-split-legenda .ss-dot.a{background:var(--moss);}

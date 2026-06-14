@@ -253,25 +253,32 @@ if("serviceWorker" in navigator){
 
 <!-- MODALE CAMBIO PASSWORD -->
 <!-- MODALE GRAFICI SOLO -->
-<div class="modal-overlay" id="modal-solo-grafici" onclick="if(event.target===this)closeSoloGrafici()">
+<!-- MODALE DETTAGLIO CHIUSURA (con torta dello snapshot) -->
+<div class="modal-overlay" id="modal-solo-chiusura" onclick="if(event.target===this)closeSoloChiusura()">
   <div class="modal" style="max-width:420px;">
+    <div class="modal-icon" style="text-align:center;">📦</div>
+    <h2 style="text-align:center;" id="solo-chiusura-titolo">Chiusura</h2>
+    <div id="solo-chiusura-body"></div>
+    <div class="modal-btns"><button class="btn-conferma" onclick="closeSoloChiusura()">🐾 Chiudi</button></div>
+  </div>
+</div>
+
+<!-- MODALE GRAFICI ANNO / CONFRONTO ANNI (barre) -->
+<div class="modal-overlay" id="modal-solo-grafanno" onclick="if(event.target===this)closeSoloGrafanno()">
+  <div class="modal" style="max-width:440px;">
     <div class="modal-icon" style="text-align:center;">📊</div>
-    <h2 style="text-align:center;">I tuoi grafici</h2>
-    <div class="solo-graf-toggle">
-      <button class="solo-graf-btn active" data-gv="cat" onclick="setSoloGrafVista('cat')">🍰 Per categoria</button>
-      <button class="solo-graf-btn" data-gv="mesi" onclick="setSoloGrafVista('mesi')">📈 Andamento</button>
-    </div>
-    <div id="solo-graf-body"></div>
-    <div class="modal-btns"><button class="btn-conferma" onclick="closeSoloGrafici()">🐾 Chiudi</button></div>
+    <h2 style="text-align:center;" id="solo-grafanno-titolo">Andamento</h2>
+    <div id="solo-grafanno-body"></div>
+    <div class="modal-btns"><button class="btn-conferma" onclick="closeSoloGrafanno()">🐾 Chiudi</button></div>
   </div>
 </div>
 
 <!-- MODALE CHIUSURA SOLO -->
 <div class="modal-overlay" id="modal-solo-chiudi" onclick="if(event.target===this)closeSoloChiudi()">
   <div class="modal">
-    <div class="modal-icon">📸</div>
-    <h2>Chiudi il mese personale</h2>
-    <p>Salvo una fotografia di entrate, uscite e saldo di questo periodo. Le voci <strong>restano</strong> nel registro: è solo un riepilogo da consultare.</p>
+    <div class="modal-icon">📦</div>
+    <h2>Chiudi e archivia il mese</h2>
+    <p>Salvo questo periodo nell'archivio (con riepilogo e grafico) e <strong>svuoto il registro</strong> per ricominciare. Le voci restano consultabili negli Archivi.</p>
     <input class="inp" type="text" id="solo-chiudi-mese" placeholder="Es. Giugno 2026" style="width:100%;margin:12px 0;">
     <div id="solo-chiudi-anteprima"></div>
     <div class="modal-btns">
@@ -571,7 +578,7 @@ if("serviceWorker" in navigator){
     <div id="grafico-stats" style="font-size:13px;font-family:'Nunito',sans-serif;font-weight:600;color:var(--text2);text-align:center;margin-bottom:10px;"></div>
     <div class="grafico-toggle">
       <button class="grafico-toggle-btn active" data-vista="barre" onclick="setGraficoVista('barre')">📊 Per mese</button>
-      <button class="grafico-toggle-btn" data-vista="torta" onclick="setGraficoVista('torta')">🥧 Luca vs Ale</button>
+      <button class="grafico-toggle-btn" data-vista="torta" onclick="setGraficoVista('torta')">🥧 Luca vs Ale (mese)</button>
     </div>
     <div id="grafico-barre-wrap" class="grafico-wrap">
       <canvas class="grafico-canvas" id="grafico-canvas"></canvas>

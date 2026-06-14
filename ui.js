@@ -1049,6 +1049,20 @@ function openStoricoMese(id){
     h+='<div class="riepilogo-mese-row"><span>📌 Spese fisse</span><span>'+eur(totF)+'</span></div>';
     h+='<div class="riepilogo-mese-row tot"><span>💰 Totale reale del mese</span><span>'+eur(c.totale+totF)+'</span></div>';
     h+='</div>';
+    // Split Luca vs Ale del mese (torta mensile)
+    var spL=0, spA=0;
+    c.txs.forEach(function(t){ if(t.chi==="Luca") spL+=t.importo; else spA+=t.importo; });
+    var spTot=spL+spA;
+    if(spTot>0){
+      var pL=Math.round(spL/spTot*100), pA=100-pL;
+      h+='<div class="storico-split">';
+      h+='<div class="storico-split-title">🥧 Chi ha speso (questo mese)</div>';
+      h+='<div class="storico-split-bar"><div class="storico-split-l" style="width:'+pL+'%"></div><div class="storico-split-a" style="width:'+pA+'%"></div></div>';
+      h+='<div class="storico-split-legenda">'
+        +'<span><span class="ss-dot l"></span>Luca '+eur(spL)+' ('+pL+'%)</span>'
+        +'<span><span class="ss-dot a"></span>Ale '+eur(spA)+' ('+pA+'%)</span></div>';
+      h+='</div>';
+    }
   }
   document.getElementById("modal-storico-body").innerHTML=h;
   document.getElementById("btn-ripristina-da-storico").onclick=function(){closeStoricoMese();openRipristino(id);};
@@ -1457,14 +1471,8 @@ function drawTorta(){
   if(!canvas) return;
   var ctx=canvas.getContext("2d");
 
-  // Calcola totali Luca e Ale da chiusure + mese corrente
+  // Mensile: solo il mese corrente (le transazioni attive), non tutto lo storico
   var totLuca=0, totAle=0;
-  S.chiusure.forEach(function(c){
-    c.txs.forEach(function(t){
-      if(t.chi==="Luca") totLuca+=parseFloat(t.importo)||0;
-      else totAle+=parseFloat(t.importo)||0;
-    });
-  });
   S.txs.forEach(function(t){
     if(t.chi==="Luca") totLuca+=parseFloat(t.importo)||0;
     else totAle+=parseFloat(t.importo)||0;
@@ -1784,6 +1792,26 @@ function _generaPDF(c){
     doc.text("Totale reale del mese",margin+2,y+5);
     doc.text(eur(totale+totF),W-margin-2,y+5,{align:"right"});
     y+=9;
+  }
+  // Split Luca vs Ale del mese
+  var spL=0, spA=0;
+  c.txs.forEach(function(t){ if(t.chi==="Luca") spL+=t.importo; else spA+=t.importo; });
+  var spTot=spL+spA;
+  if(spTot>0){
+    y+=3;
+    var pL=Math.round(spL/spTot*100), pA=100-pL;
+    doc.setFontSize(8);doc.setFont("helvetica","bold");
+    doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+    doc.text("Chi ha speso questo mese",margin,y+4);y+=6;
+    // barra proporzionale
+    var barW=W-margin*2, lw=barW*pL/100;
+    doc.setFillColor(168,50,37); doc.rect(margin,y,lw,5,"F");           // Luca berry
+    doc.setFillColor(74,124,64); doc.rect(margin+lw,y,barW-lw,5,"F");   // Ale moss
+    y+=9;
+    doc.setFont("helvetica","normal");doc.setTextColor(DARK[0],DARK[1],DARK[2]);
+    doc.text("Luca "+eur(spL)+" ("+pL+"%)",margin,y);
+    doc.text("Ale "+eur(spA)+" ("+pA+"%)",W-margin,y,{align:"right"});
+    y+=4;
   }
   // Footer
   y+=4;
@@ -2408,18 +2436,33 @@ async function caricaSolo(){
       sb.from("solo_voci").select("*").eq("proprietario",soloChi).order("data",{ascending:false}),
       sb.from("solo_ricorrenti").select("*").eq("proprietario",soloChi).order("prossima_scadenza",{ascending:true}),
       sb.from("solo_chiusure").select("*").eq("proprietario",soloChi).order("data",{ascending:false}),
-      sb.from("solo_categorie").select("*").eq("proprietario",soloChi).order("ordine",{ascending:true})
+      sb.from("solo_categorie").select("*").eq("proprietario",soloChi).order("ordine",{ascending:true}),
+      sb.from("solo_profili").select("saldo_partenza").eq("proprietario",soloChi).single()
     ]);
     soloData.voci       = (ris[0].data||[]).map(function(r){return{id:r.id,tipo:r.tipo,importo:parseFloat(r.importo)||0,categoria:r.categoria||"Altro",nota:r.nota||"",data:r.data||"",origine:r.origine||null};});
-    soloData.ricorrenti = (ris[1].data||[]).map(function(r){return{id:r.id,nome:r.nome,tipo:r.tipo,importo:parseFloat(r.importo)||0,categoria:r.categoria||"Altro",ogniQuanto:r.ogni_quanto||1,unita:r.unita||"mesi",prossimaScadenza:r.prossima_scadenza||""};});
-    soloData.chiusure   = (ris[2].data||[]).map(function(r){return{id:r.id,mese:r.mese,totEntrate:parseFloat(r.tot_entrate)||0,totUscite:parseFloat(r.tot_uscite)||0,saldo:parseFloat(r.saldo)||0,data:r.data||""};});
+    soloData.ricorrenti = (ris[1].data||[]).map(function(r){return{id:r.id,nome:r.nome,tipo:r.tipo,importo:parseFloat(r.importo)||0,categoria:r.categoria||"Altro",ogniQuanto:r.ogni_quanto||1,unita:r.unita||"mesi",prossimaScadenza:r.prossima_scadenza||"",fineData:r.fine_data||null,volteRimaste:r.volte_rimaste!=null?r.volte_rimaste:null,attiva:r.attiva!==false};});
+    soloData.chiusure   = (ris[2].data||[]).map(function(r){return{id:r.id,mese:r.mese,totEntrate:parseFloat(r.tot_entrate)||0,totUscite:parseFloat(r.tot_uscite)||0,saldo:parseFloat(r.saldo)||0,data:r.data||"",voci:r.voci||[],torta:r.torta||[]};});
     soloData.categorie  = (ris[3].data||[]).map(function(r){return{id:r.id,icona:r.icona||"📌",nome:r.nome,ordine:r.ordine||0,protetta:!!r.protetta};});
+    soloSaldoPartenza   = ris[4].data ? (parseFloat(ris[4].data.saldo_partenza)||0) : 0;
   }catch(e){ /* offline */ }
 }
 
 // Saldo personale: entrate − uscite
 function soloSaldo(){
-  return Math.round(soloData.voci.reduce(function(a,v){ return v.tipo==="entrata" ? a+v.importo : a-v.importo; }, 0)*100)/100;
+  return Math.round(soloData.voci.reduce(function(a,v){ return v.tipo==="entrata" ? a+v.importo : a-v.importo; }, soloSaldoPartenza)*100)/100;
+}
+
+function soloEditSaldoPartenza(){ soloEditSaldo=true; renderSolo(); setTimeout(function(){var e=document.getElementById("solo-sp-inp");if(e)e.focus();},40); }
+function soloAnnullaSaldoPartenza(){ soloEditSaldo=false; renderSolo(); }
+async function soloSalvaSaldoPartenza(){
+  var v=parseFloat((document.getElementById("solo-sp-inp")||{}).value);
+  if(isNaN(v)) v=0;
+  v=Math.round(v*100)/100;
+  var backup=soloSaldoPartenza;
+  soloSaldoPartenza=v; soloEditSaldo=false;
+  renderSolo();
+  try{ await post({action:"setSoloSaldoPartenza",proprietario:soloChi,valore:v}); }
+  catch(e){ soloSaldoPartenza=backup; renderSolo(); dot("err","Errore"); }
 }
 
 // ── APP sbloccata (I-1: placeholder; in I-2 diventa il registro) ──
@@ -2437,14 +2480,19 @@ function renderSoloApp(el){
     +'<div class="solo-saldo-card">'
     +'<div class="solo-saldo-lbl">Saldo personale</div>'
     +'<div class="solo-saldo-val '+(s>=0?"pos":"neg")+'">'+eur(s)+'</div>'
-    +'<div class="solo-saldo-actions"><button class="solo-saldo-act" onclick="openSoloGrafici()">📊 Grafici</button><button class="solo-saldo-act" onclick="openSoloChiudi()">📸 Chiudi mese</button></div>'
+    +(soloEditSaldo
+      ? '<div class="solo-saldo-edit"><input class="inp" type="number" id="solo-sp-inp" step="0.01" inputmode="decimal" value="'+soloSaldoPartenza+'" placeholder="Saldo di partenza"><button class="solo-sp-ok" onclick="soloSalvaSaldoPartenza()">OK</button><button class="solo-sp-no" onclick="soloAnnullaSaldoPartenza()">✕</button></div>'
+      : '<button class="solo-saldo-modifica" onclick="soloEditSaldoPartenza()">✏️ Saldo di partenza: '+eur(soloSaldoPartenza)+'</button>')
     +'</div>'
-    // Segmento: Registro / Ricorrenti
-    +'<div class="solo-seg">'
+    // Segmento a 3: Registro / Ricorrenti / Archivi
+    +'<div class="solo-seg solo-seg-3">'
     +'<button class="solo-seg-btn'+(soloSegmento==="registro"?" on":"")+'" onclick="soloSetSegmento(\'registro\')">📒 Registro</button>'
     +'<button class="solo-seg-btn'+(soloSegmento==="ricorrenti"?" on":"")+'" onclick="soloSetSegmento(\'ricorrenti\')">🔁 Ricorrenti'+(ricScadute.length?' <span class="solo-badge-pulse">'+ricScadute.length+'</span>':'')+'</button>'
+    +'<button class="solo-seg-btn'+(soloSegmento==="archivi"?" on":"")+'" onclick="soloSetSegmento(\'archivi\')">📦 Archivi</button>'
     +'</div>'
-    +(soloSegmento==="ricorrenti" ? soloRicorrentiHtml(cats) : soloRegistroHtml(catOpts));
+    +(soloSegmento==="ricorrenti" ? soloRicorrentiHtml(cats)
+      : soloSegmento==="archivi" ? soloArchiviHtml()
+      : soloRegistroHtml(catOpts));
 }
 
 // ── REGISTRO (voci entrata/uscita) ──
@@ -2465,7 +2513,8 @@ function soloRegistroHtml(catOpts){
     +'<div class="solo-storico">'
     +'<div class="solo-storico-head">Movimenti</div>'
     +soloStoricoHtml()
-    +'</div>';
+    +'</div>'
+    +(soloData.voci.length ? '<button class="solo-chiudi-mese-btn" onclick="openSoloChiudi()">📦 Chiudi e archivia il mese</button>' : '');
 }
 
 function soloStoricoHtml(){
@@ -2550,6 +2599,7 @@ var UNITA_LABEL={giorni:"giorni",settimane:"settimane",mesi:"mesi",anni:"anni"};
 function soloRicorrentiScadute(){
   var oggi=new Date(); oggi.setHours(23,59,59,999);
   return (soloData.ricorrenti||[]).filter(function(r){
+    if(r.attiva===false) return false;
     if(!r.prossimaScadenza) return false;
     return new Date(r.prossimaScadenza)<=oggi;
   });
@@ -2574,6 +2624,15 @@ function soloRicorrentiHtml(cats){
     +'<option value="mesi" selected>mesi</option><option value="anni">anni</option></select></div>';
   h+='<div class="solo-freq-row"><span>Prima scadenza</span>'
     +'<input class="inp" type="date" id="solo-ric-scad" value="'+soloOggiISO()+'" style="flex:1;"></div>';
+  // fine ricorrenza
+  h+='<div class="solo-freq-row"><span>Finché</span>'
+    +'<select class="inp solo-freq-u" id="solo-ric-fine" onchange="soloRicFineChange()">'
+    +'<option value="mai" selected>per sempre</option>'
+    +'<option value="data">fino a una data</option>'
+    +'<option value="volte">per N volte</option></select></div>';
+  h+='<div class="solo-freq-row" id="solo-ric-fine-extra" style="display:none;">'
+    +'<input class="inp" type="date" id="solo-ric-fine-data" style="flex:1;display:none;">'
+    +'<input class="inp solo-freq-n" type="number" id="solo-ric-fine-volte" min="1" step="1" value="12" inputmode="numeric" style="display:none;"><span id="solo-ric-fine-volte-lbl" style="display:none;">volte</span></div>';
   h+='<button class="solo-add-btn" onclick="soloAddRicorrente()">🔁 Aggiungi ricorrente</button>';
   h+='</div>';
   // lista ricorrenti
@@ -2585,11 +2644,16 @@ function soloRicorrentiHtml(cats){
       var entrata=r.tipo==="entrata";
       var scaduta=soloRicScaduta(r);
       var ic=soloIconaCat(r.categoria);
-      return '<div class="solo-voce '+(entrata?"entrata":"uscita")+(scaduta?" scaduta":"")+'">'
+      var conclusa=(r.attiva===false);
+      var fineInfo="";
+      if(conclusa) fineInfo=" · conclusa";
+      else if(r.volteRimaste!=null) fineInfo=" · ancora "+r.volteRimaste+" volte";
+      else if(r.fineData) fineInfo=" · fino al "+fmt(r.fineData);
+      return '<div class="solo-voce '+(entrata?"entrata":"uscita")+(scaduta?" scaduta":"")+(conclusa?" conclusa":"")+'">'
         +'<div class="solo-voce-cat">'+ic+'</div>'
         +'<div class="solo-voce-body">'
         +'<div class="solo-voce-nota">'+escapeHtml(r.nome)+'</div>'
-        +'<div class="solo-voce-data">ogni '+r.ogniQuanto+' '+UNITA_LABEL[r.unita]+' · prossima: '+fmt(r.prossimaScadenza)+'</div>'
+        +'<div class="solo-voce-data">ogni '+r.ogniQuanto+' '+UNITA_LABEL[r.unita]+(conclusa?"":" · prossima: "+fmt(r.prossimaScadenza))+fineInfo+'</div>'
         +'</div>'
         +'<div class="solo-voce-imp '+(entrata?"pos":"neg")+'">'+(entrata?"+":"−")+eur(r.importo)+'</div>'
         +(scaduta
@@ -2608,6 +2672,7 @@ function soloRicorrentiHtml(cats){
 function soloRicSetTipo(t){ soloRicTipo=t; renderSolo(); }
 function soloOggiISO(){ var d=new Date(); return d.toISOString().slice(0,10); }
 function soloRicScaduta(r){
+  if(r.attiva===false) return false;  // conclusa: niente più avvisi
   if(!r.prossimaScadenza) return false;
   var oggi=new Date(); oggi.setHours(23,59,59,999);
   return new Date(r.prossimaScadenza)<=oggi;
@@ -2632,7 +2697,12 @@ async function soloAddRicorrente(){
   var scad=document.getElementById("solo-ric-scad").value||soloOggiISO();
   if(!nome){ document.getElementById("solo-ric-nome").focus(); return; }
   if(!imp||imp<=0){ document.getElementById("solo-ric-imp").focus(); return; }
-  var r={id:Date.now().toString(),proprietario:soloChi,nome:nome,tipo:soloRicTipo,importo:imp,categoria:cat,ogniQuanto:ogni,unita:unita,prossimaScadenza:scad};
+  // fine ricorrenza
+  var fineTipo=document.getElementById("solo-ric-fine").value;
+  var fineData=null, volteRimaste=null;
+  if(fineTipo==="data") fineData=document.getElementById("solo-ric-fine-data").value||null;
+  if(fineTipo==="volte") volteRimaste=parseInt(document.getElementById("solo-ric-fine-volte").value)||1;
+  var r={id:Date.now().toString(),proprietario:soloChi,nome:nome,tipo:soloRicTipo,importo:imp,categoria:cat,ogniQuanto:ogni,unita:unita,prossimaScadenza:scad,fineData:fineData,volteRimaste:volteRimaste,attiva:true};
   soloData.ricorrenti.push(r);
   soloData.ricorrenti.sort(function(a,b){return (a.prossimaScadenza||"").localeCompare(b.prossimaScadenza||"");});
   vibra(30);
@@ -2645,21 +2715,44 @@ async function soloAddRicorrente(){
   }
 }
 
+// Mostra/nasconde i campi extra in base al tipo di fine scelto
+function soloRicFineChange(){
+  var tipo=document.getElementById("solo-ric-fine").value;
+  var extra=document.getElementById("solo-ric-fine-extra");
+  var dataI=document.getElementById("solo-ric-fine-data");
+  var volteI=document.getElementById("solo-ric-fine-volte");
+  var volteL=document.getElementById("solo-ric-fine-volte-lbl");
+  extra.style.display = (tipo==="mai") ? "none" : "flex";
+  dataI.style.display = (tipo==="data") ? "" : "none";
+  volteI.style.display = (tipo==="volte") ? "" : "none";
+  volteL.style.display = (tipo==="volte") ? "" : "none";
+}
+
 // Paga una ricorrente scaduta: crea una voce nel registro e avanza la scadenza
 async function soloPagaRicorrente(id){
   var r=soloData.ricorrenti.find(function(x){return x.id===id;});
   if(!r) return;
   var nuovaScad=soloAvanzaData(r.prossimaScadenza, r.ogniQuanto, r.unita);
   var v={id:Date.now().toString(),proprietario:soloChi,tipo:r.tipo,importo:r.importo,categoria:r.categoria,nota:r.nome,data:new Date().toISOString(),origine:"ric:"+r.id};
-  // optimistic: aggiungo la voce e avanzo la scadenza
   soloData.voci.unshift(v);
-  r.prossimaScadenza=nuovaScad;
+  // gestione fine ricorrenza
+  var concludi=false;
+  if(r.volteRimaste!=null){
+    r.volteRimaste-=1;
+    if(r.volteRimaste<=0) concludi=true;
+  }
+  if(r.fineData && new Date(nuovaScad)>new Date(r.fineData)) concludi=true;
+  if(concludi){
+    r.attiva=false; // resta visibile ma non genera più avvisi
+  } else {
+    r.prossimaScadenza=nuovaScad;
+  }
   soloData.ricorrenti.sort(function(a,b){return (a.prossimaScadenza||"").localeCompare(b.prossimaScadenza||"");});
   vibra([20,40,20]);
   renderSolo();
   try{
     await post({action:"addSoloVoce",voce:v});
-    await post({action:"updateSoloRicorrenteScadenza",id:r.id,prossimaScadenza:nuovaScad});
+    await post({action:"updateSoloRicorrente",ric:r});
   }catch(e){ dot("err","Errore"); load&&load(); }
 }
 
@@ -2773,67 +2866,61 @@ function soloCambiaPin(){
 // ════════════════════════════════════════════════════════
 //  ORSO SOLO — Grafici e Chiusure (L-2)
 // ════════════════════════════════════════════════════════
-var soloGrafVista="cat";
-
-function openSoloGrafici(){
-  document.getElementById("modal-solo-grafici").classList.add("open");
-  setSoloGrafVista("cat");
-}
-function closeSoloGrafici(){ document.getElementById("modal-solo-grafici").classList.remove("open"); }
-function setSoloGrafVista(v){
-  soloGrafVista=v;
-  document.querySelectorAll(".solo-graf-btn").forEach(function(b){ b.classList.toggle("active", b.dataset.gv===v); });
-  if(v==="cat") soloRenderGraficoCat();
-  else soloRenderGraficoMesi();
-}
-
-// Palette per le fette (ciclica)
 var SOLO_PALETTE=["#F4A827","#A83225","#4A7C40","#6B3FA0","#C87D0A","#6B3F1F","#89C082","#B89CD8","#E08078","#4A2A0F"];
 
-// Grafico a torta delle USCITE per categoria
-function soloRenderGraficoCat(){
-  var body=document.getElementById("solo-graf-body");
-  // sommo le uscite per categoria
-  var perCat={};
-  soloData.voci.forEach(function(v){
-    if(v.tipo!=="uscita") return;
-    perCat[v.categoria]=(perCat[v.categoria]||0)+v.importo;
-  });
-  var voci=Object.keys(perCat).map(function(k){return{nome:k,val:Math.round(perCat[k]*100)/100};});
-  voci.sort(function(a,b){return b.val-a.val;});
-  var tot=voci.reduce(function(a,x){return a+x.val;},0);
-  if(tot<=0){
-    body.innerHTML='<div class="grafico-empty">Nessuna uscita ancora registrata.</div>';
-    return;
+// ── DETTAGLIO CHIUSURA (con torta dello snapshot) ──
+function openSoloChiusura(id){
+  var c=(soloData.chiusure||[]).find(function(x){return x.id===id;});
+  if(!c) return;
+  var body=document.getElementById("solo-chiusura-body");
+  var h='<div class="riepilogo-mese">'
+    +'<div class="riepilogo-mese-row"><span>➕ Entrate</span><span>'+eur(c.totEntrate)+'</span></div>'
+    +'<div class="riepilogo-mese-row"><span>➖ Uscite</span><span>'+eur(c.totUscite)+'</span></div>'
+    +'<div class="riepilogo-mese-row tot"><span>💰 Saldo</span><span>'+eur(c.saldo)+'</span></div></div>';
+  // torta dallo snapshot
+  var torta=(c.torta||[]).filter(function(t){return t.val>0;});
+  if(torta.length){
+    var tot=torta.reduce(function(a,x){return a+x.val;},0);
+    h+='<div class="solo-graf-canvas-wrap"><canvas id="solo-chiusura-canvas"></canvas></div>';
+    h+='<div class="solo-graf-legenda">';
+    torta.forEach(function(t,i){
+      var perc=Math.round(t.val/tot*100);
+      h+='<div class="solo-graf-leg-row"><span class="solo-graf-dot" style="background:'+SOLO_PALETTE[i%SOLO_PALETTE.length]+'"></span>'
+        +'<span class="solo-graf-leg-nome">'+(t.icona||"📌")+' '+escapeHtml(t.nome)+'</span>'
+        +'<span class="solo-graf-leg-val">'+eur(t.val)+' · '+perc+'%</span></div>';
+    });
+    h+='</div>';
   }
-  // canvas torta
-  var h='<div class="solo-graf-canvas-wrap"><canvas id="solo-graf-canvas"></canvas></div>';
-  // legenda
-  h+='<div class="solo-graf-legenda">';
-  voci.forEach(function(v,i){
-    var perc=Math.round(v.val/tot*100);
-    var col=SOLO_PALETTE[i%SOLO_PALETTE.length];
-    var ic=soloIconaCat(v.nome);
-    h+='<div class="solo-graf-leg-row"><span class="solo-graf-dot" style="background:'+col+'"></span>'
-      +'<span class="solo-graf-leg-nome">'+ic+' '+escapeHtml(v.nome)+'</span>'
-      +'<span class="solo-graf-leg-val">'+eur(v.val)+' · '+perc+'%</span></div>';
-  });
-  h+='</div>';
+  // elenco movimenti archiviati
+  if((c.voci||[]).length){
+    h+='<div class="solo-storico-head" style="margin-top:14px;">Movimenti del periodo</div>';
+    c.voci.forEach(function(v){
+      var entrata=v.tipo==="entrata";
+      h+='<div class="solo-voce '+(entrata?"entrata":"uscita")+'" style="cursor:default;">'
+        +'<div class="solo-voce-cat">'+(soloIconaCat(v.categoria))+'</div>'
+        +'<div class="solo-voce-body"><div class="solo-voce-nota">'+escapeHtml(v.nota||(entrata?"Entrata":"Uscita"))+'</div>'
+        +'<div class="solo-voce-data">'+fmt(v.data)+'</div></div>'
+        +'<div class="solo-voce-imp '+(entrata?"pos":"neg")+'">'+(entrata?"+":"−")+eur(v.importo)+'</div></div>';
+    });
+  }
+  document.getElementById("solo-chiusura-titolo").textContent=c.mese;
   body.innerHTML=h;
-  setTimeout(function(){ soloDisegnaTorta(voci, tot); }, 30);
+  document.getElementById("modal-solo-chiusura").classList.add("open");
+  if(torta.length) setTimeout(function(){ soloDisegnaTorta(torta, torta.reduce(function(a,x){return a+x.val;},0), "solo-chiusura-canvas"); }, 40);
 }
+function closeSoloChiusura(){ document.getElementById("modal-solo-chiusura").classList.remove("open"); }
 
-function soloDisegnaTorta(voci, tot){
-  var canvas=document.getElementById("solo-graf-canvas");
-  if(!canvas) return;
+// Disegna torta/ciambella su un canvas dato
+function soloDisegnaTorta(voci, tot, canvasId){
+  var canvas=document.getElementById(canvasId||"solo-chiusura-canvas");
+  if(!canvas || tot<=0) return;
   var ctx=canvas.getContext("2d");
   var dpr=window.devicePixelRatio||1;
-  var size=Math.min(200, canvas.parentElement.offsetWidth-20);
+  var size=Math.min(200, (canvas.parentElement.offsetWidth||220)-20);
   canvas.width=size*dpr; canvas.height=size*dpr;
   canvas.style.width=size+"px"; canvas.style.height=size+"px";
   ctx.scale(dpr,dpr);
-  var cx=size/2, cy=size/2, r=size/2-6;
-  var ang=-Math.PI/2;
+  var cx=size/2, cy=size/2, r=size/2-6, ang=-Math.PI/2;
   voci.forEach(function(v,i){
     var fetta=(v.val/tot)*Math.PI*2;
     ctx.beginPath(); ctx.moveTo(cx,cy);
@@ -2841,42 +2928,60 @@ function soloDisegnaTorta(voci, tot){
     ctx.fillStyle=SOLO_PALETTE[i%SOLO_PALETTE.length]; ctx.fill();
     ang+=fetta;
   });
-  // foro centrale (ciambella)
   ctx.beginPath(); ctx.arc(cx,cy,r*0.55,0,Math.PI*2);
-  ctx.fillStyle=getComputedStyle(document.body).getPropertyValue("--card")||"#fff";
+  ctx.fillStyle=(getComputedStyle(document.body).getPropertyValue("--card")||"#fff").trim();
   ctx.fill();
 }
 
-// Grafico a barre: saldo (entrate-uscite) per mese chiuso
-function soloRenderGraficoMesi(){
-  var body=document.getElementById("solo-graf-body");
-  var chiusure=(soloData.chiusure||[]).slice().reverse(); // cronologico
-  if(!chiusure.length){
-    body.innerHTML='<div class="grafico-empty">Nessun mese ancora chiuso.<br>Usa 📸 Chiudi mese per salvare una fotografia.</div>';
-    return;
-  }
-  var maxV=Math.max.apply(null, chiusure.map(function(c){return Math.max(c.totEntrate,c.totUscite);}));
-  if(maxV<=0) maxV=1;
-  var h='<div class="solo-graf-barre">';
-  chiusure.forEach(function(c){
-    var hE=Math.round(c.totEntrate/maxV*100);
-    var hU=Math.round(c.totUscite/maxV*100);
-    h+='<div class="solo-graf-bar-col">'
-      +'<div class="solo-graf-bars">'
-      +'<div class="solo-graf-bar entrata" style="height:'+hE+'%" title="Entrate '+eur(c.totEntrate)+'"></div>'
-      +'<div class="solo-graf-bar uscita" style="height:'+hU+'%" title="Uscite '+eur(c.totUscite)+'"></div>'
-      +'</div>'
-      +'<div class="solo-graf-bar-lbl">'+escapeHtml(c.mese.split(" ")[0].slice(0,3))+'</div>'
-      +'</div>';
+// ── GRAFICI DI UN ANNO (barre dei mesi) ──
+function openSoloGraficiAnno(anno){
+  var chiusure=(soloData.chiusure||[]).filter(function(c){return String(new Date(c.data).getFullYear())===String(anno);});
+  chiusure.sort(function(a,b){return new Date(a.data)-new Date(b.data);}); // cronologico
+  document.getElementById("solo-grafanno-titolo").textContent="Andamento "+anno;
+  var body=document.getElementById("solo-grafanno-body");
+  body.innerHTML=soloBarreHtml(chiusure.map(function(c){
+    return {label:c.mese.split(" ")[0].slice(0,3), entrate:c.totEntrate, uscite:c.totUscite};
+  }));
+  document.getElementById("modal-solo-grafanno").classList.add("open");
+}
+function closeSoloGrafanno(){ document.getElementById("modal-solo-grafanno").classList.remove("open"); }
+
+// ── CONFRONTO ANNI (barre per anno) ──
+function openSoloGraficiTuttiAnni(){
+  var perAnno={};
+  (soloData.chiusure||[]).forEach(function(c){
+    var a=new Date(c.data).getFullYear();
+    if(!perAnno[a]) perAnno[a]={entrate:0,uscite:0};
+    perAnno[a].entrate+=c.totEntrate; perAnno[a].uscite+=c.totUscite;
   });
-  h+='</div>';
-  h+='<div class="solo-graf-legenda" style="justify-content:center;display:flex;gap:16px;">'
-    +'<span><span class="solo-graf-dot" style="background:var(--moss)"></span> Entrate</span>'
-    +'<span><span class="solo-graf-dot" style="background:var(--berry)"></span> Uscite</span></div>';
-  body.innerHTML=h;
+  var anni=Object.keys(perAnno).sort();
+  document.getElementById("solo-grafanno-titolo").textContent="Confronto anni";
+  document.getElementById("solo-grafanno-body").innerHTML=soloBarreHtml(anni.map(function(a){
+    return {label:a, entrate:perAnno[a].entrate, uscite:perAnno[a].uscite};
+  }));
+  document.getElementById("modal-solo-grafanno").classList.add("open");
 }
 
-// ── CHIUSURA SOLO (fotografia informativa) ──
+// Costruisce il grafico a barre entrate/uscite da una lista {label,entrate,uscite}
+function soloBarreHtml(dati){
+  if(!dati.length) return '<div class="grafico-empty">Nessun dato da mostrare.</div>';
+  var maxV=Math.max.apply(null, dati.map(function(d){return Math.max(d.entrate,d.uscite);}));
+  if(maxV<=0) maxV=1;
+  var h='<div class="solo-graf-barre">';
+  dati.forEach(function(d){
+    var hE=Math.round(d.entrate/maxV*100), hU=Math.round(d.uscite/maxV*100);
+    h+='<div class="solo-graf-bar-col"><div class="solo-graf-bars">'
+      +'<div class="solo-graf-bar entrata" style="height:'+hE+'%" title="Entrate '+eur(d.entrate)+'"></div>'
+      +'<div class="solo-graf-bar uscita" style="height:'+hU+'%" title="Uscite '+eur(d.uscite)+'"></div>'
+      +'</div><div class="solo-graf-bar-lbl">'+escapeHtml(d.label)+'</div></div>';
+  });
+  h+='</div><div class="solo-graf-legenda" style="justify-content:center;display:flex;gap:16px;">'
+    +'<span><span class="solo-graf-dot" style="background:var(--moss)"></span> Entrate</span>'
+    +'<span><span class="solo-graf-dot" style="background:var(--berry)"></span> Uscite</span></div>';
+  return h;
+}
+
+// ── CHIUSURA SOLO (archivia) ──
 function openSoloChiudi(){
   var ent=0, usc=0;
   soloData.voci.forEach(function(v){ if(v.tipo==="entrata") ent+=v.importo; else usc+=v.importo; });
@@ -2893,13 +2998,93 @@ function closeSoloChiudi(){ document.getElementById("modal-solo-chiudi").classLi
 
 async function soloConfermaChiudi(){
   var mese=document.getElementById("solo-chiudi-mese").value.trim()||new Date().toLocaleDateString("it-IT",{month:"long",year:"numeric"});
+  if(!soloData.voci.length){ closeSoloChiudi(); return; }
   var ent=0, usc=0;
   soloData.voci.forEach(function(v){ if(v.tipo==="entrata") ent+=v.importo; else usc+=v.importo; });
   ent=Math.round(ent*100)/100; usc=Math.round(usc*100)/100;
-  var ch={id:Date.now().toString(),proprietario:soloChi,mese:mese,totEntrate:ent,totUscite:usc,saldo:Math.round((ent-usc)*100)/100,data:new Date().toISOString()};
+  // Torta categorie (uscite) — salvata nello snapshot
+  var perCat={};
+  soloData.voci.forEach(function(v){ if(v.tipo==="uscita") perCat[v.categoria]=(perCat[v.categoria]||0)+v.importo; });
+  var torta=Object.keys(perCat).map(function(k){return{nome:k,val:Math.round(perCat[k]*100)/100,icona:soloIconaCat(k)};});
+  torta.sort(function(a,b){return b.val-a.val;});
+  var vociArchiviate=soloData.voci.slice();
+  var ch={id:Date.now().toString(),proprietario:soloChi,mese:mese,totEntrate:ent,totUscite:usc,
+          saldo:Math.round((ent-usc)*100)/100,data:new Date().toISOString(),
+          voci:vociArchiviate,torta:torta};
+  // optimistic: archivio e svuoto il registro
   soloData.chiusure.unshift(ch);
+  var backupVoci=soloData.voci.slice();
+  soloData.voci=[];
   closeSoloChiudi();
   vibra([20,40,20]);
-  try{ await post({action:"addSoloChiusura",ch:ch}); dot("ok","Fotografia salvata 📸"); }
-  catch(e){ soloData.chiusure=soloData.chiusure.filter(function(x){return x.id!==ch.id;}); dot("err","Errore"); }
+  soloSegmento="archivi";
+  renderSolo();
+  try{
+    await post({action:"addSoloChiusura",ch:ch});
+    // cancello le voci archiviate dal registro attivo
+    for(var i=0;i<vociArchiviate.length;i++){
+      try{ await post({action:"deleteSoloVoce",id:vociArchiviate[i].id}); }catch(e){}
+    }
+    dot("ok","Mese archiviato 📦");
+  }catch(e){
+    soloData.chiusure=soloData.chiusure.filter(function(x){return x.id!==ch.id;});
+    soloData.voci=backupVoci;
+    renderSolo();
+    dot("err","Errore archiviazione");
+  }
 }
+
+// ════════════════════════════════════════════════════════
+//  ORSO SOLO — Archivi (L-3a)
+//  Le chiusure raggruppate per anno (automatico, per data).
+// ════════════════════════════════════════════════════════
+var soloAnnoAperto=null;
+
+function soloArchiviHtml(){
+  var chiusure=soloData.chiusure||[];
+  if(!chiusure.length){
+    return '<div class="empty" style="margin-top:18px;"><span class="e-icon">📦</span>Nessun mese archiviato.<br>Chiudi un mese dal Registro per iniziare!</div>';
+  }
+  // raggruppo per anno (dalla data della chiusura)
+  var perAnno={};
+  chiusure.forEach(function(c){
+    var anno=new Date(c.data).getFullYear()||"—";
+    (perAnno[anno]=perAnno[anno]||[]).push(c);
+  });
+  var anni=Object.keys(perAnno).sort(function(a,b){return b-a;}); // recenti prima
+  var h='<div class="solo-archivi">';
+  anni.forEach(function(anno){
+    var lista=perAnno[anno];
+    var totU=lista.reduce(function(a,c){return a+c.totUscite;},0);
+    var aperto=(soloAnnoAperto==String(anno));
+    h+='<div class="solo-anno-group">';
+    h+='<button class="solo-anno-head'+(aperto?" aperto":"")+'" onclick="soloToggleAnno(\''+anno+'\')">'
+      +'<span class="solo-anno-titolo">📅 '+anno+'</span>'
+      +'<span class="solo-anno-meta">'+lista.length+' mesi · '+eur(totU)+' spesi</span>'
+      +'<span class="solo-anno-chev">'+(aperto?"▴":"▾")+'</span></button>';
+    if(aperto){
+      h+='<div class="solo-anno-body">';
+      h+='<button class="solo-anno-graf-btn" onclick="openSoloGraficiAnno(\''+anno+'\')">📊 Grafici '+anno+'</button>';
+      lista.forEach(function(c){
+        h+='<button class="solo-mese-row" onclick="openSoloChiusura(\''+c.id+'\')">'
+          +'<span class="solo-mese-nome">'+escapeHtml(c.mese)+'</span>'
+          +'<span class="solo-mese-saldo '+(c.saldo>=0?"pos":"neg")+'">'+eur(c.saldo)+'</span></button>';
+      });
+      h+='</div>';
+    }
+    h+='</div>';
+  });
+  h+='</div>';
+  // modale dei grafici degli anni (barre 2026 vs 2027...) se >1 anno
+  if(anni.length>1){
+    h+='<button class="solo-anno-graf-btn" style="margin-top:14px;" onclick="openSoloGraficiTuttiAnni()">📈 Confronta gli anni</button>';
+  }
+  return h;
+}
+
+function soloToggleAnno(anno){
+  soloAnnoAperto = (soloAnnoAperto==String(anno)) ? null : String(anno);
+  renderSolo();
+}
+
+// ── Dettaglio chiusura, grafici anno, confronto anni (L-3b) ──

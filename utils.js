@@ -51,6 +51,8 @@ var delFissaConfirmId=null;
 var soloChi=null;          // "Luca"/"Ale": chi è sbloccato in questa sessione (null = bloccato)
 var soloSbloccato=false;   // true dopo PIN corretto; si azzera a ogni riapertura app
 var soloProfili={Luca:null, Ale:null};  // pin_hash dei due, caricati dal DB
+var soloSaldoPartenza=0;   // saldo iniziale del periodo corrente (per-orso, default 0)
+var soloEditSaldo=false;   // true mentre si modifica il saldo di partenza
 var soloData={voci:[], ricorrenti:[], chiusure:[], categorie:[]};  // dati dell'orso sbloccato
 var soloCategorie=["Mutuo Tana","Stipendio","TasseTasseTasse!","Moto","Altro"]; // editabili
 var _soloPinBuffer="";     // cifre digitate nel tastierino PIN
