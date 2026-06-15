@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tana-SUPA-v14';
+const CACHE_NAME = 'tana-SUPA-v28';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,10 @@ const ASSETS = [
   './frasi.js',
   './api.js',
   './ui.js',
+  './grafici.js',
+  './debiti.js',
+  './fisso.js',
+  './solo.js',
   './app.js',
   './manifest.json',
   './bear.svg',

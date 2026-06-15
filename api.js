@@ -228,6 +228,9 @@ async function runAction(p){
         importo:p.voce.importo,categoria:p.voce.categoria,nota:p.voce.nota||"",data:p.voce.data,origine:p.voce.origine||null}); break;
     case "deleteSoloVoce":
       r=await sb.from("solo_voci").delete().eq("id",p.id); break;
+    case "updateSoloVoce":
+      r=await sb.from("solo_voci").update({tipo:p.voce.tipo,importo:p.voce.importo,
+        categoria:p.voce.categoria,nota:p.voce.nota||""}).eq("id",p.voce.id); break;
 
     // — Orso Solo: ricorrenti —
     case "addSoloRicorrente":
@@ -238,8 +241,10 @@ async function runAction(p){
     case "updateSoloRicorrenteScadenza":
       r=await sb.from("solo_ricorrenti").update({prossima_scadenza:p.prossimaScadenza}).eq("id",p.id); break;
     case "updateSoloRicorrente":
-      r=await sb.from("solo_ricorrenti").update({prossima_scadenza:p.ric.prossimaScadenza,
-        fine_data:p.ric.fineData||null,volte_rimaste:p.ric.volteRimaste,attiva:p.ric.attiva!==false}).eq("id",p.ric.id); break;
+      r=await sb.from("solo_ricorrenti").update({nome:p.ric.nome,tipo:p.ric.tipo,importo:p.ric.importo,
+        categoria:p.ric.categoria,ogni_quanto:p.ric.ogniQuanto,unita:p.ric.unita,
+        prossima_scadenza:p.ric.prossimaScadenza,fine_data:p.ric.fineData||null,
+        volte_rimaste:p.ric.volteRimaste,attiva:p.ric.attiva!==false}).eq("id",p.ric.id); break;
     case "deleteSoloRicorrente":
       r=await sb.from("solo_ricorrenti").delete().eq("id",p.id); break;
 

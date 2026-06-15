@@ -299,6 +299,86 @@ if("serviceWorker" in navigator){
   </div>
 </div>
 
+<!-- MODALE MODIFICA VOCE SOLO -->
+<div class="modal-overlay" id="modal-solo-edit-voce" onclick="if(event.target===this)closeSoloEditVoce()">
+  <div class="modal">
+    <div class="modal-icon">✏️</div>
+    <h2>Modifica movimento</h2>
+    <p>Aggiorna i dati di questa voce.</p>
+    <div class="modal-input-row">
+      <label>↕️ Tipo</label>
+      <select id="solo-ev-tipo"><option value="uscita">➖ Uscita</option><option value="entrata">➕ Entrata</option></select>
+    </div>
+    <div class="modal-input-row">
+      <label>💰 Importo (€)</label>
+      <input type="number" id="solo-ev-imp" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
+    </div>
+    <div class="modal-input-row">
+      <label>📝 Nota</label>
+      <input type="text" id="solo-ev-nota" placeholder="es. Spesa Conad">
+    </div>
+    <div class="modal-input-row">
+      <label>🏷️ Categoria</label>
+      <select id="solo-ev-cat"></select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closeSoloEditVoce()">Annulla</button>
+      <button class="btn-conferma" onclick="soloSalvaEditVoce()">✏️ Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE MODIFICA RICORRENTE SOLO -->
+<div class="modal-overlay" id="modal-solo-edit-ric" onclick="if(event.target===this)closeSoloEditRic()">
+  <div class="modal">
+    <div class="modal-icon">🔁</div>
+    <h2>Modifica ricorrente</h2>
+    <p>Aggiorna i dati di questa ricorrente.</p>
+    <div class="modal-input-row"><label>🏷️ Nome</label>
+      <input type="text" id="solo-er-nome" placeholder="Es. Affitto, Stipendio"></div>
+    <div class="modal-input-row"><label>↕️ Tipo</label>
+      <select id="solo-er-tipo"><option value="uscita">➖ Uscita</option><option value="entrata">➕ Entrata</option></select></div>
+    <div class="modal-input-row"><label>💰 Importo (€)</label>
+      <input type="number" id="solo-er-imp" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal"></div>
+    <div class="modal-input-row"><label>📂 Categoria</label>
+      <select id="solo-er-cat"></select></div>
+    <div class="modal-input-row"><label>🔁 Ogni</label>
+      <div style="display:flex;gap:8px;flex:1;">
+        <input type="number" id="solo-er-ogni" min="1" step="1" inputmode="numeric" style="width:72px;">
+        <select id="solo-er-unita">
+          <option value="giorni">giorni</option><option value="settimane">settimane</option>
+          <option value="mesi">mesi</option><option value="anni">anni</option></select>
+      </div></div>
+    <div class="modal-input-row"><label>⏳ Finché</label>
+      <select id="solo-er-fine" onchange="soloEditRicFineChange()">
+        <option value="mai">per sempre</option>
+        <option value="data">fino a una data</option>
+        <option value="volte">per N volte</option></select></div>
+    <div class="modal-input-row" id="solo-er-fine-extra" style="display:none;">
+      <input type="date" id="solo-er-fine-data" style="display:none;">
+      <input type="number" id="solo-er-fine-volte" min="1" step="1" inputmode="numeric" style="display:none;">
+      <span id="solo-er-fine-volte-lbl" style="display:none;">volte rimaste</span></div>
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closeSoloEditRic()">Annulla</button>
+      <button class="btn-conferma" onclick="soloSalvaEditRic()">🔁 Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE CESTINO SOLO -->
+<div class="modal-overlay" id="modal-solo-cestino" onclick="if(event.target===this)closeSoloCestino()">
+  <div class="modal modal-cestino-wrap">
+    <div class="modal-icon">🗑️</div>
+    <h2>Cestino Solo</h2>
+    <p>Voci e ricorrenti eliminate di recente — puoi ripristinarle.</p>
+    <div class="cestino-list" id="solo-cestino-list"></div>
+    <div class="modal-btns">
+      <button class="btn-svuota" id="btn-svuota-solo-cestino" onclick="svuotaSoloCestino()">🗑️ Svuota</button>
+      <button class="btn-conferma" onclick="closeSoloCestino()">Chiudi</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODALE CALCOLATRICE (somma scontrini, solo + e −) -->
 <div class="modal-overlay" id="modal-calc" onclick="if(event.target===this)closeCalc()">
   <div class="modal" style="max-width:300px;">
@@ -718,6 +798,10 @@ if("serviceWorker" in navigator){
 <script src="./frasi.js"></script>
 <script src="./api.js"></script>
 <script src="./ui.js"></script>
+<script src="./grafici.js"></script>
+<script src="./debiti.js"></script>
+<script src="./fisso.js"></script>
+<script src="./solo.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>
