@@ -505,8 +505,10 @@ async function soloPagaRicorrente(id){
   soloData.ricorrenti.sort(function(a,b){return (a.prossimaScadenza||"").localeCompare(b.prossimaScadenza||"");});
   vibra([20,40,20]);
   renderSolo();
+  var voceSalvata=false;
   try{
     await post({action:"addSoloVoce",voce:v});
+    voceSalvata=true;
     await post({action:"updateSoloRicorrente",ric:r});
   }catch(e){
     // rollback ottimistico locale (coerente col resto del Solo): tolgo la voce
@@ -516,6 +518,9 @@ async function soloPagaRicorrente(id){
     r.volteRimaste=backupRic.volteRimaste;
     r.attiva=backupRic.attiva;
     soloData.ricorrenti.sort(function(a,b){return (a.prossimaScadenza||"").localeCompare(b.prossimaScadenza||"");});
+    // caso parziale: se la 1ª post era andata (voce salvata) ma la 2ª no,
+    // elimino la voce dal server per non lasciare un movimento orfano
+    if(voceSalvata){ try{ await post({action:"deleteSoloVoce",id:v.id}); }catch(e2){} }
     renderSolo();
     dot("err","Errore — riprova");
   }

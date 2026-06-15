@@ -341,7 +341,7 @@ async function chiudiMese(){
   // confluiscono nello snapshot come voci una-tantum.
   var previsteBancomat=(S.previste||[]).filter(function(p){return p.stato==="pagata_bancomat";});
   previsteBancomat.forEach(function(p){
-    fisseSnapshot.push({id:p.id,nome:p.nome+" (prevista)",importo:p.importo,icona:"📅"});
+    fisseSnapshot.push({id:p.id,nome:p.nome+" (prevista)",importo:p.importo,icona:"📅",scadenza:p.scadenza||""});
   });
 var now=new Date();
 var dataLocale=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString();
@@ -530,14 +530,34 @@ async function confermaRipristino(){
   var backupSaldo = S.saldoIniziale;
   var backupTxs = S.txs.slice();
   var backupChiusure = S.chiusure.slice();
+  var backupPreviste = S.previste.slice();
+
+  // Ricostruisco le previste pagate-bancomat assorbite in questa chiusura
+  // (righe dello snapshot con icona 📅 e nome "… (prevista)"). La scadenza
+  // c'è solo per i mesi chiusi dopo l'aggiunta del campo (altrimenti vuota).
+  var previsteRip=(c.fisseSnapshot||[]).filter(function(f){
+    return f.icona==="📅" && / \(prevista\)$/.test(f.nome||"");
+  }).map(function(f){
+    return {id:f.id, nome:String(f.nome).replace(/ \(prevista\)$/,""), importo:f.importo,
+            scadenza:f.scadenza||"", stato:"pagata_bancomat", data:new Date().toISOString()};
+  });
   
   S.saldoIniziale=c.saldoIniziale;S.txs=c.txs.slice();
   S.chiusure=S.chiusure.filter(function(x){return x.id!==c.id;});
+  if(previsteRip.length){
+    var giaIds={}; S.previste.forEach(function(p){giaIds[p.id]=1;});
+    previsteRip.forEach(function(p){ if(!giaIds[p.id]) S.previste.push(p); });
+  }
   render();
   dot("","Ripristino...");
   
   try{
     await post({action:"ripristina",chiusuraId:c.id,saldoIniziale:c.saldoIniziale,txs:c.txs});
+    // Re-inserisco sul server le previste-bancomat ripristinate
+    for(var i=0;i<previsteRip.length;i++){
+      var pr=previsteRip[i];
+      try{ await post({action:"addPrevista",id:pr.id,nome:pr.nome,importo:pr.importo,scadenza:pr.scadenza,stato:pr.stato,data:pr.data}); }catch(e){}
+    }
     // ── PONTE INVERSO → ORSO SOLO ──
     // Rimuovo le voci "Cassa Comune" che questa chiusura aveva depositato,
     // ma solo se intatte. Quelle modificate/spostate vengono segnalate.
@@ -545,7 +565,7 @@ async function confermaRipristino(){
     dot("ok","Ripristinato \uD83D\uDD04");
   } catch(e){
     dot("err","Errore ripristino");
-    S.saldoIniziale = backupSaldo; S.txs = backupTxs; S.chiusure = backupChiusure;
+    S.saldoIniziale = backupSaldo; S.txs = backupTxs; S.chiusure = backupChiusure; S.previste = backupPreviste;
     render();
   }
 }
