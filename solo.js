@@ -161,7 +161,8 @@ async function soloSalvaSaldoPartenza(){
   var backup=soloSaldoPartenza;
   soloSaldoPartenza=v; soloEditSaldo=false;
   renderSolo();
-  try{ await post({action:"setSoloSaldoPartenza",proprietario:soloChi,valore:v}); }
+  dot("","Salvataggio...");
+  try{ await post({action:"setSoloSaldoPartenza",proprietario:soloChi,valore:v}); dot("ok","Sincronizzata 🐾"); }
   catch(e){ soloSaldoPartenza=backup; renderSolo(); dot("err","Errore"); }
 }
 
@@ -214,7 +215,7 @@ function soloRegistroHtml(catOpts){
     +'<div class="solo-storico-head" style="display:flex;align-items:center;justify-content:space-between;"><span>Movimenti</span>'+soloCestinoBtnHtml()+'</div>'
     +soloStoricoHtml()
     +'</div>'
-    +(soloData.voci.length ? '<button class="solo-chiudi-mese-btn" onclick="openSoloChiudi()">📦 Chiudi e archivia il mese</button>' : '');
+    +(soloData.voci.length ? '<button class="solo-chiudi-mese-btn" onclick="openSoloChiudi()">🌙 Chiudi e archivia il mese</button>' : '');
 }
 
 function soloStoricoHtml(){
@@ -269,8 +270,10 @@ async function soloAddVoce(){
   soloData.voci.unshift(v);
   vibra(30);
   renderSolo();
+  dot("","Salvataggio...");
   try{
     await post({action:"addSoloVoce",voce:v});
+    dot("ok","Sincronizzata 🐾");
   }catch(e){
     soloData.voci=soloData.voci.filter(function(x){return x.id!==v.id;});
     renderSolo();
@@ -288,8 +291,10 @@ async function soloDelVoce(id){
   soloDelConfirmId=null;
   vibra(20);
   renderSolo();
+  dot("","Salvataggio...");
   try{
     await post({action:"deleteSoloVoce",id:id});
+    dot("ok","Sincronizzata 🐾");
   }catch(e){
     soloData.voci=backup;
     renderSolo();
@@ -335,8 +340,10 @@ async function soloSalvaEditVoce(){
   closeSoloEditVoce();
   vibra(20);
   renderSolo();
+  dot("","Salvataggio...");
   try{
     await post({action:"updateSoloVoce",voce:v});
+    dot("ok","Sincronizzata 🐾");
   }catch(e){
     Object.assign(v,backup); // ripristino esatto stato precedente
     renderSolo();
@@ -460,8 +467,10 @@ async function soloAddRicorrente(){
   soloData.ricorrenti.sort(function(a,b){return (a.prossimaScadenza||"").localeCompare(b.prossimaScadenza||"");});
   vibra(30);
   renderSolo();
+  dot("","Salvataggio...");
   try{
     await post({action:"addSoloRicorrente",ric:r});
+    dot("ok","Sincronizzata 🐾");
   }catch(e){
     soloData.ricorrenti=soloData.ricorrenti.filter(function(x){return x.id!==r.id;});
     renderSolo(); dot("err","Errore salvataggio");
@@ -505,11 +514,13 @@ async function soloPagaRicorrente(id){
   soloData.ricorrenti.sort(function(a,b){return (a.prossimaScadenza||"").localeCompare(b.prossimaScadenza||"");});
   vibra([20,40,20]);
   renderSolo();
+  dot("","Salvataggio...");
   var voceSalvata=false;
   try{
     await post({action:"addSoloVoce",voce:v});
     voceSalvata=true;
     await post({action:"updateSoloRicorrente",ric:r});
+    dot("ok","Sincronizzata 🐾");
   }catch(e){
     // rollback ottimistico locale (coerente col resto del Solo): tolgo la voce
     // aggiunta e riporto la ricorrente allo stato precedente
@@ -534,7 +545,8 @@ async function soloDelRicorrente(id){
   var backup=soloData.ricorrenti.slice();
   soloData.ricorrenti=soloData.ricorrenti.filter(function(x){return x.id!==id;});
   soloRicDelId=null; vibra(20); renderSolo();
-  try{ await post({action:"deleteSoloRicorrente",id:id}); }
+  dot("","Salvataggio...");
+  try{ await post({action:"deleteSoloRicorrente",id:id}); dot("ok","Sincronizzata 🐾"); }
   catch(e){ soloData.ricorrenti=backup; renderSolo(); dot("err","Errore"); }
 }
 
@@ -559,6 +571,11 @@ function openSoloEditRic(id){
   document.getElementById("solo-er-fine").value=fineTipo;
   document.getElementById("solo-er-fine-data").value = r.fineData ? String(r.fineData).slice(0,10) : "";
   document.getElementById("solo-er-fine-volte").value = r.volteRimaste!=null ? r.volteRimaste : 12;
+  document.getElementById("solo-er-scad").value = r.prossimaScadenza ? String(r.prossimaScadenza).slice(0,10) : "";
+  // riga "Riattiva": visibile solo per ricorrenti concluse
+  var riattRow=document.getElementById("solo-er-riattiva-row");
+  document.getElementById("solo-er-riattiva").checked=false;
+  riattRow.style.display = (r.attiva===false) ? "" : "none";
   soloEditRicFineChange();
   document.getElementById("modal-solo-edit-ric").classList.add("open");
   setTimeout(function(){document.getElementById("solo-er-nome").focus();},80);
@@ -595,11 +612,19 @@ async function soloSalvaEditRic(){
   if(fineTipo==="data"){ r.fineData=document.getElementById("solo-er-fine-data").value||null; r.volteRimaste=null; }
   else if(fineTipo==="volte"){ r.volteRimaste=parseInt(document.getElementById("solo-er-fine-volte").value)||1; r.fineData=null; }
   else { r.fineData=null; r.volteRimaste=null; }
+  r.prossimaScadenza = document.getElementById("solo-er-scad").value || r.prossimaScadenza;
+  // riattivazione: solo se era conclusa e l'utente ha spuntato "Riattiva"
+  if(backup.attiva===false){
+    var riatt=document.getElementById("solo-er-riattiva");
+    r.attiva = !!(riatt && riatt.checked);
+  }
   closeSoloEditRic();
   vibra(20);
   renderSolo();
+  dot("","Salvataggio...");
   try{
     await post({action:"updateSoloRicorrente",ric:r});
+    dot("ok","Sincronizzata 🐾");
   }catch(e){
     Object.assign(r,backup); // ripristino esatto stato precedente
     renderSolo();
@@ -659,7 +684,7 @@ function openSoloCestino(){
 function closeSoloCestino(){ document.getElementById("modal-solo-cestino").classList.remove("open"); }
 
 function svuotaSoloCestino(){
-  if(!confirm("Svuotare il cestino? Gli elementi verranno eliminati definitivamente."))return;
+  if(!confirm("Svuotare il cestino? Le voci verranno eliminate definitivamente."))return;
   vibra([25,40,25]);
   setSoloCestino([]); openSoloCestino(); renderSolo();
 }
@@ -679,13 +704,15 @@ async function ripristinaDaSoloCestino(id){
     soloData.ricorrenti.push(r);
     soloData.ricorrenti.sort(function(a,b){return (a.prossimaScadenza||"").localeCompare(b.prossimaScadenza||"");});
     renderSolo();
-    try{ await post({action:"addSoloRicorrente",ric:r}); }
+    dot("","Salvataggio...");
+    try{ await post({action:"addSoloRicorrente",ric:r}); dot("ok","Ripristinata 🐾"); }
     catch(e){ soloData.ricorrenti=soloData.ricorrenti.filter(function(x){return x.id!==newId;}); renderSolo(); dot("err","Errore ripristino"); }
   }else{
     var v={id:newId,proprietario:soloChi,tipo:it.tipo,importo:it.importo,categoria:it.categoria,nota:it.nota||"",data:it.data,origine:it.origine||null};
     soloData.voci.unshift(v);
     renderSolo();
-    try{ await post({action:"addSoloVoce",voce:v}); }
+    dot("","Salvataggio...");
+    try{ await post({action:"addSoloVoce",voce:v}); dot("ok","Ripristinata 🐾"); }
     catch(e){ soloData.voci=soloData.voci.filter(function(x){return x.id!==newId;}); renderSolo(); dot("err","Errore ripristino"); }
   }
 }
@@ -875,7 +902,7 @@ function openSoloGraficiTuttiAnni(){
 
 // Costruisce il grafico a barre entrate/uscite da una lista {label,entrate,uscite}
 function soloBarreHtml(dati){
-  if(!dati.length) return '<div class="grafico-empty">Nessun dato da mostrare.</div>';
+  if(!dati.length) return '<div class="grafico-empty">Nessun dato disponibile ancora.</div>';
   return '<div class="solo-graf-canvas-wrap" style="padding:6px 0;"><canvas id="solo-grafanno-canvas" style="width:100%;height:200px;display:block;"></canvas></div>'
     +'<div class="solo-graf-legenda" style="justify-content:center;display:flex;gap:16px;">'
     +'<span><span class="solo-graf-dot" style="background:var(--moss)"></span> Entrate</span>'
@@ -994,7 +1021,7 @@ async function soloConfermaChiudi(){
     for(var i=0;i<vociArchiviate.length;i++){
       try{ await post({action:"deleteSoloVoce",id:vociArchiviate[i].id}); }catch(e){}
     }
-    dot("ok","Mese archiviato 📦");
+    dot("ok","Mese chiuso 🌙");
   }catch(e){
     soloData.chiusure=soloData.chiusure.filter(function(x){return x.id!==ch.id;});
     soloData.voci=backupVoci;

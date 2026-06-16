@@ -283,7 +283,7 @@ if("serviceWorker" in navigator){
     <div id="solo-chiudi-anteprima"></div>
     <div class="modal-btns">
       <button class="btn-annulla" onclick="closeSoloChiudi()">Annulla</button>
-      <button class="btn-conferma" onclick="soloConfermaChiudi()">📸 Salva fotografia</button>
+      <button class="btn-conferma" onclick="soloConfermaChiudi()">🐻‍❄️ Conferma chiusura</button>
     </div>
   </div>
 </div>
@@ -342,6 +342,8 @@ if("serviceWorker" in navigator){
       <input type="number" id="solo-er-imp" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal"></div>
     <div class="modal-input-row"><label>📂 Categoria</label>
       <select id="solo-er-cat"></select></div>
+    <div class="modal-input-row"><label>📅 Prossima scadenza</label>
+      <input type="date" id="solo-er-scad"></div>
     <div class="modal-input-row"><label>🔁 Ogni</label>
       <div style="display:flex;gap:8px;flex:1;">
         <input type="number" id="solo-er-ogni" min="1" step="1" inputmode="numeric" style="width:72px;">
@@ -358,6 +360,9 @@ if("serviceWorker" in navigator){
       <input type="date" id="solo-er-fine-data" style="display:none;">
       <input type="number" id="solo-er-fine-volte" min="1" step="1" inputmode="numeric" style="display:none;">
       <span id="solo-er-fine-volte-lbl" style="display:none;">volte rimaste</span></div>
+    <div class="modal-input-row" id="solo-er-riattiva-row" style="display:none;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:700;"><input type="checkbox" id="solo-er-riattiva">🔄 Riattiva questa ricorrente conclusa</label>
+    </div>
     <div class="modal-btns">
       <button class="btn-annulla" onclick="closeSoloEditRic()">Annulla</button>
       <button class="btn-conferma" onclick="soloSalvaEditRic()">🔁 Salva</button>
@@ -681,25 +686,14 @@ if("serviceWorker" in navigator){
     <p>Verrà inclusa nel riepilogo mensile ma <strong>non tocca il saldo</strong> della cassa comune.</p>
     <div class="modal-input-row">
       <label>🏷️ Nome</label>
-      <input type="text" id="fissa-nome" placeholder="es. Mutuo, Luce, Gas...">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button type="button" id="fissa-icona-btn" class="solo-cat-ic" onclick="fissaCiclaIcona()" title="Cambia icona">🏠</button>
+        <input type="text" id="fissa-nome" placeholder="es. Mutuo, Luce, Gas..." style="flex:1;">
+      </div>
     </div>
     <div class="modal-input-row">
       <label>💰 Importo mensile (€)</label>
       <input type="number" id="fissa-imp" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
-    </div>
-    <div class="modal-input-row">
-      <label>🎨 Icona</label>
-      <select id="fissa-icona">
-        <option value="🏠">🏠 Mutuo / Affitto</option>
-        <option value="💡">💡 Luce</option>
-        <option value="🔥">🔥 Gas</option>
-        <option value="💧">💧 Acqua</option>
-        <option value="📱">📱 Telefono / Internet</option>
-        <option value="🚗">🚗 Auto / Assicurazione</option>
-        <option value="🏥">🏥 Salute / Assicurazione</option>
-        <option value="📺">📺 Abbonamenti</option>
-        <option value="📌">📌 Altro</option>
-      </select>
     </div>
     <div class="modal-btns">
       <button class="btn-annulla" onclick="closeNuovaFissa()">Annulla</button>

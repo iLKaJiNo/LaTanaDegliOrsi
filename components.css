@@ -363,9 +363,9 @@ body.dark{
 .tab-btn{position:relative;}
 
 /* ── SEGMENTO MESI/ANNI ── */
-.archivio-segment{display:flex;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:16px;}
-.archivio-seg-btn{flex:1;height:40px;background:none;border:none;font-family:'Baloo 2',cursive;font-size:0.875rem;font-weight:700;color:var(--text3);cursor:pointer;transition:all .18s;-webkit-appearance:none;}
-.archivio-seg-btn.active{background:var(--brown-d);color:var(--honey);}
+.archivio-segment{display:flex;gap:6px;background:var(--card2);border-radius:var(--r-md);padding:4px;margin-bottom:16px;}
+.archivio-seg-btn{flex:1;border:none;background:transparent;color:var(--text2);font-family:'Baloo 2',cursive;font-size:0.9375rem;font-weight:700;padding:9px 8px;border-radius:var(--r-sm);cursor:pointer;transition:all .18s;-webkit-appearance:none;}
+.archivio-seg-btn.active{background:var(--card);color:var(--honey-d);box-shadow:var(--shadow-sm);}
 
 /* ── CARD ANNO ── */
 .anno-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow-sm);}

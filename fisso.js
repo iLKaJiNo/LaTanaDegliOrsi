@@ -9,13 +9,25 @@
 // ════════════════════════════════════════════════════════
 
 // ── SPESE FISSE (condivise via GAS) ──
+// Set icone per le spese fisse (congruente al tipo di spesa). Selettore a ciclo,
+// stesso meccanismo delle categorie Solo.
+var FISSE_ICONE = ["🏠","💡","🔥","📱","📺","📌"]; // mutuo, luce, gas, telefono, abbonamenti, altro
+var fissaIconaSel = "🏠";
+function fissaCiclaIcona(){
+  var i=FISSE_ICONE.indexOf(fissaIconaSel);
+  fissaIconaSel=FISSE_ICONE[(i+1)%FISSE_ICONE.length];  // cicla tra le icone
+  var btn=document.getElementById("fissa-icona-btn");
+  if(btn) btn.textContent=fissaIconaSel;
+}
+
 function openNuovaFissa(id){
   editFissaId=id||null;
   var f=id?S.fisse.find(function(x){return x.id===id;}):null;
   document.getElementById("modal-fissa-titolo").textContent=f?"Modifica spesa fissa":"Nuova spesa fissa";
   document.getElementById("fissa-nome").value=f?f.nome:"";
   document.getElementById("fissa-imp").value=f?f.importo:"";
-  document.getElementById("fissa-icona").value=f?f.icona:"🏠";
+  fissaIconaSel = f ? f.icona : "🏠";
+  document.getElementById("fissa-icona-btn").textContent = fissaIconaSel;
   document.getElementById("modal-fissa").classList.add("open");
   setTimeout(function(){document.getElementById("fissa-nome").focus();},80);
 }
@@ -24,7 +36,7 @@ function closeNuovaFissa(){document.getElementById("modal-fissa").classList.remo
 async function salvaFissa(){
   var nome=document.getElementById("fissa-nome").value.trim();
   var imp=parseFloat(document.getElementById("fissa-imp").value);
-  var icona=document.getElementById("fissa-icona").value;
+  var icona=fissaIconaSel;
   if(!nome||!imp||imp<=0)return;
   var editId=editFissaId;   // catturo PRIMA: closeNuovaFissa() azzera editFissaId
   closeNuovaFissa();
