@@ -352,7 +352,7 @@ var chiusura={id:Date.now().toString(),mese:mese,saldo:nuovoSaldo,data:dataLocal
   var backupSaldo = S.saldoIniziale;
   
   vibra([30,50,30]);
-S.chiusure.unshift(chiusura);S.saldoIniziale=nuovoSaldo;S.txs=[];
+S.chiusure.unshift(chiusura);sortChiusure();S.saldoIniziale=nuovoSaldo;S.txs=[];
   render();
   dot("","Chiusura in corso...");
   
@@ -375,7 +375,7 @@ S.chiusure.unshift(chiusura);S.saldoIniziale=nuovoSaldo;S.txs=[];
     dot("ok","Mese chiuso \uD83C\uDF19");
   } catch(e){
     dot("err","Errore chiusura");
-    S.chiusure.shift(); S.txs = backupTxs; S.saldoIniziale = backupSaldo;
+    S.chiusure=S.chiusure.filter(function(x){return x.id!==chiusura.id;}); S.txs = backupTxs; S.saldoIniziale = backupSaldo;
     render();
   }
 }
@@ -544,6 +544,7 @@ async function confermaRipristino(){
   
   S.saldoIniziale=c.saldoIniziale;S.txs=c.txs.slice();
   S.chiusure=S.chiusure.filter(function(x){return x.id!==c.id;});
+  sortChiusure();
   if(previsteRip.length){
     var giaIds={}; S.previste.forEach(function(p){giaIds[p.id]=1;});
     previsteRip.forEach(function(p){ if(!giaIds[p.id]) S.previste.push(p); });
@@ -571,7 +572,73 @@ async function confermaRipristino(){
 }
 
 function toggleEliminaConfirm(id){eliminaConfirmId=eliminaConfirmId===id?null:id;render();}
+// ── CESTINO ARCHIVI (localStorage, per-dispositivo) ──
+// Recupero dei mesi archiviati cancellati. Conserva lo snapshot INTERO
+// della chiusura e lo ripristina fedele. Cap 24 (snapshot pesanti).
+var ARCHIVI_CESTINO_KEY="tana_archivi_cestino_v1";
+function getArchiviCestino(){try{return JSON.parse(localStorage.getItem(ARCHIVI_CESTINO_KEY)||"[]");}catch(e){return[];}}
+function setArchiviCestino(arr){localStorage.setItem(ARCHIVI_CESTINO_KEY,JSON.stringify(arr.slice(0,24)));}
+function addAlArchiviCestino(c){var a=getArchiviCestino();a.unshift(Object.assign({},c,{_eliminata:new Date().toISOString()}));setArchiviCestino(a);}
+
+function openArchiviCestino(){
+  var a=getArchiviCestino();
+  var el=document.getElementById("archivi-cestino-list");
+  var svuota=document.getElementById("btn-svuota-archivi-cestino");
+  if(!a.length){
+    el.innerHTML='<div class="cestino-vuoto">'+statoVuoto("cestino","4rem")+'</div>';
+    if(svuota)svuota.style.display="none";
+  }else{
+    if(svuota)svuota.style.display="";
+    var h="";
+    a.forEach(function(c){
+      var nv=(c.txs||[]).length;
+      h+='<div class="cestino-row">';
+      h+='<div class="cestino-row-body">';
+      h+='<div class="cestino-row-nota">🌙 '+escapeHtml(c.mese)+'</div>';
+      h+='<div class="cestino-row-meta">'+nv+' voci · chiuso il '+fmt(c.data)+'</div>';
+      h+='</div>';
+      h+='<div class="cestino-row-imp '+saldoCls(c.saldo)+'">'+eurInt(c.saldo)+'</div>';
+      h+='<button class="btn-ripristina-voce" onclick="ripristinaDaArchivioCestino(\''+c.id+'\')">↩ Ripristina</button>';
+      h+='</div>';
+    });
+    el.innerHTML=h;
+  }
+  document.getElementById("modal-archivi-cestino").classList.add("open");
+}
+function closeArchiviCestino(){document.getElementById("modal-archivi-cestino").classList.remove("open");}
+function svuotaArchiviCestino(){
+  if(!confirm("Svuotare il cestino archivi? I mesi verranno eliminati definitivamente."))return;
+  vibra([25,40,25]);
+  setArchiviCestino([]);openArchiviCestino();render();
+}
+
+async function ripristinaDaArchivioCestino(id){
+  var a=getArchiviCestino();
+  var c=a.find(function(x){return x.id===id;});
+  if(!c) return;
+  var backupCestino=a.slice();
+  var chiusura=Object.assign({},c); delete chiusura._eliminata;  // snapshot pulito
+  setArchiviCestino(a.filter(function(x){return x.id!==id;}));
+  vibra(30);
+  // guard anti-duplicato: rimpiazzo eventuale chiusura con stesso id, poi inserisco
+  S.chiusure=S.chiusure.filter(function(x){return x.id!==chiusura.id;});
+  S.chiusure.unshift(chiusura);
+  sortChiusure();
+  closeArchiviCestino();render();dot("","Ripristino...");
+  try{
+    await post({action:"restoreChiusura",chiusura:chiusura});
+    dot("ok","Ripristinato 🔄");
+  }catch(e){
+    dot("err","Errore ripristino");
+    S.chiusure=S.chiusure.filter(function(x){return x.id!==chiusura.id;});
+    setArchiviCestino(backupCestino);  // rimetto nel cestino, niente perdita
+    render();
+  }
+}
+
 async function eliminaArchiviazione(id){
+  var c=S.chiusure.find(function(x){return x.id===id;});
+  if(c) addAlArchiviCestino(c);
   var backup = S.chiusure.slice();
   S.chiusure=S.chiusure.filter(function(x){return x.id!==id;});
   eliminaConfirmId=null;
@@ -731,96 +798,67 @@ function renderArchivioTab(){
   if(!el)return;
   var h="";
 
-  // Segmento toggle
-  h+='<div class="archivio-segment">';
-  h+='<button class="archivio-seg-btn'+(archivioSegmento==="mesi"?" active":"")+ '" onclick="setArchivioSegmento(\'mesi\')">🗓️ Mesi</button>';
-  h+='<button class="archivio-seg-btn'+(archivioSegmento==="anni"?" active":"")+ '" onclick="setArchivioSegmento(\'anni\')">📅 Anni</button>';
-  h+='</div>';
+  // Accesso al cestino archivi (raggiungibile anche con 0 archivi)
+  var nArchCest=getArchiviCestino().length;
+  if(nArchCest>0){
+    h+='<div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button class="btn-cestino-hd pieno" onclick="openArchiviCestino()">🗑️ Cestino <span class="cestino-badge">'+nArchCest+'</span></button></div>';
+  }
 
   if(!S.chiusure.length){
     h+='<div class="empty" style="margin-top:20px;"><span style="font-size:48px;display:block;margin-bottom:12px;">📦</span>Nessun mese archiviato ancora.<br>Chiudi il primo mese per iniziare!</div>';
     el.innerHTML=h;return;
   }
 
-  if(archivioSegmento==="mesi"){
-    var totAnnuale=S.chiusure.reduce(function(a,c){return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));},0);
-    var mediaAnnuale=S.chiusure.length>0?Math.round(totAnnuale/S.chiusure.length):0;
-    h+='<div class="chiusure-section">';
-    h+='<div class="chiusure-head-row"><span class="chiusure-head">\uD83D\uDCE6 '+S.chiusure.length+' mesi archiviati</span><button class="btn-grafico" onclick="openGrafico()">\uD83D\uDCCA Grafico</button></div>';
-    h+='<div class="chiusura-totale" style="margin-bottom:4px;">\uD83D\uDCC5 Totale archivio: <strong>'+eurInt(totAnnuale)+'</strong></div>';
-    h+='<div class="chiusura-totale" style="margin-bottom:12px;">\uD83D\uDCCA Media mensile: <strong>'+eurInt(mediaAnnuale)+'</strong></div>';
-    S.chiusure.forEach(function(c){
+  // Riepilogo archivio + Grafico (in cima)
+  var totAnnuale=S.chiusure.reduce(function(a,c){return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));},0);
+  var mediaAnnuale=S.chiusure.length>0?Math.round(totAnnuale/S.chiusure.length):0;
+  h+='<div class="chiusure-section">';
+  h+='<div class="chiusure-head-row"><span class="chiusure-head">📦 '+S.chiusure.length+' mesi archiviati</span><button class="btn-grafico" onclick="openGrafico()">📊 Grafico</button></div>';
+  h+='<div class="chiusura-totale" style="margin-bottom:4px;">📅 Totale archivio: <strong>'+eurInt(totAnnuale)+'</strong></div>';
+  h+='<div class="chiusura-totale" style="margin-bottom:12px;">📊 Media mensile: <strong>'+eurInt(mediaAnnuale)+'</strong></div>';
+
+  // Accordion: anni che raggruppano i mesi (card ricche). Anno corrente aperto di default.
+  var anniMap={};
+  S.chiusure.forEach(function(c){
+    var annoKey="?";
+    if(c.data){ var d=new Date(c.data); if(!isNaN(d)) annoKey=String(d.getFullYear()); }
+    (anniMap[annoKey]=anniMap[annoKey]||[]).push(c);
+  });
+  var anniKeys=Object.keys(anniMap).sort(function(a,b){return b-a;});
+  anniKeys.forEach(function(anno){
+    var mesi=anniMap[anno];
+    var totAnno=mesi.reduce(function(a,c){return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));},0);
+    var totFisseAnno=mesi.reduce(function(a,c){var f=c.fisseSnapshot||[];return a+f.reduce(function(b,x){return b+(parseFloat(x.importo)||0);},0);},0);
+    var totRealeAnno=totAnno+totFisseAnno;
+    var mediaAnno=mesi.length>0?Math.round(totAnno/mesi.length):0;
+    var isOpen=(annoAperto===anno);
+    h+='<div class="anno-card">';
+    h+='<div class="anno-header" onclick="toggleAnno(\''+anno+'\')">';
+    h+='<span class="anno-label">📅 '+anno+'</span>';
+    h+='<span class="anno-tot">'+eurInt(totAnno)+'</span>';
+    h+='<span class="anno-toggle'+(isOpen?" open":"")+'">▼</span>';
+    h+='</div>';
+    h+='<div class="anno-stat-row">';
+    h+='<span>'+mesi.length+' mesi · media: <strong>'+eurInt(mediaAnno)+'</strong></span>';
+    if(totFisseAnno>0){
+      h+='<span style="color:var(--honey-d);">📌 Fisse: <strong>'+eurInt(totFisseAnno)+'</strong> · Totale reale: <strong>'+eurInt(totRealeAnno)+'</strong></span>';
+    }
+    h+='</div>';
+    h+='<div class="anno-mesi'+(isOpen?" open":"")+'">';
+    mesi.forEach(function(c){
       var cls=saldoCls(c.saldo);
       var desc=c.saldo>0?"Ale Orsa in debito di "+eurInt(c.saldo):c.saldo<0?"Luca Orso in debito di "+eurInt(Math.abs(c.saldo)):"In pari";
       var tot=c.totale||c.txs.reduce(function(a,t){return a+(parseFloat(t.importo)||0);},0);
-      h+='<div class="chiusura-row"><div class="chiusura-top"><div class="chiusura-info"><div class="chiusura-mese">\uD83C\uDF19 '+escapeHtml(c.mese)+'</div><div class="chiusura-meta">'+c.txs.length+' voci \u00b7 chiuso il '+fmt(c.data)+'</div></div><div class="chiusura-saldo '+cls+'">'+eurInt(c.saldo)+'</div></div><div class="chiusura-desc">'+desc+'</div><div class="chiusura-totale">\uD83D\uDED2 Totale spese mese: <strong>'+eurInt(tot)+'</strong></div><div class="chiusura-btns"><button class="btn-storico-mese" onclick="openStoricoMese(\''+c.id+'\')">\uD83D\uDCCB Vedi storico</button><button class="btn-ripristina" onclick="openRipristino(\''+c.id+'\')">\uD83D\uDD04 Ripristina</button><button class="btn-elimina-arch" onclick="toggleEliminaConfirm(\''+c.id+'\')" title="Elimina">\uD83D\uDDD1\uFE0F</button></div>';
-      if(eliminaConfirmId===c.id){h+='<div class="elimina-arch-confirm"><span>Eliminare definitivamente questo mese?</span><button class="btn-yes" onclick="eliminaArchiviazione(\''+c.id+'\')">S\u00ec</button><button class="btn-no" onclick="toggleEliminaConfirm(\''+c.id+'\')">No</button></div>';}
+      h+='<div class="chiusura-row"><div class="chiusura-top"><div class="chiusura-info"><div class="chiusura-mese">🌙 '+escapeHtml(c.mese)+'</div><div class="chiusura-meta">'+c.txs.length+' voci · chiuso il '+fmt(c.data)+'</div></div><div class="chiusura-saldo '+saldoCls(c.saldo)+'">'+eurInt(c.saldo)+'</div></div><div class="chiusura-desc">'+desc+'</div><div class="chiusura-totale">🛒 Totale spese mese: <strong>'+eurInt(tot)+'</strong></div><div class="chiusura-btns"><button class="btn-storico-mese" onclick="openStoricoMese(\''+c.id+'\')">📋 Vedi storico</button><button class="btn-ripristina" onclick="openRipristino(\''+c.id+'\')">🔄 Ripristina</button><button class="btn-elimina-arch" onclick="toggleEliminaConfirm(\''+c.id+'\')" title="Elimina">🗑️</button></div>';
+      if(eliminaConfirmId===c.id){h+='<div class="elimina-arch-confirm"><span>Eliminare definitivamente questo mese?</span><button class="btn-yes" onclick="eliminaArchiviazione(\''+c.id+'\')">Sì</button><button class="btn-no" onclick="toggleEliminaConfirm(\''+c.id+'\')">No</button></div>';}
       h+='</div>';
     });
     h+='</div>';
-
-  }else{
-    // Vista anni: raggruppa per anno dal campo mese o dalla data
-    var anniMap={};
-    S.chiusure.forEach(function(c){
-      // Estrai anno dalla data di chiusura
-      var annoKey="?";
-      if(c.data){
-        var d=new Date(c.data);
-        if(!isNaN(d)) annoKey=String(d.getFullYear());
-      }
-      if(!anniMap[annoKey]) anniMap[annoKey]=[];
-      anniMap[annoKey].push(c);
-    });
-    var anniKeys=Object.keys(anniMap).sort(function(a,b){return b-a;});
-    h+='<div class="chiusure-section">';
-    anniKeys.forEach(function(anno){
-      var mesi=anniMap[anno];
-      var totAnno=mesi.reduce(function(a,c){return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));},0);
-      var totFisseAnno=mesi.reduce(function(a,c){
-        var f=c.fisseSnapshot||[];
-        return a+f.reduce(function(b,x){return b+(parseFloat(x.importo)||0);},0);
-      },0);
-      var totRealeAnno=totAnno+totFisseAnno;
-      var mediaAnno=mesi.length>0?Math.round(totAnno/mesi.length):0;
-      var isOpen=(annoAperto===anno);
-      h+='<div class="anno-card">';
-      h+='<div class="anno-header" onclick="toggleAnno(\''+anno+'\')">';
-      h+='<span class="anno-label">\uD83D\uDCC5 '+anno+'</span>';
-      h+='<span class="anno-tot">'+eurInt(totAnno)+'</span>';
-      h+='<span class="anno-toggle'+(isOpen?" open":"")+'">▼</span>';
-      h+='</div>';
-      h+='<div class="anno-stat-row">';
-      h+='<span>'+mesi.length+' mesi · media: <strong>'+eurInt(mediaAnno)+'</strong></span>';
-      if(totFisseAnno>0){
-        h+='<span style="color:var(--honey-d);">📌 Fisse: <strong>'+eurInt(totFisseAnno)+'</strong> · Totale reale: <strong>'+eurInt(totRealeAnno)+'</strong></span>';
-      }
-      h+='</div>';
-      h+='<div class="anno-mesi'+(isOpen?" open":"")+'">';
-      mesi.forEach(function(c){
-        var tot=c.totale||c.txs.reduce(function(a,t){return a+(parseFloat(t.importo)||0);},0);
-        var totF=(c.fisseSnapshot||[]).reduce(function(a,f){return a+(parseFloat(f.importo)||0);},0);
-        h+='<div class="anno-mese-mini">';
-        h+='<span class="anno-mese-mini-nome">\uD83C\uDF19 '+escapeHtml(c.mese)+'</span>';
-        h+='<div style="text-align:right;">';
-        h+='<div class="anno-mese-mini-tot">'+eurInt(tot)+'</div>';
-        if(totF>0) h+='<div style="font-size:11px;color:var(--honey-d);font-family:\'Nunito\',sans-serif;font-weight:600;">reale: '+eurInt(tot+totF)+'</div>';
-        h+='</div>';
-        h+='<button class="anno-mese-mini-btn" onclick="openStoricoMese(\''+c.id+'\')">\uD83D\uDCCB Storico</button>';
-        h+='</div>';
-      });
-      h+='</div>';
-      h+='</div>';
-    });
     h+='</div>';
-  }
+  });
+  h+='</div>';
 
   el.innerHTML=h;
-}
-
-function setArchivioSegmento(seg){
-  archivioSegmento=seg;
-  renderArchivioTab();
 }
 
 function toggleAnno(anno){

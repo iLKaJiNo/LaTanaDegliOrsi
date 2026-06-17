@@ -30,8 +30,7 @@ var CESTINO_KEY="tana_cestino_v1";
 var editFissaId=null;
 var editDebitoId=null;
 var prevSaldo=null;
-var archivioSegmento="mesi"; // "mesi" | "anni"
-var annoAperto=null;
+var annoAperto=String(new Date().getFullYear()); // anno in corso aperto di default nell'archivio
 var THEME_KEY="tana_theme";
 var filterChi="tutti"; // "tutti" | "Luca" | "Ale"
 // Lista spesa
@@ -123,6 +122,10 @@ function installApp(){if(!deferredPrompt)return;deferredPrompt.prompt();deferred
 // ── HELPER DI FORMATO/CALCOLO ──────────────────────────
 // ── HELPERS ──
 function saldo(){return Math.round(S.txs.reduce(function(a,t){return t.chi==="Luca"?a+t.importo:a-t.importo;},S.saldoIniziale)*100)/100;}
+// Ordine canonico di S.chiusure: DISCENDENTE per data (più recente in testa).
+// Unico punto di verità: chiamato dopo load e dopo ogni modifica di S.chiusure;
+// i punti di lettura (drawChart, renderArchivioTab) si fidano di quest'ordine.
+function sortChiusure(){ S.chiusure.sort(function(a,b){ return (b.data||"").localeCompare(a.data||""); }); }
 function fmt(iso){if(!iso)return"";var d=new Date(iso);return isNaN(d)?iso:String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");}
 function fmtLong(iso){if(!iso)return"";var d=new Date(iso);return isNaN(d)?iso:d.toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});}
 var eur=function(n){return Math.abs(Math.round(n*100)/100).toFixed(2).replace(".",",")+"\u00a0\u20ac";};

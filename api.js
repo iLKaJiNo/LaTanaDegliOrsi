@@ -75,6 +75,7 @@ async function load(){
              saldoIniziale:parseFloat(r.saldo_iniziale)||0,txs:t,totale:tot,
              fisseSnapshot:r.fisse_snapshot||[]};
     });
+    sortChiusure();  // ordine canonico (discendente per data)
 
     S.debiti=debiti.map(function(r){
       return{id:r.id,prestatore:r.prestatore,debitore:r.debitore,
@@ -168,6 +169,10 @@ async function runAction(p){
       }); break;
     case "eliminaChiusura":
       r=await sb.from("chiusure").delete().eq("id",p.id); break;
+    case "restoreChiusura":
+      r=await sb.from("chiusure").upsert({id:p.chiusura.id,mese:p.chiusura.mese,saldo:p.chiusura.saldo,
+        data:p.chiusura.data,saldo_iniziale:p.chiusura.saldoIniziale,txs:p.chiusura.txs,
+        totale:p.chiusura.totale,fisse_snapshot:p.chiusura.fisseSnapshot||[]}); break;
 
     // — Debiti diretti —
     case "addDebito":

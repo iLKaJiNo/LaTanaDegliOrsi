@@ -787,6 +787,20 @@ if("serviceWorker" in navigator){
   </div>
 </div>
 
+<!-- MODALE CESTINO ARCHIVI -->
+<div class="modal-overlay" id="modal-archivi-cestino" onclick="if(event.target===this)closeArchiviCestino()">
+  <div class="modal modal-cestino-wrap">
+    <div class="modal-icon">🗑️</div>
+    <h2>Cestino archivi</h2>
+    <p>Mesi archiviati eliminati di recente — puoi ripristinarli.</p>
+    <div class="cestino-list" id="archivi-cestino-list"></div>
+    <div class="modal-btns">
+      <button class="btn-svuota" id="btn-svuota-archivi-cestino" onclick="svuotaArchiviCestino()">🗑️ Svuota</button>
+      <button class="btn-conferma" onclick="closeArchiviCestino()">Chiudi</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="./utils.js"></script>
 <script src="./frasi.js"></script>
