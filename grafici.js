@@ -8,14 +8,24 @@
 
 var graficoVista="barre"; // "barre" | "torta"
 
-function openGrafico(){
-  var totAnnuale=S.chiusure.reduce(function(a,c){
-    return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));
-  },0);
-  var mediaAnnuale=S.chiusure.length>0?Math.round(totAnnuale/S.chiusure.length):0;
-  var el=document.getElementById("grafico-stats");
-  if(el){
-    el.innerHTML=S.chiusure.length>0
+// vista: "barre" (spese per mese, archivio) | "torta" (Luca vs Ale del mese corrente)
+function openGrafico(vista){
+  graficoVista = (vista==="torta") ? "torta" : "barre";
+  var ic=document.getElementById("grafico-icon");
+  var tit=document.getElementById("grafico-titolo");
+  var st=document.getElementById("grafico-stats");
+  if(graficoVista==="torta"){
+    if(ic) ic.textContent="🥧";
+    if(tit) tit.textContent="Chi ha speso questo mese";
+    if(st) st.innerHTML="";
+  }else{
+    if(ic) ic.textContent="📊";
+    if(tit) tit.textContent="Spese mensili";
+    var totAnnuale=S.chiusure.reduce(function(a,c){
+      return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));
+    },0);
+    var mediaAnnuale=S.chiusure.length>0?Math.round(totAnnuale/S.chiusure.length):0;
+    if(st) st.innerHTML=S.chiusure.length>0
       ?'<span>📅 Totale: <strong>'+eurInt(totAnnuale)+'</strong></span><span style="margin-left:16px;">📊 Media: <strong>'+eurInt(mediaAnnuale)+'</strong></span>'
       :'';
   }
@@ -23,15 +33,6 @@ function openGrafico(){
   setTimeout(function(){renderGraficoVista();},50);
 }
 function closeGrafico(){document.getElementById("modal-grafico").classList.remove("open");}
-
-function setGraficoVista(v){
-  graficoVista=v;
-  // Aggiorna bottoni toggle
-  document.querySelectorAll(".grafico-toggle-btn").forEach(function(b){
-    b.classList.toggle("active", b.dataset.vista===v);
-  });
-  renderGraficoVista();
-}
 
 function renderGraficoVista(){
   var barraWrap=document.getElementById("grafico-barre-wrap");

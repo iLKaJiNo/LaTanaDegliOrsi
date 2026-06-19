@@ -34,8 +34,8 @@ function renderSoloGate(el){
       +'<h2 class="solo-gate-title">Orso Solo</h2>'
       +'<p class="solo-gate-sub">La tua contabilità personale, privata.<br>Chi sei?</p>'
       +'<div class="solo-gate-chi">'
-      +'<button class="solo-chi-btn" onclick="soloScegliChi(\'Luca\')">Luca</button>'
-      +'<button class="solo-chi-btn" onclick="soloScegliChi(\'Ale\')">Ale</button>'
+      +'<button class="solo-chi-btn" onclick="soloScegliChi(\'Luca\')"><img src="./bear.svg" alt=""><span>Luca</span></button>'
+      +'<button class="solo-chi-btn" onclick="soloScegliChi(\'Ale\')"><img src="./bear.svg" alt=""><span>Ale</span></button>'
       +'</div></div>';
     return;
   }
@@ -67,8 +67,8 @@ function soloRenderDots(){
   var d=document.getElementById("solo-pin-dots");
   if(!d) return;
   var s="";
-  for(var i=0;i<4;i++) s+= (i<_soloPinBuffer.length ? "●" : "○");
-  d.textContent=s;
+  for(var i=0;i<4;i++) s+='<div class="solo-pin-dot'+(i<_soloPinBuffer.length?" filled":"")+'"></div>';
+  d.innerHTML=s;
 }
 function soloPinBack(){
   _soloPinBuffer=_soloPinBuffer.slice(0,-1);
@@ -181,9 +181,11 @@ function renderSoloApp(el){
     +'<div class="solo-saldo-card">'
     +'<div class="solo-saldo-lbl">Saldo personale</div>'
     +'<div class="solo-saldo-val '+(s>=0?"pos":"neg")+'">'+eur(s)+'</div>'
+    +'<div style="margin-top:14px;display:flex;justify-content:center;">'
     +(soloEditSaldo
-      ? '<div class="solo-saldo-edit"><input class="inp" type="number" id="solo-sp-inp" step="0.01" inputmode="decimal" value="'+soloSaldoPartenza+'" placeholder="Saldo di partenza"><button class="solo-sp-ok" onclick="soloSalvaSaldoPartenza()">OK</button><button class="solo-sp-no" onclick="soloAnnullaSaldoPartenza()">✕</button></div>'
-      : '<button class="solo-saldo-modifica" onclick="soloEditSaldoPartenza()">✏️ Saldo di partenza: '+eur(soloSaldoPartenza)+'</button>')
+      ? '<div class="edit-saldo-form"><label>🍯 Saldo di partenza</label><div class="erow"><input class="inp-saldo" id="solo-sp-inp" type="number" inputmode="decimal" step="0.01" value="'+soloSaldoPartenza+'" onkeydown="if(event.key===\'Enter\')soloSalvaSaldoPartenza()"><span style="color:rgba(255,255,255,.4);font-weight:700;font-size:16px">&euro;</span><button class="btn-ok" onclick="soloSalvaSaldoPartenza()">Salva</button><button class="btn-cancel-sm" onclick="soloAnnullaSaldoPartenza()">&times;</button></div></div>'
+      : '<div class="saldo-base"><div class="saldo-base-lbl">Saldo di partenza</div><div class="saldo-base-val">'+eur(soloSaldoPartenza)+'</div><button class="btn-edit-saldo" onclick="soloEditSaldoPartenza()">✏️ Modifica</button></div>')
+    +'</div>'
     +'</div>'
     // Segmento a 3: Registro / Ricorrenti / Archivi
     +'<div class="solo-seg solo-seg-3">'

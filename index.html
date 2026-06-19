@@ -658,13 +658,9 @@ if("serviceWorker" in navigator){
 <!-- MODALE GRAFICO -->
 <div class="modal-overlay" id="modal-grafico" onclick="if(event.target===this)closeGrafico()">
   <div class="modal modal-grafico">
-    <div class="modal-icon">&#x1F4CA;</div>
-    <h2>Spese mensili</h2>
+    <div class="modal-icon" id="grafico-icon">&#x1F4CA;</div>
+    <h2 id="grafico-titolo">Spese mensili</h2>
     <div id="grafico-stats" style="font-size:13px;font-family:'Nunito',sans-serif;font-weight:600;color:var(--text2);text-align:center;margin-bottom:10px;"></div>
-    <div class="grafico-toggle">
-      <button class="grafico-toggle-btn active" data-vista="barre" onclick="setGraficoVista('barre')">📊 Per mese</button>
-      <button class="grafico-toggle-btn" data-vista="torta" onclick="setGraficoVista('torta')">🥧 Luca vs Ale (mese)</button>
-    </div>
     <div id="grafico-barre-wrap" class="grafico-wrap">
       <canvas class="grafico-canvas" id="grafico-canvas"></canvas>
     </div>

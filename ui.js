@@ -750,6 +750,7 @@ function render(){
     h+='<button class="btn-filter-chi'+(filterChi==="tutti"?" active-tutti":"")+ '" onclick="filterChi=\'tutti\';render()">Tutti</button>';
     h+='<button class="btn-filter-chi'+(filterChi==="Luca"?" active-luca":"")+ '" onclick="filterChi=\'Luca\';render()"><img src="./bear.svg" style="width:0.75rem;height:0.75rem;vertical-align:middle;"> Luca</button>';
     h+='<button class="btn-filter-chi'+(filterChi==="Ale"?" active-ale":"")+ '" onclick="filterChi=\'Ale\';render()"><img src="./bear.svg" style="width:0.75rem;height:0.75rem;vertical-align:middle;"> Ale</button>';
+    h+='<button class="btn-filter-chi" onclick="openGrafico(\'torta\')" title="Chi ha speso questo mese">🥧</button>';
     if(filterChi!=="tutti"){
       h+='<span style="margin-left:auto;font-size:12px;font-family:\'Nunito\',sans-serif;font-weight:700;color:var(--text2);">Totale: <strong>'+eur(totFiltrato)+'</strong></span>';
     }
@@ -813,7 +814,7 @@ function renderArchivioTab(){
   var totAnnuale=S.chiusure.reduce(function(a,c){return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));},0);
   var mediaAnnuale=S.chiusure.length>0?Math.round(totAnnuale/S.chiusure.length):0;
   h+='<div class="chiusure-section">';
-  h+='<div class="chiusure-head-row"><span class="chiusure-head">📦 '+S.chiusure.length+' mesi archiviati</span><button class="btn-grafico" onclick="openGrafico()">📊 Grafico</button></div>';
+  h+='<div class="chiusure-head-row"><span class="chiusure-head">📦 '+S.chiusure.length+' mesi archiviati</span><button class="btn-grafico" onclick="openGrafico('barre')">📊 Grafico</button></div>';
   h+='<div class="chiusura-totale" style="margin-bottom:4px;">📅 Totale archivio: <strong>'+eurInt(totAnnuale)+'</strong></div>';
   h+='<div class="chiusura-totale" style="margin-bottom:12px;">📊 Media mensile: <strong>'+eurInt(mediaAnnuale)+'</strong></div>';
 
