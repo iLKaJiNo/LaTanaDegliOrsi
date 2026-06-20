@@ -130,6 +130,18 @@ function saldo(){return Math.round(S.txs.reduce(function(a,t){return t.chi==="Lu
 // Unico punto di verità: chiamato dopo load e dopo ogni modifica di S.chiusure;
 // i punti di lettura (drawChart, renderArchivioTab) si fidano di quest'ordine.
 function sortChiusure(){ S.chiusure.sort(function(a,b){ return (b.data||"").localeCompare(a.data||""); }); }
+// Ultimo mese già archiviato come "YYYY-MM", ricavato dalle txs di TUTTE
+// le chiusure (massimo). Language-independent. "" se nessuna chiusura con voci.
+function ultimoMeseChiuso(){
+  var max="";
+  (S.chiusure||[]).forEach(function(c){
+    (c.txs||[]).forEach(function(t){
+      var ym=(t.data||"").slice(0,7);
+      if(ym && ym>max) max=ym;
+    });
+  });
+  return max;
+}
 function fmt(iso){if(!iso)return"";var d=new Date(iso);return isNaN(d)?iso:String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");}
 function fmtLong(iso){if(!iso)return"";var d=new Date(iso);return isNaN(d)?iso:d.toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});}
 var eur=function(n){return Math.abs(Math.round(n*100)/100).toFixed(2).replace(".",",")+"\u00a0\u20ac";};

@@ -805,16 +805,18 @@ function render(){
 
     h+='<div class="row-start"><span>\uD83C\uDF32 Debito di partenza</span><strong>'+eurInt(S.saldoIniziale)+'</strong></div>';
 
+    var umc=ultimoMeseChiuso();
     filtered.forEach(function(t){
       var id=t.id,isL=t.chi==="Luca";
+      var isRetro=umc&&(t.data||"").slice(0,7)<=umc;
       var after=afterMap[id]||0;
       if(delId===id){h+='<div class="del-confirm"><span>\uD83D\uDDD1\uFE0F Eliminare questa voce?</span><button class="btn-yes" onclick="deleteTx(\''+id+'\')">S\u00ec</button><button class="btn-no" onclick="delId=null;render()">No</button></div>';return;}
       var ac=after>0?"ac":after<0?"lc":"pc";
       var al=after>0?"ale <img src='./bear.svg' style='width:0.625rem;height:0.625rem;'>":after<0?"luca <img src='./bear.svg' style='width:0.625rem;height:0.625rem;'>":"pari \uD83C\uDF6F";
-      h+='<div class="tx '+(isL?"luca":"ale")+'">';
+      h+='<div class="tx '+(isL?"luca":"ale")+(isRetro?" tx-retro":"")+'">';
       h+='<div class="tx-ava '+(isL?"l":"a")+'"><img src="./bear.svg" style="width:1.375rem;height:1.375rem;"></div>';
       h+='<div class="tx-body"><div class="tx-nota">'+escapeHtml(t.nota||(isL?"Spesa Luca":"Spesa Ale"))+'</div>';
-      h+='<div class="tx-sub"><span class="tx-date">'+fmt(t.data)+'</span><span class="tx-who '+(isL?"l":"a")+'">'+t.chi+'</span></div></div>';
+      h+='<div class="tx-sub"><span class="tx-date">'+fmt(t.data)+'</span>'+(isRetro?'<span class="tx-retro-badge" title="Spesa retrodatata — il mese è già archiviato">🕓</span>':'')+'<span class="tx-who '+(isL?"l":"a")+'">'+t.chi+'</span></div></div>';
       h+='<div class="tx-nums"><div class="tx-imp '+(isL?"l":"a")+'">'+eurInt(t.importo)+'</div>';
       h+='<div class="tx-after '+ac+'">&rarr; '+eurInt(after)+' '+al+'</div></div>';
       h+='<button class="btn-del" onclick="openEditTx(\''+id+'\')" title="Modifica" style="color:var(--honey-d);border-color:var(--honey-brd);background:var(--honey-bg);">✏️</button>';

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tana-SUPA-v45';
+const CACHE_NAME = 'tana-SUPA-v46';
 const ASSETS = [
   './',
   './index.html',
