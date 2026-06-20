@@ -733,35 +733,35 @@ body.dark{
   50%{transform:translateY(-6px) rotate(1deg);}
 }
 /* ══════════════════════════════════════════════════════════
-   SPESE PREVISTE (tab Fisse → toggle Previste)
+   SPESE RICORRENTI (tab Fisse → toggle Ricorrenti)
 ══════════════════════════════════════════════════════════ */
-/* Toggle Ricorrenti / Previste */
+/* Toggle Fisse / Ricorrenti */
 .fisse-toggle{display:flex;gap:6px;background:var(--card2);border-radius:var(--r-md);padding:4px;margin-bottom:14px;}
 .fisse-toggle-btn{flex:1;border:none;background:transparent;color:var(--text2);font-family:'Baloo 2',cursive;font-size:0.9375rem;font-weight:700;padding:9px 8px;border-radius:var(--r-sm);cursor:pointer;transition:all .18s;}
 .fisse-toggle-btn.active{background:var(--card);color:var(--honey-d);box-shadow:var(--shadow-sm);}
 
-/* Card previste */
-.previste-card{background:var(--card);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow-md);border:1.5px solid var(--honey-brd);position:relative;overflow:hidden;}
+/* Card ricorrenti */
+.ricorrenti-card{background:var(--card);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow-md);border:1.5px solid var(--honey-brd);position:relative;overflow:hidden;}
 
-/* Voce prevista */
-.prevista-item{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card2);border-radius:var(--r-md);padding:12px;margin-bottom:8px;border-left:4px solid var(--border);}
-.prevista-item.scad-scaduta{border-left-color:var(--berry);}
-.prevista-item.scad-oggi{border-left-color:var(--berry);}
-.prevista-item.scad-vicina{border-left-color:var(--honey);}
-.prevista-item.scad-lontana{border-left-color:var(--moss-brd);}
-.prevista-body{flex:1;min-width:0;}
-.prevista-nome{font-weight:700;color:var(--text);font-size:1rem;}
-.prevista-scad-badge{font-size:0.75rem;font-family:'Nunito',sans-serif;font-weight:700;margin-top:3px;}
-.prevista-scad-badge.scad-scaduta,.prevista-scad-badge.scad-oggi{color:var(--berry);}
-.prevista-scad-badge.scad-vicina{color:var(--honey-d);}
-.prevista-scad-badge.scad-lontana{color:var(--text3);}
-.prevista-imp{font-weight:800;color:var(--honey-d);font-size:1.0625rem;white-space:nowrap;}
-.prevista-actions{display:flex;gap:6px;align-items:center;width:100%;justify-content:flex-end;}
-.btn-paga-prevista{background:var(--moss-bg);border:1.5px solid var(--moss-brd);color:var(--moss);border-radius:var(--r-sm);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.8125rem;padding:5px 12px;cursor:pointer;margin-right:auto;}
-.btn-paga-prevista:active{transform:scale(.96);}
+/* Voce ricorrente */
+.ricorrente-item{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card2);border-radius:var(--r-md);padding:12px;margin-bottom:8px;border-left:4px solid var(--border);}
+.ricorrente-item.scad-scaduta{border-left-color:var(--berry);}
+.ricorrente-item.scad-oggi{border-left-color:var(--berry);}
+.ricorrente-item.scad-vicina{border-left-color:var(--honey);}
+.ricorrente-item.scad-lontana{border-left-color:var(--moss-brd);}
+.ricorrente-body{flex:1;min-width:0;}
+.ricorrente-nome{font-weight:700;color:var(--text);font-size:1rem;}
+.ricorrente-scad-badge{font-size:0.75rem;font-family:'Nunito',sans-serif;font-weight:700;margin-top:3px;}
+.ricorrente-scad-badge.scad-scaduta,.ricorrente-scad-badge.scad-oggi{color:var(--berry);}
+.ricorrente-scad-badge.scad-vicina{color:var(--honey-d);}
+.ricorrente-scad-badge.scad-lontana{color:var(--text3);}
+.ricorrente-imp{font-weight:800;color:var(--honey-d);font-size:1.0625rem;white-space:nowrap;}
+.ricorrente-actions{display:flex;gap:6px;align-items:center;width:100%;justify-content:flex-end;}
+.btn-paga-ricorrente{background:var(--moss-bg);border:1.5px solid var(--moss-brd);color:var(--moss);border-radius:var(--r-sm);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.8125rem;padding:5px 12px;cursor:pointer;margin-right:auto;}
+.btn-paga-ricorrente:active{transform:scale(.96);}
 
 /* Banner scadenze */
-.previste-banner{background:var(--berry-bg);border:1.5px solid var(--berry-brd);color:var(--berry);border-radius:var(--r-md);padding:11px 14px;margin-bottom:12px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.8125rem;line-height:1.4;}
+.ricorrenti-banner{background:var(--berry-bg);border:1.5px solid var(--berry-brd);color:var(--berry);border-radius:var(--r-md);padding:11px 14px;margin-bottom:12px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.8125rem;line-height:1.4;}
 
 /* Modale "come è stata pagata" */
 .paga-scelte{display:flex;flex-direction:column;gap:10px;margin:8px 0 4px;}
@@ -774,13 +774,13 @@ body.dark{
 .bancomat-section{margin-top:16px;padding-top:14px;border-top:1.5px dashed var(--purple-brd);}
 .bancomat-head{font-family:'Nunito',sans-serif;font-weight:800;font-size:0.8125rem;color:var(--purple);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;}
 .bancomat-item{background:var(--purple-bg);border-left:4px solid var(--purple-brd);opacity:.92;}
-.bancomat-item .prevista-nome{color:var(--purple);}
+.bancomat-item .ricorrente-nome{color:var(--purple);}
 .btn-annulla-bancomat{background:transparent;border:1.5px solid var(--purple-brd);color:var(--purple);border-radius:var(--r-sm);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.75rem;padding:4px 10px;cursor:pointer;margin-left:auto;}
 .btn-annulla-bancomat:active{transform:scale(.96);}
 .bancomat-tot{margin-top:8px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.8125rem;color:var(--purple);text-align:right;}
-/* Conferma inline dentro fissa/prevista: va a capo a tutta larghezza */
+/* Conferma inline dentro fissa/ricorrente: va a capo a tutta larghezza */
 .fissa-item .elimina-arch-confirm,
-.prevista-item .elimina-arch-confirm{width:100%;flex-basis:100%;margin-top:8px;}
+.ricorrente-item .elimina-arch-confirm{width:100%;flex-basis:100%;margin-top:8px;}
 
 /* ── CALCOLATRICE ── */
 .inp-euro-wrap{position:relative;width:120px;flex:0 0 auto;}

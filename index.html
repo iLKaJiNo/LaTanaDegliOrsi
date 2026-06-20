@@ -161,14 +161,14 @@ if("serviceWorker" in navigator){
     ══════════════════════════════════════ -->
     <div class="tab-page" data-tab="fisso">
 
-      <!-- Toggle Ricorrenti / Previste -->
+      <!-- Toggle Fisse / Ricorrenti -->
       <div class="fisse-toggle" id="fisse-toggle">
-        <button class="fisse-toggle-btn active" data-seg="ricorrenti" onclick="switchFisseSeg('ricorrenti')">📌 Ricorrenti</button>
-        <button class="fisse-toggle-btn" data-seg="previste" onclick="switchFisseSeg('previste')">📅 Previste</button>
+        <button class="fisse-toggle-btn active" data-seg="fisse" onclick="switchFisseSeg('fisse')">📌 Fisse</button>
+        <button class="fisse-toggle-btn" data-seg="ricorrenti" onclick="switchFisseSeg('ricorrenti')">📅 Ricorrenti</button>
       </div>
 
-      <!-- ── SEGMENTO RICORRENTI (fisse + riepilogo) ── -->
-      <div id="seg-ricorrenti">
+      <!-- ── SEGMENTO FISSE (fisse + riepilogo) ── -->
+      <div id="seg-fisse">
         <div class="fisse-card" id="fisse-card">
           <div class="fisse-header">
             <span class="fisse-title">📌 Spese fisse mensili</span>
@@ -197,14 +197,14 @@ if("serviceWorker" in navigator){
         </div>
       </div>
 
-      <!-- ── SEGMENTO PREVISTE ── -->
-      <div id="seg-previste" style="display:none;">
-        <div class="previste-card" id="previste-card">
+      <!-- ── SEGMENTO RICORRENTI ── -->
+      <div id="seg-ricorrenti" style="display:none;">
+        <div class="ricorrenti-card" id="ricorrenti-card">
           <div class="fisse-header">
-            <span class="fisse-title">📅 Spese previste</span>
-            <button class="btn-nuova-fissa" onclick="openNuovaPrevista()">+ Aggiungi</button>
+            <span class="fisse-title">📅 Spese ricorrenti</span>
+            <button class="btn-nuova-fissa" onclick="openNuovaRicorrente()">+ Aggiungi</button>
           </div>
-          <div id="previste-list"></div>
+          <div id="ricorrenti-list"></div>
         </div>
       </div>
 
@@ -541,11 +541,11 @@ if("serviceWorker" in navigator){
     </details>
 
     <details class="guida-sez" id="guida-fisse" style="border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:8px;background:var(--card2);">
-      <summary style="cursor:pointer;font-weight:700;color:var(--text);">📌 Spese fisse e 📅 previste</summary>
+      <summary style="cursor:pointer;font-weight:700;color:var(--text);">📌 Spese fisse e 📅 ricorrenti</summary>
       <div style="margin-top:8px;font-size:.9rem;color:var(--text2);line-height:1.5;">
-        Le <strong>fisse</strong> sono le ricorrenti di ogni mese (affitto, bollette, abbonamenti): si inseriscono una
+        Le <strong>fisse</strong> sono le spese di ogni mese (affitto, bollette, abbonamenti): si inseriscono una
         volta e vengono incluse automaticamente nel totale alla chiusura del mese.
-        Le <strong>previste</strong> sono spese future con una scadenza (la rata del condominio, il regalo): quando arriva il momento si
+        Le <strong>ricorrenti</strong> sono spese future con una scadenza (la rata del condominio, il regalo): quando arriva il momento si
         possono pagare <strong>dalla cassa</strong> (diventano una spesa normale) oppure segnare come
         <strong>pagate col bancomat</strong> condiviso, ed entrano nel conteggio della chiusura.
       </div>
@@ -780,44 +780,44 @@ if("serviceWorker" in navigator){
   </div>
 </div>
 
-<!-- MODALE NUOVA / MODIFICA SPESA PREVISTA -->
-<div class="modal-overlay" id="modal-prevista" onclick="if(event.target===this)closeNuovaPrevista()">
+<!-- MODALE NUOVA / MODIFICA SPESA RICORRENTE -->
+<div class="modal-overlay" id="modal-ricorrente" onclick="if(event.target===this)closeNuovaRicorrente()">
   <div class="modal">
     <div class="modal-icon">📅</div>
-    <h2 id="modal-prevista-titolo">Nuova spesa prevista</h2>
+    <h2 id="modal-ricorrente-titolo">Nuova spesa ricorrente</h2>
     <p>Una spesa futura con una scadenza. Quando la paghi, scegli se l'ha pagata Luca/Ale o il Conto Comune BPM.</p>
     <div class="modal-input-row">
       <label>🏷️ Nome</label>
-      <input type="text" id="prevista-nome" placeholder="es. Bollo auto, Assicurazione...">
+      <input type="text" id="ricorrente-nome" placeholder="es. Bollo auto, Assicurazione...">
     </div>
     <div class="modal-input-row">
       <label>💰 Importo (€)</label>
-      <input type="number" id="prevista-imp" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
+      <input type="number" id="ricorrente-imp" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
     </div>
     <div class="modal-input-row">
       <label>📅 Scadenza</label>
-      <input type="date" id="prevista-scad">
+      <input type="date" id="ricorrente-scad">
     </div>
     <div class="modal-btns">
-      <button class="btn-annulla" onclick="closeNuovaPrevista()">Annulla</button>
-      <button class="btn-conferma" onclick="salvaPrevista()">📅 Salva</button>
+      <button class="btn-annulla" onclick="closeNuovaRicorrente()">Annulla</button>
+      <button class="btn-conferma" onclick="salvaRicorrente()">📅 Salva</button>
     </div>
   </div>
 </div>
 
 <!-- MODALE SEGNA PAGATA (scelta come) -->
-<div class="modal-overlay" id="modal-paga-prevista" onclick="if(event.target===this)closePagaPrevista()">
+<div class="modal-overlay" id="modal-paga-ricorrente" onclick="if(event.target===this)closePagaRicorrente()">
   <div class="modal">
     <div class="modal-icon">✅</div>
     <h2>Come è stata pagata?</h2>
-    <p id="paga-prevista-desc">Scegli chi ha pagato questa spesa.</p>
+    <p id="paga-ricorrente-desc">Scegli chi ha pagato questa spesa.</p>
     <div class="paga-scelte">
-      <button class="paga-scelta" onclick="pagaPrevista('Luca')"><img src="./bear.svg" style="width:1.5rem;height:1.5rem;vertical-align:middle;margin-right:6px;">Pagata da Luca</button>
-      <button class="paga-scelta" onclick="pagaPrevista('Ale')"><img src="./bear.svg" style="width:1.5rem;height:1.5rem;vertical-align:middle;margin-right:6px;">Pagata da Ale</button>
-      <button class="paga-scelta paga-bancomat" onclick="pagaPrevista('bancomat')">💳 Conto Comune BPM</button>
+      <button class="paga-scelta" onclick="pagaRicorrente('Luca')"><img src="./bear.svg" style="width:1.5rem;height:1.5rem;vertical-align:middle;margin-right:6px;">Pagata da Luca</button>
+      <button class="paga-scelta" onclick="pagaRicorrente('Ale')"><img src="./bear.svg" style="width:1.5rem;height:1.5rem;vertical-align:middle;margin-right:6px;">Pagata da Ale</button>
+      <button class="paga-scelta paga-bancomat" onclick="pagaRicorrente('bancomat')">💳 Conto Comune BPM</button>
     </div>
     <div class="modal-btns">
-      <button class="btn-annulla" onclick="closePagaPrevista()">Annulla</button>
+      <button class="btn-annulla" onclick="closePagaRicorrente()">Annulla</button>
     </div>
   </div>
 </div>

@@ -18,7 +18,7 @@ var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ── STATO GLOBALE ──────────────────────────────────────
 // ── STATO GLOBALE ──
-var S={saldoIniziale:0,txs:[],chiusure:[],debiti:[],fisse:[],lista:[],previste:[],nota:{testo:"",autore:"",data:""}};
+var S={saldoIniziale:0,txs:[],chiusure:[],debiti:[],fisse:[],lista:[],ricorrenti:[],nota:{testo:"",autore:"",data:""}};
 var chi="Luca",delId=null,editSaldo=false;
 var deferredPrompt=null,ripristinoTarget=null,eliminaConfirmId=null;
 var rimborsoOpenId=null,delDebitoConfirmId=null;
@@ -41,11 +41,11 @@ var _svuotaListaConfirm=false;
 // Lista pulse e swipe tab
 var _listaHash=null;
 var TABS_ORDER=["tana","archivio","fisso","lista"];
-// Spese previste
-var fisseSegmento="ricorrenti"; // "ricorrenti" | "previste"
-var editPrevistaId=null;
-var pagaPrevistaId=null;
-var delPrevistaConfirmId=null;
+// Spese ricorrenti
+var fisseSegmento="fisse"; // "fisse" | "ricorrenti"
+var editRicorrenteId=null;
+var pagaRicorrenteId=null;
+var delRicorrenteConfirmId=null;
 var delFissaConfirmId=null;
 // ── PROMEMORIA CHIUSURA (Imp-B) ──
 var _chiusuraStash=null;     // voci del mese nuovo messe da parte durante "Archivia"

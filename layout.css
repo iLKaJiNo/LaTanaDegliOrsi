@@ -65,12 +65,12 @@
   .fisse-card{grid-column:1/-1;grid-row:8;margin-top:0;}
   .riepilogo-card{grid-column:1/-1;grid-row:9;margin-top:0;}
   /* Tab Fisse: la tratto come blocco a colonna singola centrato, così
-     toggle + ricorrenti/previste restano allineati e congrui su desktop
+     toggle + fisse/ricorrenti restano allineati e congrui su desktop
      (le altre tab restano in griglia 2 colonne). */
   .tab-page[data-tab="fisso"].active{display:block !important;grid-column:1/-1;max-width:680px;margin:0 auto;width:100%;}
   .tab-page[data-tab="fisso"].active .fisse-card,
   .tab-page[data-tab="fisso"].active .riepilogo-card,
-  .tab-page[data-tab="fisso"].active .previste-card{grid-column:auto;margin-top:14px;}
+  .tab-page[data-tab="fisso"].active .ricorrenti-card{grid-column:auto;margin-top:14px;}
   .tab-page[data-tab="solo"].active{display:block !important;grid-column:1/-1;max-width:680px;margin:0 auto;width:100%;}
 }
 

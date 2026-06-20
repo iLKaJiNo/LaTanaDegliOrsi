@@ -50,14 +50,14 @@ async function load(){
       sb.from("debiti").select("*").order("data",{ascending:true}),
       sb.from("fisse").select("*").order("data",{ascending:true}),
       sb.from("lista").select("*").order("data",{ascending:true}),
-      sb.from("previste").select("*").order("data",{ascending:true})
+      sb.from("ricorrenti").select("*").order("data",{ascending:true})
     ]);
     // Se una qualsiasi risposta ha errore, lo gestisco
     for(var i=0;i<ris.length;i++){
       if(ris[i].error) return gestisciErrore(ris[i].error);
     }
     var cfg=ris[0].data, txs=ris[1].data, chiusure=ris[2].data,
-        debiti=ris[3].data, fisse=ris[4].data, lista=ris[5].data, previste=ris[6].data;
+        debiti=ris[3].data, fisse=ris[4].data, lista=ris[5].data, ricorrenti=ris[6].data;
 
     // Config → saldo iniziale + nota condivisa
     S.saldoIniziale=0;
@@ -89,7 +89,7 @@ async function load(){
 
     S.lista=lista.map(function(r){return{id:r.id,testo:r.testo,quantita:r.quantita||"",completata:!!r.completata,data:r.data||""};});
 
-    S.previste=previste.map(function(r){return{id:r.id,nome:r.nome,importo:parseFloat(r.importo)||0,scadenza:r.scadenza||"",stato:r.stato||"attiva",data:r.data||""};});
+    S.ricorrenti=ricorrenti.map(function(r){return{id:r.id,nome:r.nome,importo:parseFloat(r.importo)||0,scadenza:r.scadenza||"",stato:r.stato||"attiva",data:r.data||""};});
 
     try{ localStorage.setItem(CACHE_DATI, JSON.stringify(S)); }catch(e){}
     dot("ok","Sincronizzata \uD83D\uDC3E");
@@ -162,7 +162,7 @@ async function runAction(p){
         p_data:p.chiusura.data, p_saldo_iniziale:p.chiusura.saldoIniziale,
         p_txs:p.chiusura.txs, p_fisse_snapshot:p.chiusura.fisseSnapshot||[],
         p_totale:p.chiusura.totale||0, p_nuovo_saldo:p.nuovoSaldo,
-        p_previste_ids:[]
+        p_previste_ids:[]   // nome PARAMETRO della funzione SQL chiudi_mese: NON rinominare (la funzione DB attende ancora "p_previste_ids")
       }); break;
     case "ripristina":
       r=await sb.rpc("ripristina_mese",{
@@ -197,15 +197,15 @@ async function runAction(p){
     case "deleteFissa":
       r=await sb.from("fisse").delete().eq("id",p.id); break;
 
-    // — Spese previste —
-    case "addPrevista":
-      r=await sb.from("previste").insert({id:p.id,nome:p.nome,importo:p.importo,scadenza:p.scadenza||null,stato:p.stato||"attiva",data:p.data}); break;
-    case "editPrevista":
-      r=await sb.from("previste").update({nome:p.nome,importo:p.importo,scadenza:p.scadenza||null}).eq("id",p.id); break;
-    case "setStatoPrevista":
-      r=await sb.from("previste").update({stato:p.stato}).eq("id",p.id); break;
-    case "deletePrevista":
-      r=await sb.from("previste").delete().eq("id",p.id); break;
+    // — Spese ricorrenti —
+    case "addRicorrente":
+      r=await sb.from("ricorrenti").insert({id:p.id,nome:p.nome,importo:p.importo,scadenza:p.scadenza||null,stato:p.stato||"attiva",data:p.data}); break;
+    case "editRicorrente":
+      r=await sb.from("ricorrenti").update({nome:p.nome,importo:p.importo,scadenza:p.scadenza||null}).eq("id",p.id); break;
+    case "setStatoRicorrente":
+      r=await sb.from("ricorrenti").update({stato:p.stato}).eq("id",p.id); break;
+    case "deleteRicorrente":
+      r=await sb.from("ricorrenti").delete().eq("id",p.id); break;
 
     // — Lista della spesa —
     case "addListaItem":

@@ -378,11 +378,11 @@ async function chiudiMese(){
   var totMeseChiusura=Math.round(S.txs.reduce(function(a,t){return a+t.importo;},0)*100)/100;
   // Snapshot delle spese fisse al momento della chiusura
   var fisseSnapshot=S.fisse.map(function(f){return{id:f.id,nome:f.nome,importo:f.importo,icona:f.icona};});
-  // Aggiungo le spese previste pagate col bancomat comune in questo mese:
+  // Aggiungo le spese ricorrenti pagate col bancomat comune in questo mese:
   // confluiscono nello snapshot come voci una-tantum.
-  var previsteBancomat=(S.previste||[]).filter(function(p){return p.stato==="pagata_bancomat";});
-  previsteBancomat.forEach(function(p){
-    fisseSnapshot.push({id:p.id,nome:p.nome+" (prevista)",importo:p.importo,icona:"📅",scadenza:p.scadenza||""});
+  var ricorrentiBancomat=(S.ricorrenti||[]).filter(function(p){return p.stato==="pagata_bancomat";});
+  ricorrentiBancomat.forEach(function(p){
+    fisseSnapshot.push({id:p.id,nome:p.nome+" (ricorrente)",importo:p.importo,icona:"📅",scadenza:p.scadenza||""});
   });
 var now=new Date();
 var dataLocale=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString();
@@ -399,14 +399,14 @@ S.chiusure.unshift(chiusura);sortChiusure();S.saldoIniziale=nuovoSaldo;S.txs=[];
   
   try{
     await post({action:"chiudiMese",chiusura:chiusura,nuovoSaldo:nuovoSaldo});
-    // Le previste pagate col bancomat sono confluite nello snapshot:
-    // le rimuovo dalla lista previste (foglio + locale).
-    if(previsteBancomat.length){
-      for(var i=0;i<previsteBancomat.length;i++){
-        try{ await post({action:"deletePrevista",id:previsteBancomat[i].id}); }catch(e){}
+    // Le ricorrenti pagate col bancomat sono confluite nello snapshot:
+    // le rimuovo dalla lista ricorrenti (foglio + locale).
+    if(ricorrentiBancomat.length){
+      for(var i=0;i<ricorrentiBancomat.length;i++){
+        try{ await post({action:"deleteRicorrente",id:ricorrentiBancomat[i].id}); }catch(e){}
       }
-      var idsRimosse=previsteBancomat.map(function(p){return p.id;});
-      S.previste=S.previste.filter(function(p){return idsRimosse.indexOf(p.id)===-1;});
+      var idsRimosse=ricorrentiBancomat.map(function(p){return p.id;});
+      S.ricorrenti=S.ricorrenti.filter(function(p){return idsRimosse.indexOf(p.id)===-1;});
     }
     // ── PONTE → ORSO SOLO ──
     // Per ciascun orso, deposito nel suo registro personale una voce
@@ -577,34 +577,34 @@ async function confermaRipristino(){
   var backupSaldo = S.saldoIniziale;
   var backupTxs = S.txs.slice();
   var backupChiusure = S.chiusure.slice();
-  var backupPreviste = S.previste.slice();
+  var backupRicorrenti = S.ricorrenti.slice();
 
-  // Ricostruisco le previste pagate-bancomat assorbite in questa chiusura
-  // (righe dello snapshot con icona 📅 e nome "… (prevista)"). La scadenza
+  // Ricostruisco le ricorrenti pagate-bancomat assorbite in questa chiusura
+  // (righe dello snapshot con icona 📅 e nome "… (ricorrente)"). La scadenza
   // c'è solo per i mesi chiusi dopo l'aggiunta del campo (altrimenti vuota).
-  var previsteRip=(c.fisseSnapshot||[]).filter(function(f){
-    return f.icona==="📅" && / \(prevista\)$/.test(f.nome||"");
+  var ricorrentiRip=(c.fisseSnapshot||[]).filter(function(f){
+    return f.icona==="📅" && / \(ricorrente\)$/.test(f.nome||"");
   }).map(function(f){
-    return {id:f.id, nome:String(f.nome).replace(/ \(prevista\)$/,""), importo:f.importo,
+    return {id:f.id, nome:String(f.nome).replace(/ \(ricorrente\)$/,""), importo:f.importo,
             scadenza:f.scadenza||"", stato:"pagata_bancomat", data:new Date().toISOString()};
   });
   
   S.saldoIniziale=c.saldoIniziale;S.txs=c.txs.slice();
   S.chiusure=S.chiusure.filter(function(x){return x.id!==c.id;});
   sortChiusure();
-  if(previsteRip.length){
-    var giaIds={}; S.previste.forEach(function(p){giaIds[p.id]=1;});
-    previsteRip.forEach(function(p){ if(!giaIds[p.id]) S.previste.push(p); });
+  if(ricorrentiRip.length){
+    var giaIds={}; S.ricorrenti.forEach(function(p){giaIds[p.id]=1;});
+    ricorrentiRip.forEach(function(p){ if(!giaIds[p.id]) S.ricorrenti.push(p); });
   }
   render();
   dot("","Ripristino...");
   
   try{
     await post({action:"ripristina",chiusuraId:c.id,saldoIniziale:c.saldoIniziale,txs:c.txs});
-    // Re-inserisco sul server le previste-bancomat ripristinate
-    for(var i=0;i<previsteRip.length;i++){
-      var pr=previsteRip[i];
-      try{ await post({action:"addPrevista",id:pr.id,nome:pr.nome,importo:pr.importo,scadenza:pr.scadenza,stato:pr.stato,data:pr.data}); }catch(e){}
+    // Re-inserisco sul server le ricorrenti-bancomat ripristinate
+    for(var i=0;i<ricorrentiRip.length;i++){
+      var pr=ricorrentiRip[i];
+      try{ await post({action:"addRicorrente",id:pr.id,nome:pr.nome,importo:pr.importo,scadenza:pr.scadenza,stato:pr.stato,data:pr.data}); }catch(e){}
     }
     // ── PONTE INVERSO → ORSO SOLO ──
     // Rimuovo le voci "Cassa Comune" che questa chiusura aveva depositato,
@@ -613,7 +613,7 @@ async function confermaRipristino(){
     dot("ok","Ripristinato \uD83D\uDD04");
   } catch(e){
     dot("err","Errore ripristino");
-    S.saldoIniziale = backupSaldo; S.txs = backupTxs; S.chiusure = backupChiusure; S.previste = backupPreviste;
+    S.saldoIniziale = backupSaldo; S.txs = backupTxs; S.chiusure = backupChiusure; S.ricorrenti = backupRicorrenti;
     render();
   }
 }
@@ -753,7 +753,7 @@ function render(){
     :'<div class="saldo-base"><div class="saldo-base-lbl">Debito di partenza</div><div class="saldo-base-val">'+eurInt(siAbs)+'</div><button class="btn-edit-saldo" onclick="startEditSaldo()">\u270F\uFE0F Modifica</button></div>';
 
   renderDebiti();
-  aggiornaPulsePreviste();
+  aggiornaPulseRicorrenti();
 
   var el=document.getElementById("storico");
   var h="";
@@ -835,7 +835,7 @@ function render(){
   // Ottimizzazione: renderizza solo il tab attivo
   switch(currentTab){
     case "archivio": renderArchivioTab(); break;
-    case "fisso": renderFisse(); renderRiepilogo(); if(fisseSegmento==="previste") renderPreviste(); break;
+    case "fisso": renderFisse(); renderRiepilogo(); if(fisseSegmento==="ricorrenti") renderRicorrenti(); break;
     case "lista": renderLista(); break;
   }
   checkListaPulse();
@@ -863,7 +863,7 @@ function renderArchivioTab(){
   var totAnnuale=S.chiusure.reduce(function(a,c){return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));},0);
   var mediaAnnuale=S.chiusure.length>0?Math.round(totAnnuale/S.chiusure.length):0;
   h+='<div class="chiusure-section">';
-  h+='<div class="chiusure-head-row"><span class="chiusure-head">📦 '+S.chiusure.length+' mesi archiviati</span><button class="btn-grafico" onclick="openGrafico(\'barre\')">📊 Grafico</button></div>';
+  h+='<div class="chiusure-head-row"><span class="chiusure-head">📦 '+S.chiusure.length+' mesi archiviati</span><button class="btn-grafico" onclick="openGrafico(\'barre\')">📊 Grafico</button><button class="btn-grafico" onclick="esportaPDFComplessivo()">📄 PDF completo</button></div>';
   h+='<div class="chiusura-totale" style="margin-bottom:4px;">📅 Totale archivio: <strong>'+eurInt(totAnnuale)+'</strong></div>';
   h+='<div class="chiusura-totale" style="margin-bottom:12px;">📊 Media mensile: <strong>'+eurInt(mediaAnnuale)+'</strong></div>';
 
@@ -1244,7 +1244,7 @@ function switchTab(tab) {
     b.classList.toggle("active", b.dataset.tab === tab);
   });
   if(tab === "archivio") renderArchivioTab();
-  if(tab === "fisso") { renderFisse(); renderRiepilogo(); if(fisseSegmento==="previste") renderPreviste(); }
+  if(tab === "fisso") { renderFisse(); renderRiepilogo(); if(fisseSegmento==="ricorrenti") renderRicorrenti(); }
   if(tab === "lista") { clearListaPulse(); renderLista(); }
   if(tab === "solo") { renderSolo(); }
   // Animazione di entrata: rigioca il fade+slide sulla tab appena aperta

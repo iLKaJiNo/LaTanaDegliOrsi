@@ -257,19 +257,24 @@ function drawChart(){
 }
 
 // ── ESPORTA PDF ──
+// Carica jsPDF da CDN (lazy) se non presente, poi esegue cb()
+function _conJsPDF(cb){
+  if(typeof window.jspdf!=="undefined"){cb();return;}
+  var s=document.createElement("script");
+  s.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+  s.onload=function(){cb();};
+  s.onerror=function(){alert("Impossibile caricare jsPDF. Controlla la connessione.");};
+  document.head.appendChild(s);
+}
+
 function esportaPDF(id){
   var c=S.chiusure.find(function(x){return x.id===id;});
   if(!c){alert("Mese non trovato");return;}
-  if(typeof window.jspdf==="undefined"){
-    var s=document.createElement("script");
-    s.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-    s.onload=function(){_generaPDF(c);};
-    s.onerror=function(){alert("Impossibile caricare jsPDF. Controlla la connessione.");};
-    document.head.appendChild(s);
-  }else{_generaPDF(c);}
+  _conJsPDF(function(){_generaPDF(c);});
 }
 
-function _generaPDF(c){
+// Crea il doc jsPDF e monta il patch pdfStrip su doc.text (vale per ogni pagina/mese)
+function _pdfNuovoDoc(){
   var jsPDF=window.jspdf.jsPDF;
   var doc=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
 
@@ -286,6 +291,11 @@ function _generaPDF(c){
   doc.text=function(str,x,y,opts){
     return _origText(typeof str==="string"?pdfStrip(str):str,x,y,opts);
   };
+  return doc;
+}
+
+function _generaPDF(c){
+  var doc=_pdfNuovoDoc();
   var W=210,margin=18,y=margin;
   var BROWN=[74,42,15],HONEY=[244,168,39],BERRY=[168,50,37],MOSS=[74,124,64];
   var LIGHT=[254,245,220],DARK=[46,26,8],GRAY=[120,85,56];
@@ -299,7 +309,24 @@ function _generaPDF(c){
   doc.setTextColor(255,255,255);
   doc.text("Luca & Ale — cassa comune",margin,19);
   doc.text("Generato il "+new Date().toLocaleDateString("it-IT"),W-margin,19,{align:"right"});
-  y=36;
+  y=_pdfMese(doc,c,36);
+  // Footer
+  y+=4;
+  doc.setDrawColor(HONEY[0],HONEY[1],HONEY[2]);
+  doc.setLineWidth(0.4);
+  doc.line(margin,y,W-margin,y);y+=5;
+  doc.setFontSize(8);doc.setFont("helvetica","normal");
+  doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+  doc.text("La Tana degli Orsi — "+c.mese,margin,y);
+  doc.text("Pagina 1",W-margin,y,{align:"right"});
+  doc.save("tana-"+c.mese.replace(/\s+/g,"-").toLowerCase()+".pdf");
+}
+
+// Disegna la sezione di un mese (titolo -> split Luca/Ale) da y, ritorna il nuovo y
+function _pdfMese(doc,c,y){
+  var W=210,margin=18;
+  var BROWN=[74,42,15],HONEY=[244,168,39],BERRY=[168,50,37],MOSS=[74,124,64];
+  var LIGHT=[254,245,220],DARK=[46,26,8],GRAY=[120,85,56];
   // Titolo mese
   doc.setTextColor(DARK[0],DARK[1],DARK[2]);
   doc.setFontSize(16);doc.setFont("helvetica","bold");
@@ -424,14 +451,95 @@ function _generaPDF(c){
     doc.text("Ale "+eur(spA)+" ("+pA+"%)",W-margin,y,{align:"right"});
     y+=4;
   }
-  // Footer
-  y+=4;
-  doc.setDrawColor(HONEY[0],HONEY[1],HONEY[2]);
-  doc.setLineWidth(0.4);
-  doc.line(margin,y,W-margin,y);y+=5;
-  doc.setFontSize(8);doc.setFont("helvetica","normal");
+  return y;
+}
+
+// ── PDF COMPLESSIVO: un unico file con riepilogo + tutti i mesi archiviati ──
+function esportaPDFComplessivo(){
+  if(!S.chiusure || !S.chiusure.length){alert("Nessun mese archiviato.");return;}
+  _conJsPDF(function(){_generaPDFComplessivo();});
+}
+
+function _generaPDFComplessivo(){
+  var doc=_pdfNuovoDoc();
+  var W=210,margin=18,y=margin;
+  var BROWN=[74,42,15],HONEY=[244,168,39],BERRY=[168,50,37],MOSS=[74,124,64];
+  var LIGHT=[254,245,220],DARK=[46,26,8],GRAY=[120,85,56];
+  // Header brandizzato (stesso blocco testata del PDF per-mese)
+  doc.setFillColor(BROWN[0],BROWN[1],BROWN[2]);
+  doc.rect(0,0,W,28,"F");
+  doc.setTextColor(HONEY[0],HONEY[1],HONEY[2]);
+  doc.setFontSize(18);doc.setFont("helvetica","bold");
+  doc.text("La Tana degli Orsi",margin,12);
+  doc.setFontSize(9);doc.setFont("helvetica","normal");
+  doc.setTextColor(255,255,255);
+  doc.text("Luca & Ale — cassa comune",margin,19);
+  doc.text("Generato il "+new Date().toLocaleDateString("it-IT"),W-margin,19,{align:"right"});
+  y=40;
+  // ── Pagina di riepilogo
+  doc.setTextColor(DARK[0],DARK[1],DARK[2]);
+  doc.setFontSize(16);doc.setFont("helvetica","bold");
+  doc.text("Archivio completo",margin,y);y+=7;
+  doc.setFontSize(9);doc.setFont("helvetica","normal");
   doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
-  doc.text("La Tana degli Orsi — "+c.mese,margin,y);
-  doc.text("Pagina 1",W-margin,y,{align:"right"});
-  doc.save("tana-"+c.mese.replace(/\s+/g,"-").toLowerCase()+".pdf");
+  doc.text("Generato il "+new Date().toLocaleDateString("it-IT"),margin,y);y+=8;
+  // Aggregazione per anno (stessa di drawChart vista "anni") + conteggio mesi e totale
+  var perAnno={}, mesiAnno={}, totArchivio=0;
+  S.chiusure.forEach(function(c){
+    var anno=new Date(c.data).getFullYear();
+    var tot=c.totale||c.txs.reduce(function(a,t){return a+(parseFloat(t.importo)||0);},0);
+    perAnno[anno]=(perAnno[anno]||0)+tot;
+    mesiAnno[anno]=(mesiAnno[anno]||0)+1;
+    totArchivio+=tot;
+  });
+  // Riquadro totali complessivi
+  doc.setFillColor(LIGHT[0],LIGHT[1],LIGHT[2]);
+  doc.roundedRect(margin,y,W-margin*2,16,3,3,"F");
+  doc.setFontSize(9);doc.setFont("helvetica","normal");
+  doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+  doc.text("Mesi archiviati: "+S.chiusure.length,margin+4,y+6);
+  doc.setFontSize(11);doc.setFont("helvetica","bold");
+  doc.setTextColor(BERRY[0],BERRY[1],BERRY[2]);
+  doc.text("Totale spese archivio: "+eurInt(totArchivio),W-margin-4,y+6,{align:"right"});
+  y+=22;
+  // Tabella ripartizione per anno
+  doc.setFillColor(BROWN[0],BROWN[1],BROWN[2]);
+  doc.rect(margin,y,W-margin*2,7,"F");
+  doc.setTextColor(HONEY[0],HONEY[1],HONEY[2]);
+  doc.setFontSize(8);doc.setFont("helvetica","bold");
+  doc.text("Anno",margin+2,y+5);
+  doc.text("Mesi",margin+40,y+5);
+  doc.text("Totale",W-margin-2,y+5,{align:"right"});
+  y+=7;
+  var anni=Object.keys(perAnno).sort(); // crescente
+  anni.forEach(function(a,i){
+    if(y>272){doc.addPage();y=margin;}
+    doc.setFillColor(i%2===0?255:248,i%2===0?253:245,i%2===0?248:238);
+    doc.rect(margin,y,W-margin*2,6.5,"F");
+    doc.setTextColor(DARK[0],DARK[1],DARK[2]);
+    doc.setFontSize(8);doc.setFont("helvetica","bold");
+    doc.text(String(a),margin+2,y+4.5);
+    doc.setFont("helvetica","normal");
+    doc.text(mesiAnno[a]+" mesi",margin+40,y+4.5);
+    doc.setFont("helvetica","bold");
+    doc.setTextColor(BERRY[0],BERRY[1],BERRY[2]);
+    doc.text(eurInt(perAnno[a]),W-margin-2,y+4.5,{align:"right"});
+    y+=6.5;
+  });
+  // Sezioni per mese in ordine cronologico (S.chiusure è discendente → reverse)
+  var chiusure=[].concat(S.chiusure).reverse();
+  chiusure.forEach(function(c){
+    doc.addPage();
+    _pdfMese(doc,c,margin);
+  });
+  // Numerazione pagine reale i/n a fine costruzione
+  var n=doc.getNumberOfPages();
+  for(var i=1;i<=n;i++){
+    doc.setPage(i);
+    doc.setFontSize(8);doc.setFont("helvetica","normal");
+    doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+    doc.text("La Tana degli Orsi — Archivio completo",margin,290);
+    doc.text("Pagina "+i+"/"+n,W-margin,290,{align:"right"});
+  }
+  doc.save("tana-archivio-completo.pdf");
 }

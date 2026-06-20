@@ -52,7 +52,7 @@ var FRASI_VUOTO = {
   fisse: [
     "Nessuna spesa fissa — aggiungine una! 📌",
     "Niente fisse per ora {orso}",
-    "Mutuo, bollette... aggiungi le ricorrenti!",
+    "Mutuo, bollette... aggiungi le fisse!",
     "Sono Carina! ...tutti lo dicono"
   ],
 
@@ -78,8 +78,8 @@ var FRASI_VUOTO = {
     "Sono Carina! ...tutti lo dicono"
   ],
 
-  // Tab Fisse → Previste — nessuna spesa in arrivo
-  previste: [
+  // Tab Fisse → Ricorrenti — nessuna spesa in arrivo
+  ricorrenti: [
     "Nessuna spesa in arrivo {orso}",
     "Niente scadenze all'orizzonte 📅",
     "Aggiungi una spesa futura da non scordare!",

@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════
 //  La Tana degli Orsi — fisso.js
 //  Tab "Fisso" della cassa comune: spese fisse mensili,
-//  spese previste (con scadenze e pagamento Luca/Ale/bancomat)
+//  spese ricorrenti (con scadenze e pagamento Luca/Ale/bancomat)
 //  e riepilogo mensile. UI ottimistica con rollback.
 //  Dipende da: utils.js + api.js + ui.js (render/statoVuoto/
 //  escapeHtml/vibra).
@@ -116,18 +116,18 @@ function renderFisse(){
 }
 
 // ═══════════════════════════════════════════════════════════
-// ── SPESE PREVISTE ──
+// ── SPESE RICORRENTI ──
 // ═══════════════════════════════════════════════════════════
 
-// Toggle tra "Ricorrenti" e "Previste" nella tab Fisse
+// Toggle tra "Fisse" e "Ricorrenti" nella tab Fisse
 function switchFisseSeg(seg){
   fisseSegmento=seg;
   document.querySelectorAll(".fisse-toggle-btn").forEach(function(b){
     b.classList.toggle("active", b.dataset.seg===seg);
   });
-  document.getElementById("seg-ricorrenti").style.display = seg==="ricorrenti"?"":"none";
-  document.getElementById("seg-previste").style.display   = seg==="previste"?"":"none";
-  if(seg==="previste") renderPreviste();
+  document.getElementById("seg-fisse").style.display = seg==="fisse"?"":"none";
+  document.getElementById("seg-ricorrenti").style.display   = seg==="ricorrenti"?"":"none";
+  if(seg==="ricorrenti") renderRicorrenti();
   else { renderFisse(); renderRiepilogo(); }
 }
 
@@ -179,19 +179,19 @@ function testoScadenza(g){
   return "Tra "+g+" giorni";
 }
 
-function renderPreviste(){
-  var el=document.getElementById("previste-list");
+function renderRicorrenti(){
+  var el=document.getElementById("ricorrenti-list");
   if(!el) return;
-  aggiornaPulsePreviste();
-  // Banner scadenze: mostro in cima se ci sono previste scadute o in scadenza oggi
+  aggiornaPulseRicorrenti();
+  // Banner scadenze: mostro in cima se ci sono ricorrenti scadute o in scadenza oggi
   var bannerHtml="";
-  var scadute=previsteScadute();
+  var scadute=ricorrentiScadute();
   if(scadute.length){
     var nomi=scadute.map(function(p){return escapeHtml(p.nome);}).join(", ");
-    bannerHtml='<div class="previste-banner">⏰ <strong>'+(scadute.length===1?"1 spesa scaduta o in scadenza oggi":scadute.length+" spese scadute o in scadenza oggi")+'</strong><br>'+nomi+'</div>';
+    bannerHtml='<div class="ricorrenti-banner">⏰ <strong>'+(scadute.length===1?"1 spesa scaduta o in scadenza oggi":scadute.length+" spese scadute o in scadenza oggi")+'</strong><br>'+nomi+'</div>';
   }
-  // Previste pagate col bancomat (in attesa di chiusura mese)
-  var bancomat=(S.previste||[]).filter(function(p){return p.stato==="pagata_bancomat";});
+  // Ricorrenti pagate col bancomat (in attesa di chiusura mese)
+  var bancomat=(S.ricorrenti||[]).filter(function(p){return p.stato==="pagata_bancomat";});
   // Blocco "pagate bancomat" da mostrare in fondo
   var bancomatHtml="";
   if(bancomat.length){
@@ -199,20 +199,20 @@ function renderPreviste(){
     bancomatHtml='<div class="bancomat-section">';
     bancomatHtml+='<div class="bancomat-head">💳 Pagate col Conto Comune BPM · in attesa di chiusura</div>';
     bancomat.forEach(function(p){
-      bancomatHtml+='<div class="prevista-item bancomat-item">';
-      bancomatHtml+='<div class="prevista-body"><div class="prevista-nome">✓ '+escapeHtml(p.nome)+'</div>';
-      bancomatHtml+='<div class="prevista-scad-badge">'+fmtScadenza(p.scadenza)+'</div></div>';
-      bancomatHtml+='<div class="prevista-imp">'+eur(p.importo)+'</div>';
-      bancomatHtml+='<div class="prevista-actions"><button class="btn-annulla-bancomat" onclick="annullaPagamentoBancomat(\''+p.id+'\')" title="Annulla pagamento">↩️ Annulla</button></div>';
+      bancomatHtml+='<div class="ricorrente-item bancomat-item">';
+      bancomatHtml+='<div class="ricorrente-body"><div class="ricorrente-nome">✓ '+escapeHtml(p.nome)+'</div>';
+      bancomatHtml+='<div class="ricorrente-scad-badge">'+fmtScadenza(p.scadenza)+'</div></div>';
+      bancomatHtml+='<div class="ricorrente-imp">'+eur(p.importo)+'</div>';
+      bancomatHtml+='<div class="ricorrente-actions"><button class="btn-annulla-bancomat" onclick="annullaPagamentoBancomat(\''+p.id+'\')" title="Annulla pagamento">↩️ Annulla</button></div>';
       bancomatHtml+='</div>';
     });
     bancomatHtml+='<div class="bancomat-tot">Totale Conto Comune BPM: <strong>'+eur(totB)+'</strong> — confluirà nelle fisse a fine mese</div>';
     bancomatHtml+='</div>';
   }
-  // Mostro le previste ancora "attive"
-  var attive=(S.previste||[]).filter(function(p){return p.stato==="attiva";});
+  // Mostro le ricorrenti ancora "attive"
+  var attive=(S.ricorrenti||[]).filter(function(p){return p.stato==="attiva";});
   if(!attive.length){
-    el.innerHTML=bannerHtml+(bancomat.length?"":'<div class="previste-empty">'+statoVuoto("previste","4rem")+'</div>')+bancomatHtml;
+    el.innerHTML=bannerHtml+(bancomat.length?"":'<div class="ricorrenti-empty">'+statoVuoto("ricorrenti","4rem")+'</div>')+bancomatHtml;
     return;
   }
   // Ordino per scadenza crescente (le senza data in fondo)
@@ -225,180 +225,180 @@ function renderPreviste(){
   attive.forEach(function(p){
     var g=giorniAScadenza(p.scadenza);
     var cls=classeScadenza(g);
-    h+='<div class="prevista-item '+cls+'">';
-    h+='<div class="prevista-body">';
-    h+='<div class="prevista-nome">'+escapeHtml(p.nome)+'</div>';
-    h+='<div class="prevista-scad-badge '+cls+'">'+fmtScadenza(p.scadenza)+(g!==null?' · '+testoScadenza(g):"")+'</div>';
+    h+='<div class="ricorrente-item '+cls+'">';
+    h+='<div class="ricorrente-body">';
+    h+='<div class="ricorrente-nome">'+escapeHtml(p.nome)+'</div>';
+    h+='<div class="ricorrente-scad-badge '+cls+'">'+fmtScadenza(p.scadenza)+(g!==null?' · '+testoScadenza(g):"")+'</div>';
     h+='</div>';
-    h+='<div class="prevista-imp">'+eur(p.importo)+'</div>';
-    h+='<div class="prevista-actions">';
-    h+='<button class="btn-paga-prevista" onclick="openPagaPrevista(\''+p.id+'\')" title="Segna pagata">✓ Paga</button>';
-    h+='<button class="btn-edit-fissa" onclick="openNuovaPrevista(\''+p.id+'\')" title="Modifica">✏️</button>';
-    h+='<button class="btn-del-fissa" onclick="toggleDelPrevista(\''+p.id+'\')" title="Elimina">×</button>';
+    h+='<div class="ricorrente-imp">'+eur(p.importo)+'</div>';
+    h+='<div class="ricorrente-actions">';
+    h+='<button class="btn-paga-ricorrente" onclick="openPagaRicorrente(\''+p.id+'\')" title="Segna pagata">✓ Paga</button>';
+    h+='<button class="btn-edit-fissa" onclick="openNuovaRicorrente(\''+p.id+'\')" title="Modifica">✏️</button>';
+    h+='<button class="btn-del-fissa" onclick="toggleDelRicorrente(\''+p.id+'\')" title="Elimina">×</button>';
     h+='</div>';
-    if(delPrevistaConfirmId===p.id){
-      h+='<div class="elimina-arch-confirm"><span>Eliminare "'+escapeHtml(p.nome)+'"?</span><button class="btn-yes" onclick="eliminaPrevista(\''+p.id+'\')">Sì</button><button class="btn-no" onclick="toggleDelPrevista(\''+p.id+'\')">No</button></div>';
+    if(delRicorrenteConfirmId===p.id){
+      h+='<div class="elimina-arch-confirm"><span>Eliminare "'+escapeHtml(p.nome)+'"?</span><button class="btn-yes" onclick="eliminaRicorrente(\''+p.id+'\')">Sì</button><button class="btn-no" onclick="toggleDelRicorrente(\''+p.id+'\')">No</button></div>';
     }
     h+='</div>';
   });
   el.innerHTML=bannerHtml+h+bancomatHtml;
 }
 
-// Annulla un pagamento col bancomat: riporta la prevista a "attiva"
+// Annulla un pagamento col bancomat: riporta la ricorrente a "attiva"
 async function annullaPagamentoBancomat(id){
-  var p=S.previste.find(function(x){return x.id===id;});
+  var p=S.ricorrenti.find(function(x){return x.id===id;});
   if(!p)return;
   vibra(20);
   p.stato="attiva";
-  renderPreviste();dot("","Salvataggio...");
+  renderRicorrenti();dot("","Salvataggio...");
   try{
-    await post({action:"setStatoPrevista",id:id,stato:"attiva"});
+    await post({action:"setStatoRicorrente",id:id,stato:"attiva"});
     dot("ok","Sincronizzata 🐾");
-  }catch(e){ dot("err","Errore — riprova"); p.stato="pagata_bancomat"; renderPreviste(); }
+  }catch(e){ dot("err","Errore — riprova"); p.stato="pagata_bancomat"; renderRicorrenti(); }
 }
-function openNuovaPrevista(id){
-  editPrevistaId=id||null;
-  var p=id?S.previste.find(function(x){return x.id===id;}):null;
-  document.getElementById("modal-prevista-titolo").textContent=p?"Modifica spesa prevista":"Nuova spesa prevista";
-  document.getElementById("prevista-nome").value=p?p.nome:"";
-  document.getElementById("prevista-imp").value=p?p.importo:"";
+function openNuovaRicorrente(id){
+  editRicorrenteId=id||null;
+  var p=id?S.ricorrenti.find(function(x){return x.id===id;}):null;
+  document.getElementById("modal-ricorrente-titolo").textContent=p?"Modifica spesa ricorrente":"Nuova spesa ricorrente";
+  document.getElementById("ricorrente-nome").value=p?p.nome:"";
+  document.getElementById("ricorrente-imp").value=p?p.importo:"";
   // Il campo <input type=date> accetta SOLO "YYYY-MM-DD": normalizzo
   // (la scadenza dal server può essere un ISO completo con ora/Z).
-  document.getElementById("prevista-scad").value=p?isoDateInput(p.scadenza):"";
-  document.getElementById("modal-prevista").classList.add("open");
-  setTimeout(function(){document.getElementById("prevista-nome").focus();},80);
+  document.getElementById("ricorrente-scad").value=p?isoDateInput(p.scadenza):"";
+  document.getElementById("modal-ricorrente").classList.add("open");
+  setTimeout(function(){document.getElementById("ricorrente-nome").focus();},80);
 }
-function closeNuovaPrevista(){document.getElementById("modal-prevista").classList.remove("open");editPrevistaId=null;}
+function closeNuovaRicorrente(){document.getElementById("modal-ricorrente").classList.remove("open");editRicorrenteId=null;}
 
-async function salvaPrevista(){
-  var nome=document.getElementById("prevista-nome").value.trim();
-  var imp=parseFloat(document.getElementById("prevista-imp").value);
-  var scad=document.getElementById("prevista-scad").value;
+async function salvaRicorrente(){
+  var nome=document.getElementById("ricorrente-nome").value.trim();
+  var imp=parseFloat(document.getElementById("ricorrente-imp").value);
+  var scad=document.getElementById("ricorrente-scad").value;
   if(!nome||!imp||imp<=0)return;
-  var editId=editPrevistaId;   // catturo PRIMA: closeNuovaPrevista() azzera editPrevistaId
+  var editId=editRicorrenteId;   // catturo PRIMA: closeNuovaRicorrente() azzera editRicorrenteId
   vibra(20);
-  closeNuovaPrevista();
+  closeNuovaRicorrente();
 
   if(editId){
-    var p=S.previste.find(function(x){return x.id===editId;});
+    var p=S.ricorrenti.find(function(x){return x.id===editId;});
     if(!p)return;
     var backup={nome:p.nome,importo:p.importo,scadenza:p.scadenza};
     p.nome=nome;p.importo=imp;p.scadenza=scad;
-    renderPreviste();dot("","Salvataggio...");
+    renderRicorrenti();dot("","Salvataggio...");
     try{
-      await post({action:"editPrevista",id:editId,nome:nome,importo:imp,scadenza:scad});
+      await post({action:"editRicorrente",id:editId,nome:nome,importo:imp,scadenza:scad});
       dot("ok","Sincronizzata 🐾");
     }catch(e){
       dot("err","Errore salvataggio");
       p.nome=backup.nome;p.importo=backup.importo;p.scadenza=backup.scadenza;
-      renderPreviste();
+      renderRicorrenti();
     }
   }else{
     var newId=Date.now().toString();
     var nuova={id:newId,nome:nome,importo:imp,scadenza:scad,stato:"attiva",data:new Date().toISOString()};
-    S.previste.push(nuova);
-    renderPreviste();dot("","Salvataggio...");
-    aggiornaPulsePreviste();
+    S.ricorrenti.push(nuova);
+    renderRicorrenti();dot("","Salvataggio...");
+    aggiornaPulseRicorrenti();
     try{
-      await post({action:"addPrevista",id:nuova.id,nome:nuova.nome,importo:nuova.importo,scadenza:nuova.scadenza,stato:"attiva",data:nuova.data});
+      await post({action:"addRicorrente",id:nuova.id,nome:nuova.nome,importo:nuova.importo,scadenza:nuova.scadenza,stato:"attiva",data:nuova.data});
       dot("ok","Sincronizzata 🐾");
     }catch(e){
       dot("err","Errore salvataggio");
-      S.previste=S.previste.filter(function(x){return x.id!==newId;});
-      renderPreviste();
+      S.ricorrenti=S.ricorrenti.filter(function(x){return x.id!==newId;});
+      renderRicorrenti();
     }
   }
 }
 
 // Toggle della conferma inline
-function toggleDelPrevista(id){
-  delPrevistaConfirmId = delPrevistaConfirmId===id ? null : id;
-  renderPreviste();
+function toggleDelRicorrente(id){
+  delRicorrenteConfirmId = delRicorrenteConfirmId===id ? null : id;
+  renderRicorrenti();
 }
 // Esegue l'eliminazione (dopo conferma inline)
-async function eliminaPrevista(id){
+async function eliminaRicorrente(id){
   vibra([25,40,25]);
-  delPrevistaConfirmId=null;
-  var backup=S.previste.slice();
-  S.previste=S.previste.filter(function(x){return x.id!==id;});
-  renderPreviste();dot("","Salvataggio...");
-  aggiornaPulsePreviste();
+  delRicorrenteConfirmId=null;
+  var backup=S.ricorrenti.slice();
+  S.ricorrenti=S.ricorrenti.filter(function(x){return x.id!==id;});
+  renderRicorrenti();dot("","Salvataggio...");
+  aggiornaPulseRicorrenti();
   try{
-    await post({action:"deletePrevista",id:id});
+    await post({action:"deleteRicorrente",id:id});
     dot("ok","Sincronizzata 🐾");
   }catch(e){
     dot("err","Errore eliminazione");
-    S.previste=backup;
-    renderPreviste();
+    S.ricorrenti=backup;
+    renderRicorrenti();
   }
 }
 
 // ── Segna pagata ──
-function openPagaPrevista(id){
-  pagaPrevistaId=id;
-  var p=S.previste.find(function(x){return x.id===id;});
-  var desc=document.getElementById("paga-prevista-desc");
+function openPagaRicorrente(id){
+  pagaRicorrenteId=id;
+  var p=S.ricorrenti.find(function(x){return x.id===id;});
+  var desc=document.getElementById("paga-ricorrente-desc");
   if(p&&desc) desc.textContent='"'+p.nome+'" — '+eur(p.importo)+". Chi l'ha pagata?";
-  document.getElementById("modal-paga-prevista").classList.add("open");
+  document.getElementById("modal-paga-ricorrente").classList.add("open");
 }
-function closePagaPrevista(){document.getElementById("modal-paga-prevista").classList.remove("open");pagaPrevistaId=null;}
+function closePagaRicorrente(){document.getElementById("modal-paga-ricorrente").classList.remove("open");pagaRicorrenteId=null;}
 
 // modo: "Luca" | "Ale" | "bancomat"
-async function pagaPrevista(modo){
-  var id=pagaPrevistaId;
-  var p=S.previste.find(function(x){return x.id===id;});
-  if(!p){closePagaPrevista();return;}
+async function pagaRicorrente(modo){
+  var id=pagaRicorrenteId;
+  var p=S.ricorrenti.find(function(x){return x.id===id;});
+  if(!p){closePagaRicorrente();return;}
   vibra(30);
-  closePagaPrevista();
+  closePagaRicorrente();
 
   if(modo==="Luca"||modo==="Ale"){
     // Diventa una transazione normale nella cassa comune
-    var t={id:Date.now().toString(),chi:modo,importo:p.importo,nota:p.nome+" (prevista)",data:new Date().toISOString()};
-    var backupPreviste=S.previste.slice();
+    var t={id:Date.now().toString(),chi:modo,importo:p.importo,nota:p.nome+" (ricorrente)",data:new Date().toISOString()};
+    var backupRicorrenti=S.ricorrenti.slice();
     S.txs.push(t);
-    // Rimuovo la prevista
-    S.previste=S.previste.filter(function(x){return x.id!==id;});
-    render();renderPreviste();dot("","Salvataggio...");
-    aggiornaPulsePreviste();
+    // Rimuovo la ricorrente
+    S.ricorrenti=S.ricorrenti.filter(function(x){return x.id!==id;});
+    render();renderRicorrenti();dot("","Salvataggio...");
+    aggiornaPulseRicorrenti();
     var txSalvata=false;
     try{
       await post({action:"addTransaction",id:t.id,chi:t.chi,importo:t.importo,nota:t.nota,data:t.data});
       txSalvata=true;
-      await post({action:"deletePrevista",id:id});
+      await post({action:"deleteRicorrente",id:id});
       dot("ok","Sincronizzata 🐾");
     }catch(e){
-      // rollback allo stato pre-pagamento: tolgo la transazione e ripristino la prevista
+      // rollback allo stato pre-pagamento: tolgo la transazione e ripristino la ricorrente
       S.txs=S.txs.filter(function(x){return x.id!==t.id;});
-      S.previste=backupPreviste;
+      S.ricorrenti=backupRicorrenti;
       // caso parziale: se la 1ª post era andata (transazione salvata) ma la 2ª no,
       // elimino la transazione dal server per non lasciare un movimento orfano
       if(txSalvata){ try{ await post({action:"deleteTransaction",id:t.id}); }catch(e2){} }
-      render();renderPreviste();aggiornaPulsePreviste();
+      render();renderRicorrenti();aggiornaPulseRicorrenti();
       dot("err","Errore — riprova");
     }
   } else {
-    // Bancomat condiviso: la prevista resta ma cambia stato, confluirà
+    // Bancomat condiviso: la ricorrente resta ma cambia stato, confluirà
     // nello snapshot fisse alla chiusura del mese.
     p.stato="pagata_bancomat";
-    renderPreviste();dot("","Salvataggio...");
-    aggiornaPulsePreviste();
+    renderRicorrenti();dot("","Salvataggio...");
+    aggiornaPulseRicorrenti();
     try{
-      await post({action:"setStatoPrevista",id:id,stato:"pagata_bancomat"});
+      await post({action:"setStatoRicorrente",id:id,stato:"pagata_bancomat"});
       dot("ok","Sincronizzata 🐾");
-    }catch(e){ dot("err","Errore — riprova"); p.stato="attiva"; renderPreviste(); }
+    }catch(e){ dot("err","Errore — riprova"); p.stato="attiva"; renderRicorrenti(); }
   }
 }
 
 // ── Pulse sull'icona tab Fisse + banner se c'è una scadenza oggi/passata ──
-function previsteScadute(){
-  return (S.previste||[]).filter(function(p){
+function ricorrentiScadute(){
+  return (S.ricorrenti||[]).filter(function(p){
     if(p.stato!=="attiva") return false;
     var g=giorniAScadenza(p.scadenza);
     return g!==null && g<=0;
   });
 }
-function aggiornaPulsePreviste(){
-  var scadute=previsteScadute();
+function aggiornaPulseRicorrenti(){
+  var scadute=ricorrentiScadute();
   var btn=document.querySelector('.tab-btn[data-tab="fisso"]');
   if(btn) btn.classList.toggle("pulse", scadute.length>0);
 }
