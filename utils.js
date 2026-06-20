@@ -32,6 +32,7 @@ var editDebitoId=null;
 var prevSaldo=null;
 var annoAperto=String(new Date().getFullYear()); // anno in corso aperto di default nell'archivio
 var THEME_KEY="tana_theme";
+var SOLO_VIS_KEY="tana_solo_visibile"; // visibilità del bottone Orso Solo in tab-bar (default ON)
 var filterChi="tutti"; // "tutti" | "Luca" | "Ale"
 // Lista spesa
 var IDENTITY_KEY="tana_identity";
@@ -46,6 +47,9 @@ var editPrevistaId=null;
 var pagaPrevistaId=null;
 var delPrevistaConfirmId=null;
 var delFissaConfirmId=null;
+// ── PROMEMORIA CHIUSURA (Imp-B) ──
+var _chiusuraStash=null;     // voci del mese nuovo messe da parte durante "Archivia"
+var _chiusuraInCorso=false;  // true mentre chiudiMese() è in volo (blocca il ripristino in closeChiudi)
 // ── ORSO SOLO (contabilità personale) ──
 var soloChi=null;          // "Luca"/"Ale": chi è sbloccato in questa sessione (null = bloccato)
 var soloSbloccato=false;   // true dopo PIN corretto; si azzera a ogni riapertura app

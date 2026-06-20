@@ -14,6 +14,7 @@ function skeletons(){document.getElementById("storico").innerHTML='<span class="
 // ── AVVIO APP (chiamato da authInit dopo il login) ──
 function appStart(){
   initTheme();
+  applySoloVis();
   initTabSwipe();
   maybeBenvenuto();
   caricaSoloProfili();

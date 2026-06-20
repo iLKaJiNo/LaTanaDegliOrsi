@@ -85,6 +85,10 @@ async function addTx(){
     dataISO=new Date(dataInp.value+"T12:00:00").toISOString();
   }
   var t={id:Date.now().toString(),chi:chi,importo:imp,nota:nota,data:dataISO};
+  // ── Promemoria chiusura (Imp-B): 't' apre un mese più recente di quelli già presenti? ──
+  var _hadTxs=S.txs.length>0,_prevMax="";
+  for(var _i=0;_i<S.txs.length;_i++){var _ym=S.txs[_i].data.slice(0,7);if(_ym>_prevMax)_prevMax=_ym;}
+  var _newYM=t.data.slice(0,7);
   S.txs.push(t);
   impEl.value="";
   document.getElementById("nota").value="";
@@ -96,6 +100,7 @@ async function addTx(){
   btn.innerHTML="\u2713 Nella tana!";btn.classList.add("flash");btn.disabled=true;
   setTimeout(function(){btn.innerHTML="<img src='./bear.svg' style='width:1.125rem;height:1.125rem;vertical-align:middle;margin-right:6px;'> Aggiungi alla Tana";btn.classList.remove("flash");btn.disabled=false;},1400);
   render();
+  if(_hadTxs&&_newYM>_prevMax) showPromemoriaChiusura(_prevMax,_newYM);
   dot("","Salvataggio...");
   try{
     await post({action:"addTransaction",id:t.id,chi:t.chi,importo:t.importo,nota:t.nota,data:t.data});
@@ -301,6 +306,36 @@ async function confirmEditSaldo(){
 }
 
 
+// ── PROMEMORIA CHIUSURA MESE (Imp-B) ──
+// Banner non bloccante in cima alla Tana: invita ad archiviare il mese
+// precedente ancora aperto quando si inserisce una spesa di un mese nuovo.
+var _promPrevMax=null,_promNewYM=null;
+function meseLabel(ym){var p=ym.split("-");return new Date(+p[0],+p[1]-1,1).toLocaleDateString("it-IT",{month:"long",year:"numeric"});}
+function showPromemoriaChiusura(prevMax,newYM){
+  _promPrevMax=prevMax;_promNewYM=newYM;
+  var el=document.getElementById("promemoria-chiusura");
+  if(!el)return;
+  el.innerHTML='<span style="flex:1;min-width:140px;font-family:\'Nunito\',sans-serif;font-weight:700;color:var(--text);font-size:.85rem;">🌙 C\'è ancora <strong>'+meseLabel(prevMax)+'</strong> aperto — archiviarlo?</span>'
+    +'<button onclick="archiviaPromemoria()" style="background:var(--honey-d);border:none;border-radius:var(--r-sm);color:#fff;font-family:\'Baloo 2\',cursive;font-weight:700;font-size:.8rem;padding:7px 12px;cursor:pointer;-webkit-appearance:none;">Archivia</button>'
+    +'<button onclick="dismissPromemoria()" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text2);font-family:\'Baloo 2\',cursive;font-weight:700;font-size:.8rem;padding:7px 12px;cursor:pointer;-webkit-appearance:none;">Più tardi</button>';
+  el.style.display="flex";
+}
+function dismissPromemoria(){
+  var el=document.getElementById("promemoria-chiusura");
+  if(el){el.style.display="none";el.innerHTML="";}
+  _promPrevMax=null;_promNewYM=null;
+}
+function archiviaPromemoria(){
+  var newYM=_promNewYM,prevMax=_promPrevMax;
+  if(!newYM)return;
+  dismissPromemoria();
+  var stash=S.txs.filter(function(tx){return tx.data.slice(0,7)>=newYM;});
+  S.txs=S.txs.filter(function(tx){return tx.data.slice(0,7)<newYM;});
+  _chiusuraStash=stash;
+  openChiudi();
+  document.getElementById("modal-mese").value=meseLabel(prevMax);
+}
+
 // ── CHIUSURA MESE E ARCHIVIO ──
 function openChiudi(){
   var s=saldo();
@@ -329,9 +364,15 @@ function openChiudi(){
   document.getElementById("modal-chiudi").classList.add("open");
   setTimeout(function(){document.getElementById("modal-mese").select();},100);
 }
-function closeChiudi(){document.getElementById("modal-chiudi").classList.remove("open");}
+function closeChiudi(){
+  document.getElementById("modal-chiudi").classList.remove("open");
+  // Imp-B: se la chiusura è stata annullata dall'utente (stash presente
+  // ma nessuna chiusura in volo), rimetto a posto il mese nuovo.
+  if(_chiusuraStash&&!_chiusuraInCorso){S.txs=S.txs.concat(_chiusuraStash);_chiusuraStash=null;render();}
+}
 
 async function chiudiMese(){
+  _chiusuraInCorso=true; // Imp-B: blocca il ripristino stash nella closeChiudi() interna
   var mese=document.getElementById("modal-mese").value.trim()||new Date().toLocaleDateString("it-IT",{month:"long",year:"numeric"});
   var nuovoSaldo=saldo();
   var totMeseChiusura=Math.round(S.txs.reduce(function(a,t){return a+t.importo;},0)*100)/100;
@@ -373,10 +414,16 @@ S.chiusure.unshift(chiusura);sortChiusure();S.saldoIniziale=nuovoSaldo;S.txs=[];
     // non metà). origine collegata alla chiusura per il ripristino.
     try{ await depositaQuoteSolo(chiusura); }catch(e){ console.error("Ponte Solo:",e); }
     dot("ok","Mese chiuso \uD83C\uDF19");
+    // Imp-B: su successo S.txs (vuoto) accoglie il mese nuovo messo da parte
+    if(_chiusuraStash){S.txs=S.txs.concat(_chiusuraStash);_chiusuraStash=null;render();}
+    _chiusuraInCorso=false;
   } catch(e){
     dot("err","Errore chiusura");
     S.chiusure=S.chiusure.filter(function(x){return x.id!==chiusura.id;}); S.txs = backupTxs; S.saldoIniziale = backupSaldo;
     render();
+    // Imp-B: su errore torna mese-vecchio+nuovo = stato originale (nessun re-post)
+    if(_chiusuraStash){S.txs=S.txs.concat(_chiusuraStash);_chiusuraStash=null;render();}
+    _chiusuraInCorso=false;
   }
 }
 
