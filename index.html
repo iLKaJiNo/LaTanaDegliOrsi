@@ -277,6 +277,16 @@ if("serviceWorker" in navigator){
         </button>
       </div>
 
+      <!-- Dati -->
+      <div class="form-card">
+        <span class="section-lbl">Dati</span>
+        <button onclick="esportaBackupJSON()"
+          style="width:100%;text-align:left;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.9rem;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;-webkit-appearance:none;">&#x2B07;&#xFE0F; Esporta backup (JSON)</button>
+        <button onclick="esportaTxtCSV()"
+          style="width:100%;text-align:left;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.9rem;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;margin-top:10px;-webkit-appearance:none;">&#x1F4C4; Esporta spese (CSV)</button>
+        <div style="font-size:0.72rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;margin-top:10px;">Backup della cassa comune. L'area Orso Solo non &egrave; inclusa.</div>
+      </div>
+
     </div>
   </main>
 
@@ -327,6 +337,17 @@ if("serviceWorker" in navigator){
     <h2 style="text-align:center;" id="solo-grafanno-titolo">Andamento</h2>
     <div id="solo-grafanno-body"></div>
     <div class="modal-btns"><button class="btn-conferma" onclick="closeSoloGrafanno()">🐾 Chiudi</button></div>
+  </div>
+</div>
+
+<!-- MODALE CATEGORIE ANNO (donut categorie annuale) -->
+<div class="modal-overlay" id="modal-solo-categorie" onclick="if(event.target===this)closeSoloCategorieAnno()">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-icon" style="text-align:center;">🥧</div>
+    <h2 style="text-align:center;" id="solo-categorie-titolo">Categorie</h2>
+    <div class="solo-graf-canvas-wrap" id="solo-categorie-canvas-wrap"><canvas id="solo-categorie-canvas"></canvas></div>
+    <div class="solo-graf-legenda" id="solo-categorie-legenda"></div>
+    <div class="modal-btns"><button class="btn-conferma" onclick="closeSoloCategorieAnno()">🐾 Chiudi</button></div>
   </div>
 </div>
 
@@ -719,6 +740,10 @@ if("serviceWorker" in navigator){
     <h2 id="grafico-titolo">Spese mensili</h2>
     <div id="grafico-stats" style="font-size:13px;font-family:'Nunito',sans-serif;font-weight:600;color:var(--text2);text-align:center;margin-bottom:10px;"></div>
     <div id="grafico-barre-wrap" class="grafico-wrap">
+      <div class="grafico-toggle">
+        <button class="grafico-toggle-btn active" id="gp-mesi" onclick="setGraficoPeriodo('mesi')">📅 Mesi</button>
+        <button class="grafico-toggle-btn" id="gp-anni" onclick="setGraficoPeriodo('anni')">📆 Anni</button>
+      </div>
       <canvas class="grafico-canvas" id="grafico-canvas"></canvas>
     </div>
     <div id="grafico-torta-wrap" class="torta-wrap" style="display:none;">

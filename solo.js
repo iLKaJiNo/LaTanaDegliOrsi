@@ -886,6 +886,45 @@ function openSoloGraficiAnno(anno){
 }
 function closeSoloGrafanno(){ document.getElementById("modal-solo-grafanno").classList.remove("open"); }
 
+// ── CATEGORIE DI UN ANNO (donut uscite per categoria, base archivi) ──
+function openSoloCategorieAnno(anno){
+  var chiusure=(soloData.chiusure||[]).filter(function(c){return String(new Date(c.data).getFullYear())===String(anno);});
+  // Aggrego le USCITE per categoria su tutto l'anno (robusto: voci → fallback torta).
+  var perCat={};
+  chiusure.forEach(function(c){
+    if(c.voci && c.voci.length){
+      c.voci.forEach(function(v){ if(v.tipo==="uscita") perCat[v.categoria]=(perCat[v.categoria]||0)+v.importo; });
+    } else if(c.torta && c.torta.length){
+      c.torta.forEach(function(t){ perCat[t.nome]=(perCat[t.nome]||0)+(t.val||0); });
+    }
+  });
+  var torta=Object.keys(perCat).map(function(k){return{nome:k,val:Math.round(perCat[k]*100)/100,icona:soloIconaCat(k)};});
+  torta.sort(function(a,b){return b.val-a.val;});
+  var tot=torta.reduce(function(a,x){return a+x.val;},0);
+  document.getElementById("solo-categorie-titolo").textContent="Categorie "+anno;
+  var wrap=document.getElementById("solo-categorie-canvas-wrap");
+  var leg=document.getElementById("solo-categorie-legenda");
+  if(tot<=0){
+    wrap.style.display="none";
+    leg.innerHTML='<div class="grafico-empty">Nessuna spesa per categoria in '+anno+'</div>';
+    document.getElementById("modal-solo-categorie").classList.add("open");
+    return;
+  }
+  wrap.style.display="";
+  var h="";
+  torta.forEach(function(t,i){
+    var perc=Math.round(t.val/tot*100);
+    h+='<div class="torta-legenda-item"><div class="torta-legenda-dot" style="background:'+SOLO_PALETTE[i%SOLO_PALETTE.length]+'"></div>'
+      +'<span>'+(t.icona||"📌")+' '+escapeHtml(t.nome)+'</span>'
+      +'<span class="torta-legenda-val">'+eur(t.val)+' ('+perc+'%)</span></div>';
+  });
+  h+='<div class="torta-legenda-item" style="border-top:1px solid var(--border);padding-top:6px;margin-top:2px;"><span style="color:var(--text3);">Totale</span><span class="torta-legenda-val">'+eur(tot)+'</span></div>';
+  leg.innerHTML=h;
+  document.getElementById("modal-solo-categorie").classList.add("open");
+  setTimeout(function(){ soloDisegnaTorta(torta, tot, "solo-categorie-canvas"); }, 40);
+}
+function closeSoloCategorieAnno(){ document.getElementById("modal-solo-categorie").classList.remove("open"); }
+
 // ── CONFRONTO ANNI (barre per anno) ──
 function openSoloGraficiTuttiAnni(){
   var perAnno={};
@@ -1063,6 +1102,7 @@ function soloArchiviHtml(){
     if(aperto){
       h+='<div class="solo-anno-body">';
       h+='<button class="solo-anno-graf-btn" onclick="openSoloGraficiAnno(\''+anno+'\')">📊 Grafici '+anno+'</button>';
+      h+='<button class="solo-anno-graf-btn" onclick="openSoloCategorieAnno(\''+anno+'\')">🥧 Categorie '+anno+'</button>';
       lista.forEach(function(c){
         h+='<button class="solo-mese-row" onclick="openSoloChiusura(\''+c.id+'\')">'
           +'<span class="solo-mese-nome">'+escapeHtml(c.mese)+'</span>'

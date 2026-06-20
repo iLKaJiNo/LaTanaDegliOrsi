@@ -7,6 +7,7 @@
 // ════════════════════════════════════════════════════════
 
 var graficoVista="barre"; // "barre" | "torta"
+var graficoBarrePeriodo="mesi"; // "mesi" | "anni" — periodo della vista barre
 
 // vista: "barre" (spese per mese, archivio) | "torta" (Luca vs Ale del mese corrente)
 function openGrafico(vista){
@@ -21,6 +22,10 @@ function openGrafico(vista){
   }else{
     if(ic) ic.textContent="📊";
     if(tit) tit.textContent="Spese mensili";
+    graficoBarrePeriodo="mesi";
+    var bm=document.getElementById("gp-mesi"), ba=document.getElementById("gp-anni");
+    if(bm) bm.classList.add("active");
+    if(ba) ba.classList.remove("active");
     var totAnnuale=S.chiusure.reduce(function(a,c){
       return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));
     },0);
@@ -33,6 +38,17 @@ function openGrafico(vista){
   setTimeout(function(){renderGraficoVista();},50);
 }
 function closeGrafico(){document.getElementById("modal-grafico").classList.remove("open");}
+
+// Cambia il periodo della vista barre (mesi/anni), sincronizza toggle e titolo, ridisegna.
+function setGraficoPeriodo(p){
+  graficoBarrePeriodo = (p==="anni") ? "anni" : "mesi";
+  var bm=document.getElementById("gp-mesi"), ba=document.getElementById("gp-anni");
+  if(bm) bm.classList.toggle("active", graficoBarrePeriodo==="mesi");
+  if(ba) ba.classList.toggle("active", graficoBarrePeriodo==="anni");
+  var tit=document.getElementById("grafico-titolo");
+  if(tit) tit.textContent = (graficoBarrePeriodo==="anni") ? "Spese annuali" : "Spese mensili";
+  drawChart();
+}
 
 function renderGraficoVista(){
   var barraWrap=document.getElementById("grafico-barre-wrap");
@@ -124,13 +140,27 @@ function drawTorta(){
 function drawChart(){
   var canvas=document.getElementById("grafico-canvas");
   var ctx=canvas.getContext("2d");
-  var chiusure=[].concat(S.chiusure).reverse();
-  var totCorrente=S.txs.reduce(function(a,t){return a+t.importo;},0);
-  var dati=chiusure.map(function(c){
-    var tot=c.totale||c.txs.reduce(function(a,t){return a+(parseFloat(t.importo)||0);},0);
-    return{label:c.mese,val:Math.round(tot)};
-  });
-  if(S.txs.length>0){dati.push({label:"Mese corrente",val:Math.round(totCorrente)});}
+  var haCorrente=(graficoBarrePeriodo==="mesi" && S.txs.length>0);
+  var dati;
+  if(graficoBarrePeriodo==="anni"){
+    // Consuntivo per anno dei soli mesi ARCHIVIATI (no mese corrente).
+    var perAnno={};
+    S.chiusure.forEach(function(c){
+      var anno=new Date(c.data).getFullYear();
+      var tot=c.totale||c.txs.reduce(function(a,t){return a+(parseFloat(t.importo)||0);},0);
+      perAnno[anno]=(perAnno[anno]||0)+tot;
+    });
+    var anni=Object.keys(perAnno).sort(); // crescente
+    dati=anni.map(function(a){ return {label:String(a),val:Math.round(perAnno[a])}; });
+  }else{
+    var chiusure=[].concat(S.chiusure).reverse();
+    var totCorrente=S.txs.reduce(function(a,t){return a+t.importo;},0);
+    dati=chiusure.map(function(c){
+      var tot=c.totale||c.txs.reduce(function(a,t){return a+(parseFloat(t.importo)||0);},0);
+      return{label:c.mese,val:Math.round(tot)};
+    });
+    if(haCorrente){dati.push({label:"Mese corrente",val:Math.round(totCorrente)});}
+  }
 
   if(!dati.length){
     ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -176,7 +206,7 @@ function drawChart(){
     var x=padL+step*i+step/2;
     var bh=(d.val/maxVal)*chartH;
     var y=padT+chartH-bh;
-    var isLast=(i===dati.length-1&&S.txs.length>0);
+    var isLast=(haCorrente && i===dati.length-1);
     ctx.fillStyle=isLast?barColorLast:barColor;
     var r=Math.min(4,barW/2);
     ctx.beginPath();

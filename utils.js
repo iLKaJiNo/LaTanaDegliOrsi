@@ -160,3 +160,68 @@ async function sha256(str){
   var buf=await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,"0");}).join("");
 }
+
+// ── BACKUP / EXPORT (data-ownership, tutto lato client) ──
+// Esporta un backup MANUALE e COMPLETO della cassa comune in un file
+// JSON scaricabile. Nessuna scrittura su DB, nessuna chiamata di rete:
+// serializza lo stato globale S già caricato. Funziona anche da file://.
+// L'area Orso Solo (PIN-gated) NON è inclusa: va gestita a parte.
+function esportaBackupJSON(){
+  var obj={
+    _schema:"tana-backup-v1",
+    _exportedAt:new Date().toISOString(),
+    app:"La Tana degli Orsi",
+    _note:"Backup della sola cassa comune. L'area Orso Solo non è inclusa.",
+    dati:S
+  };
+  var blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"});
+  var d=new Date();
+  var ymd=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url;
+  a.download="tana-backup-"+ymd+".json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  dot("ok","Backup esportato 🐾");
+}
+
+// ── EXPORT CSV (storico spese mese corrente, human-readable) ──
+// CSV PIATTO del solo S.txs per Excel/Sheets. Colonne: data,chi,importo,nota.
+// Separatore virgola, escaping RFC 4180. Il backup completo resta il JSON.
+function _csvCampo(v){
+  v=String(v==null?"":v);
+  if(/[",\n\r]/.test(v)) v='"'+v.replace(/"/g,'""')+'"';
+  return v;
+}
+function esportaTxtCSV(){
+  var righe=[["data","chi","importo","nota"].join(",")];
+  (S.txs||[]).forEach(function(t){
+    var dt=t.data?new Date(t.data):null;
+    var dataLeggibile=(dt&&!isNaN(dt))
+      ? String(dt.getDate()).padStart(2,"0")+"/"+String(dt.getMonth()+1).padStart(2,"0")+"/"+dt.getFullYear()
+      : (t.data||"");
+    var importo=(Math.round((t.importo||0)*100)/100).toFixed(2);
+    righe.push([
+      _csvCampo(dataLeggibile),
+      _csvCampo(t.chi),
+      _csvCampo(importo),
+      _csvCampo(t.nota)
+    ].join(","));
+  });
+  // BOM "﻿" => Excel legge correttamente UTF-8 (accenti/emoji).
+  var blob=new Blob(["﻿"+righe.join("\r\n")],{type:"text/csv;charset=utf-8"});
+  var d=new Date();
+  var ymd=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url;
+  a.download="tana-spese-"+ymd+".csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  dot("ok","Spese esportate 🐾");
+}
