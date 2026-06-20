@@ -814,7 +814,7 @@ function renderArchivioTab(){
   var totAnnuale=S.chiusure.reduce(function(a,c){return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));},0);
   var mediaAnnuale=S.chiusure.length>0?Math.round(totAnnuale/S.chiusure.length):0;
   h+='<div class="chiusure-section">';
-  h+='<div class="chiusure-head-row"><span class="chiusure-head">📦 '+S.chiusure.length+' mesi archiviati</span><button class="btn-grafico" onclick="openGrafico('barre')">📊 Grafico</button></div>';
+  h+='<div class="chiusure-head-row"><span class="chiusure-head">📦 '+S.chiusure.length+' mesi archiviati</span><button class="btn-grafico" onclick="openGrafico(\'barre\')">📊 Grafico</button></div>';
   h+='<div class="chiusura-totale" style="margin-bottom:4px;">📅 Totale archivio: <strong>'+eurInt(totAnnuale)+'</strong></div>';
   h+='<div class="chiusura-totale" style="margin-bottom:12px;">📊 Media mensile: <strong>'+eurInt(mediaAnnuale)+'</strong></div>';
 
@@ -1205,6 +1205,30 @@ function switchTab(tab) {
     void main.offsetWidth; // forza il reflow per re-triggerare l'animazione
     main.classList.add("tab-switching");
   }
+}
+
+// ── IMPOSTAZIONI (schermata da header 🍪) ──
+// Tab senza bottone in tab-bar: vi si accede solo da qui.
+function openImpostazioni(){ switchTab("impostazioni"); }
+
+// ── VISIBILITÀ ORSO SOLO ──
+// Flag in localStorage (default ON): nasconde SOLO il bottone .tab-solo.
+// Nessuna logica viene disattivata — chiusure, ponte e realtime continuano
+// a girare sotto il cofano: "nascondere, non sospendere".
+function soloVisibile(){ return localStorage.getItem(SOLO_VIS_KEY) !== "0"; }
+function applySoloVis(){
+  var on = soloVisibile();
+  var btn = document.querySelector(".tab-btn.tab-solo");
+  if(btn) btn.style.display = on ? "" : "none";
+  var ctrl = document.getElementById("imp-solo-vis-btn");
+  if(ctrl) ctrl.innerHTML = on ? "👁 Visibile" : "🙈 Nascosto";
+}
+function toggleSoloVis(){
+  var on = !soloVisibile();
+  localStorage.setItem(SOLO_VIS_KEY, on ? "1" : "0");
+  applySoloVis();
+  // Guard: se nascondo mentre sono dentro l'Orso Solo, torno alla Tana
+  if(!on && currentTab === "solo") switchTab("tana");
 }
 
 // ── GUIDA DELLA TANA ──
