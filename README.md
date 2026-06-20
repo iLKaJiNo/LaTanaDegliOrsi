@@ -3,7 +3,7 @@
 
 # La Tana degli Orsi 🐻🍯
 
-**Cassa comune di coppia — semplice, dolce, tutta vostra.**
+**Cassa comune di coppia — semplice, dolce, tutta nostra.**
 
 </div>
 
