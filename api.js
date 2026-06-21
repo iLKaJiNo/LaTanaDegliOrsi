@@ -67,7 +67,7 @@ async function load(){
       if(r.chiave==="nota_condivisa"&&r.valore) S.nota={testo:r.valore.testo||"",autore:r.valore.autore||"",data:r.valore.data||""};
     });
 
-    S.txs=txs.map(function(r){return{id:r.id,chi:r.chi,importo:parseFloat(r.importo)||0,nota:r.nota||"",data:r.data||""};});
+    S.txs=txs.map(function(r){return{id:r.id,chi:r.chi,importo:parseFloat(r.importo)||0,nota:r.nota||"",data:r.data||"",origine:r.origine||null};});
 
     S.chiusure=chiusure.map(function(r){
       var t=r.txs||[];
@@ -89,7 +89,8 @@ async function load(){
 
     S.lista=lista.map(function(r){return{id:r.id,testo:r.testo,quantita:r.quantita||"",completata:!!r.completata,data:r.data||""};});
 
-    S.ricorrenti=ricorrenti.map(function(r){return{id:r.id,nome:r.nome,importo:parseFloat(r.importo)||0,scadenza:r.scadenza||"",stato:r.stato||"attiva",data:r.data||""};});
+    S.ricorrenti=ricorrenti.map(function(r){return{id:r.id,nome:r.nome,importo:parseFloat(r.importo)||0,scadenza:r.scadenza||"",stato:r.stato||"attiva",data:r.data||"",
+      icona:r.icona||"📅",ricorrente:r.ricorrente===true,ogniQuanto:r.ogni_quanto||1,unita:r.unita||"mesi",fineData:r.fine_data||null,volteRimaste:r.volte_rimaste,attiva:r.attiva!==false};});
 
     try{ localStorage.setItem(CACHE_DATI, JSON.stringify(S)); }catch(e){}
     dot("ok","Sincronizzata \uD83D\uDC3E");
@@ -143,7 +144,7 @@ async function runAction(p){
 
     // — Transazioni —
     case "addTransaction":
-      r=await sb.from("transazioni").insert({id:p.id,chi:p.chi,importo:p.importo,nota:p.nota||"",data:p.data}); break;
+      r=await sb.from("transazioni").insert({id:p.id,chi:p.chi,importo:p.importo,nota:p.nota||"",data:p.data,origine:p.origine||null}); break;
     case "editTransaction":
       r=await sb.from("transazioni").update({chi:p.chi,importo:p.importo,nota:p.nota||"",data:p.data}).eq("id",p.id); break;
     case "deleteTransaction":
@@ -161,8 +162,7 @@ async function runAction(p){
         p_id:p.chiusura.id, p_mese:p.chiusura.mese, p_saldo:p.chiusura.saldo,
         p_data:p.chiusura.data, p_saldo_iniziale:p.chiusura.saldoIniziale,
         p_txs:p.chiusura.txs, p_fisse_snapshot:p.chiusura.fisseSnapshot||[],
-        p_totale:p.chiusura.totale||0, p_nuovo_saldo:p.nuovoSaldo,
-        p_previste_ids:[]   // nome PARAMETRO della funzione SQL chiudi_mese: NON rinominare (la funzione DB attende ancora "p_previste_ids")
+        p_totale:p.chiusura.totale||0, p_nuovo_saldo:p.nuovoSaldo
       }); break;
     case "ripristina":
       r=await sb.rpc("ripristina_mese",{
@@ -199,9 +199,13 @@ async function runAction(p){
 
     // — Spese ricorrenti —
     case "addRicorrente":
-      r=await sb.from("ricorrenti").insert({id:p.id,nome:p.nome,importo:p.importo,scadenza:p.scadenza||null,stato:p.stato||"attiva",data:p.data}); break;
+      r=await sb.from("ricorrenti").insert({id:p.id,nome:p.nome,importo:p.importo,scadenza:p.scadenza||null,stato:p.stato||"attiva",data:p.data,
+        icona:p.icona||"📅",ricorrente:!!p.ricorrente,ogni_quanto:p.ogniQuanto||1,unita:p.unita||"mesi",
+        fine_data:p.fineData||null,volte_rimaste:p.volteRimaste,attiva:p.attiva!==false}); break;
     case "editRicorrente":
-      r=await sb.from("ricorrenti").update({nome:p.nome,importo:p.importo,scadenza:p.scadenza||null}).eq("id",p.id); break;
+      r=await sb.from("ricorrenti").update({nome:p.nome,importo:p.importo,scadenza:p.scadenza||null,
+        icona:p.icona||"📅",ricorrente:!!p.ricorrente,ogni_quanto:p.ogniQuanto||1,unita:p.unita||"mesi",
+        fine_data:p.fineData||null,volte_rimaste:p.volteRimaste,attiva:p.attiva!==false}).eq("id",p.id); break;
     case "setStatoRicorrente":
       r=await sb.from("ricorrenti").update({stato:p.stato}).eq("id",p.id); break;
     case "deleteRicorrente":

@@ -180,11 +180,15 @@ if("serviceWorker" in navigator){
         <div class="riepilogo-card" id="riepilogo-card">
           <div class="riepilogo-title">📊 Riepilogo mese corrente</div>
           <div class="riepilogo-row">
-            <span class="riepilogo-row-lbl">🛒 Spese comuni (cassa)</span>
+            <span class="riepilogo-row-lbl">🛒 Spese Comuni (Cassa)</span>
             <span class="riepilogo-row-val" id="riepilogo-comuni">--- €</span>
           </div>
+<div class="riepilogo-row">
+            <span class="riepilogo-row-lbl">📅 Spese ricorrenti (conto condiviso)</span>
+            <span class="riepilogo-row-val" id="riepilogo-ricorrenti">--- €</span>
+          </div>
           <div class="riepilogo-row">
-            <span class="riepilogo-row-lbl">📌 Spese fisse</span>
+            <span class="riepilogo-row-lbl">📌 Spese fisse (conto condiviso)</span>
             <span class="riepilogo-row-val" id="riepilogo-fisse">--- €</span>
           </div>
           <div class="riepilogo-totale">
@@ -348,6 +352,17 @@ if("serviceWorker" in navigator){
     <div class="solo-graf-canvas-wrap" id="solo-categorie-canvas-wrap"><canvas id="solo-categorie-canvas"></canvas></div>
     <div class="solo-graf-legenda" id="solo-categorie-legenda"></div>
     <div class="modal-btns"><button class="btn-conferma" onclick="closeSoloCategorieAnno()">🐾 Chiudi</button></div>
+  </div>
+</div>
+
+<!-- MODALE CATEGORIE — CONFRONTO ANNI (barre impilate per categoria) -->
+<div class="modal-overlay" id="modal-solo-categorie-anni" onclick="if(event.target===this)closeSoloCategorieAnni()">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-icon" style="text-align:center;">🥧</div>
+    <h2 style="text-align:center;" id="solo-cat-anni-titolo">Categorie</h2>
+    <div class="solo-graf-canvas-wrap" id="solo-cat-anni-canvas-wrap"><canvas id="solo-cat-anni-canvas" style="width:100%;height:200px;display:block;"></canvas></div>
+    <div class="solo-graf-legenda" id="solo-cat-anni-legenda"></div>
+    <div class="modal-btns"><button class="btn-conferma" onclick="closeSoloCategorieAnni()">🐾 Chiudi</button></div>
   </div>
 </div>
 
@@ -785,19 +800,41 @@ if("serviceWorker" in navigator){
   <div class="modal">
     <div class="modal-icon">📅</div>
     <h2 id="modal-ricorrente-titolo">Nuova spesa ricorrente</h2>
-    <p>Una spesa futura con una scadenza. Quando la paghi, scegli se l'ha pagata Luca/Ale o il Conto Comune BPM.</p>
+    <p>Una spesa con una scadenza. Può ripetersi nel tempo. Quando la paghi, scegli se l'ha pagata Luca/Ale o il Conto Comune BPM.</p>
     <div class="modal-input-row">
       <label>🏷️ Nome</label>
-      <input type="text" id="ricorrente-nome" placeholder="es. Bollo auto, Assicurazione...">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button type="button" id="ricorrente-icona-btn" class="solo-cat-ic" onclick="ricCiclaIcona()" title="Cambia icona">📅</button>
+        <input type="text" id="ricorrente-nome" placeholder="es. Bollo auto, Assicurazione..." style="flex:1;">
+      </div>
     </div>
     <div class="modal-input-row">
       <label>💰 Importo (€)</label>
       <input type="number" id="ricorrente-imp" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
     </div>
     <div class="modal-input-row">
-      <label>📅 Scadenza</label>
+      <label id="ricorrente-scad-lbl">📅 Scadenza</label>
       <input type="date" id="ricorrente-scad">
     </div>
+    <div class="modal-input-row">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:700;"><input type="checkbox" id="ricorrente-ric" onchange="ricorrenteToggleRic()">🔁 Si ripete nel tempo</label>
+    </div>
+    <div class="modal-input-row" id="ricorrente-freq-row" style="display:none;"><label>🔁 Ogni</label>
+      <div style="display:flex;gap:8px;flex:1;">
+        <input type="number" id="ricorrente-ogni" min="1" step="1" inputmode="numeric" value="1" style="width:72px;">
+        <select id="ricorrente-unita">
+          <option value="giorni">giorni</option><option value="settimane">settimane</option>
+          <option value="mesi" selected>mesi</option><option value="anni">anni</option></select>
+      </div></div>
+    <div class="modal-input-row" id="ricorrente-fine-row" style="display:none;"><label>⏳ Finché</label>
+      <select id="ricorrente-fine" onchange="ricorrenteFineChange()">
+        <option value="mai">per sempre</option>
+        <option value="data">fino a una data</option>
+        <option value="volte">per N volte</option></select></div>
+    <div class="modal-input-row" id="ricorrente-fine-extra" style="display:none;">
+      <input type="date" id="ricorrente-fine-data" style="display:none;">
+      <input type="number" id="ricorrente-fine-volte" min="1" step="1" inputmode="numeric" style="display:none;">
+      <span id="ricorrente-fine-volte-lbl" style="display:none;">volte rimaste</span></div>
     <div class="modal-btns">
       <button class="btn-annulla" onclick="closeNuovaRicorrente()">Annulla</button>
       <button class="btn-conferma" onclick="salvaRicorrente()">📅 Salva</button>

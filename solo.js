@@ -354,7 +354,7 @@ async function soloSalvaEditVoce(){
 }
 
 // ── RICORRENTI (fisse personali con frequenza) ──
-var UNITA_LABEL={giorni:"giorni",settimane:"settimane",mesi:"mesi",anni:"anni"};
+// UNITA_LABEL ora è condiviso in utils.js (usato anche da fisso.js)
 
 // Ricorrenti la cui prossima scadenza è oggi o passata
 function soloRicorrentiScadute(){
@@ -440,15 +440,7 @@ function soloRicScaduta(r){
   return new Date(r.prossimaScadenza)<=oggi;
 }
 
-// Calcola la prossima scadenza avanzando di (ogniQuanto × unita) da una data
-function soloAvanzaData(iso, ogni, unita){
-  var d=new Date(iso);
-  if(unita==="giorni") d.setDate(d.getDate()+ogni);
-  else if(unita==="settimane") d.setDate(d.getDate()+ogni*7);
-  else if(unita==="mesi") d.setMonth(d.getMonth()+ogni);
-  else if(unita==="anni") d.setFullYear(d.getFullYear()+ogni);
-  return d.toISOString().slice(0,10);
-}
+// soloAvanzaData ora è avanzaData in utils.js (condiviso Solo + comune)
 
 async function soloAddRicorrente(){
   var nome=document.getElementById("solo-ric-nome").value.trim();
@@ -498,7 +490,7 @@ async function soloPagaRicorrente(id){
   if(!r) return;
   // backup dello stato precedente della ricorrente (per rollback)
   var backupRic={prossimaScadenza:r.prossimaScadenza, volteRimaste:r.volteRimaste, attiva:r.attiva};
-  var nuovaScad=soloAvanzaData(r.prossimaScadenza, r.ogniQuanto, r.unita);
+  var nuovaScad=avanzaData(r.prossimaScadenza, r.ogniQuanto, r.unita);
   var v={id:Date.now().toString(),proprietario:soloChi,tipo:r.tipo,importo:r.importo,categoria:r.categoria,nota:r.nome,data:new Date().toISOString(),origine:"ric:"+r.id};
   soloData.voci.unshift(v);
   // gestione fine ricorrenza
@@ -664,6 +656,19 @@ function openSoloCestino(){
     if(svuota) svuota.style.display="";
     var h="";
     c.forEach(function(it){
+      if(it._tipo==="chiusura"){
+        var nv=(it.voci||[]).length;
+        h+='<div class="cestino-row">';
+        h+='<div class="solo-voce-cat" style="flex-shrink:0;">🌙</div>';
+        h+='<div class="cestino-row-body">';
+        h+='<div class="cestino-row-nota">'+escapeHtml(it.mese||"Mese")+'</div>';
+        h+='<div class="cestino-row-meta">'+nv+' voci · chiuso il '+fmt(it.data)+'</div>';
+        h+='</div>';
+        h+='<div class="cestino-row-imp" style="color:'+(it.saldo>=0?"var(--moss)":"var(--berry)")+';">'+eurInt(it.saldo)+'</div>';
+        h+='<button class="btn-ripristina-voce" onclick="ripristinaDaSoloCestino(\''+it.id+'\')">↩ Ripristina</button>';
+        h+='</div>';
+        return;
+      }
       var ric=(it._tipo==="ricorrente");
       var entrata=it.tipo==="entrata";
       var ic= ric ? "🔁" : soloIconaCat(it.categoria);
@@ -695,6 +700,7 @@ async function ripristinaDaSoloCestino(id){
   var c=getSoloCestino();
   var it=c.find(function(x){return x.id===id;});
   if(!it) return;
+  var backupCestino=c.slice();
   setSoloCestino(c.filter(function(x){return x.id!==id;}));
   vibra(30);
   var newId=Date.now().toString();
@@ -708,14 +714,24 @@ async function ripristinaDaSoloCestino(id){
     renderSolo();
     dot("","Salvataggio...");
     try{ await post({action:"addSoloRicorrente",ric:r}); dot("ok","Ripristinata 🐾"); }
-    catch(e){ soloData.ricorrenti=soloData.ricorrenti.filter(function(x){return x.id!==newId;}); renderSolo(); dot("err","Errore ripristino"); }
+    catch(e){ soloData.ricorrenti=soloData.ricorrenti.filter(function(x){return x.id!==newId;}); setSoloCestino(backupCestino); renderSolo(); dot("err","Errore ripristino"); }
+  }else if(it._tipo==="chiusura"){
+    var ch={id:it.id,proprietario:soloChi,mese:it.mese,totEntrate:it.totEntrate,totUscite:it.totUscite,
+            saldo:it.saldo,data:it.data,voci:it.voci||[],torta:it.torta||[]};
+    soloData.chiusure.push(ch);
+    soloData.chiusure.sort(function(a,b){return (b.data||"").localeCompare(a.data||"");}); // discendente per data, come il load
+    soloSegmento="archivi";
+    renderSolo();
+    dot("","Salvataggio...");
+    try{ await post({action:"addSoloChiusura",ch:ch}); dot("ok","Ripristinata 🐾"); }
+    catch(e){ soloData.chiusure=soloData.chiusure.filter(function(x){return x.id!==ch.id;}); setSoloCestino(backupCestino); renderSolo(); dot("err","Errore ripristino"); }
   }else{
     var v={id:newId,proprietario:soloChi,tipo:it.tipo,importo:it.importo,categoria:it.categoria,nota:it.nota||"",data:it.data,origine:it.origine||null};
     soloData.voci.unshift(v);
     renderSolo();
     dot("","Salvataggio...");
     try{ await post({action:"addSoloVoce",voce:v}); dot("ok","Ripristinata 🐾"); }
-    catch(e){ soloData.voci=soloData.voci.filter(function(x){return x.id!==newId;}); renderSolo(); dot("err","Errore ripristino"); }
+    catch(e){ soloData.voci=soloData.voci.filter(function(x){return x.id!==newId;}); setSoloCestino(backupCestino); renderSolo(); dot("err","Errore ripristino"); }
   }
 }
 
@@ -924,6 +940,53 @@ function openSoloCategorieAnno(anno){
   setTimeout(function(){ soloDisegnaTorta(torta, tot, "solo-categorie-canvas"); }, 40);
 }
 function closeSoloCategorieAnno(){ document.getElementById("modal-solo-categorie").classList.remove("open"); }
+function closeSoloCategorieAnni(){ document.getElementById("modal-solo-categorie-anni").classList.remove("open"); }
+
+// ── CATEGORIE CROSS-ANNO (barre impilate, una pila per anno) ──
+function openSoloCategorieAnni(){
+  var chiusure=soloData.chiusure||[];
+  // perAnnoPerCat: { anno: {Cat:val,...} } — SOLO uscite, logica robusta voci→torta
+  var perAnnoPerCat={}, totByCat={};
+  chiusure.forEach(function(c){
+    var anno=String(new Date(c.data).getFullYear()||"—");
+    var dst=(perAnnoPerCat[anno]=perAnnoPerCat[anno]||{});
+    if(c.voci && c.voci.length){
+      c.voci.forEach(function(v){ if(v.tipo==="uscita"){ dst[v.categoria]=(dst[v.categoria]||0)+v.importo; totByCat[v.categoria]=(totByCat[v.categoria]||0)+v.importo; } });
+    } else if(c.torta && c.torta.length){
+      c.torta.forEach(function(t){ dst[t.nome]=(dst[t.nome]||0)+(t.val||0); totByCat[t.nome]=(totByCat[t.nome]||0)+(t.val||0); });
+    }
+  });
+  // categorie ordinate per TOTALE cross-anno desc → ordine stabile per colori+legenda
+  var categorie=Object.keys(totByCat).sort(function(a,b){return totByCat[b]-totByCat[a];});
+  var anni=Object.keys(perAnnoPerCat).sort(); // asc
+  var totGen=categorie.reduce(function(a,k){return a+totByCat[k];},0);
+
+  document.getElementById("solo-cat-anni-titolo").textContent="Categorie — confronto anni";
+  var wrap=document.getElementById("solo-cat-anni-canvas-wrap");
+  var leg=document.getElementById("solo-cat-anni-legenda");
+  if(!anni.length || totGen<=0){
+    wrap.style.display="none";
+    leg.innerHTML='<div class="grafico-empty">Nessuna spesa per categoria ancora.</div>';
+    document.getElementById("modal-solo-categorie-anni").classList.add("open");
+    return;
+  }
+  wrap.style.display="";
+  // colore stabile per categoria (stesso indice in pile E legenda)
+  var coloreByCat={};
+  categorie.forEach(function(cat,i){ coloreByCat[cat]=SOLO_PALETTE[i%SOLO_PALETTE.length]; });
+  // legenda: pallino colore + categoria + totale cross-anno
+  var h="";
+  categorie.forEach(function(cat){
+    var perc=Math.round(totByCat[cat]/totGen*100);
+    h+='<div class="torta-legenda-item"><div class="torta-legenda-dot" style="background:'+coloreByCat[cat]+'"></div>'
+      +'<span>'+soloIconaCat(cat)+' '+escapeHtml(cat)+'</span>'
+      +'<span class="torta-legenda-val">'+eur(totByCat[cat])+' ('+perc+'%)</span></div>';
+  });
+  h+='<div class="torta-legenda-item" style="border-top:1px solid var(--border);padding-top:6px;margin-top:2px;"><span style="color:var(--text3);">Totale</span><span class="torta-legenda-val">'+eur(totGen)+'</span></div>';
+  leg.innerHTML=h;
+  document.getElementById("modal-solo-categorie-anni").classList.add("open");
+  setTimeout(function(){ soloDisegnaBarreImpilate("solo-cat-anni-canvas", anni, categorie, perAnnoPerCat, coloreByCat); }, 50);
+}
 
 // ── CONFRONTO ANNI (barre per anno) ──
 function openSoloGraficiTuttiAnni(){
@@ -1018,6 +1081,82 @@ function soloDisegnaBarre(canvasId, dati){
   });
 }
 
+// Barre IMPILATE per categoria — una pila per anno (mirror assi/griglia di soloDisegnaBarre).
+// anni=[...], categorie=[...] (ordine stabile), perAnnoPerCat={anno:{cat:val}}, coloreByCat={cat:hex}
+function soloDisegnaBarreImpilate(canvasId, anni, categorie, perAnnoPerCat, coloreByCat){
+  var canvas=document.getElementById(canvasId);
+  if(!canvas) return;
+  var ctx=canvas.getContext("2d");
+  if(!anni || !anni.length){ ctx.clearRect(0,0,canvas.width,canvas.height); return; }
+
+  var dpr=window.devicePixelRatio||1;
+  var rect=canvas.getBoundingClientRect();
+  canvas.width=rect.width*dpr; canvas.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);
+  var W=rect.width, H=rect.height;
+  var padL=44, padR=16, padT=20, padB=48;
+  var chartW=W-padL-padR, chartH=H-padT-padB;
+
+  // maxVal = max sulla SOMMA categorie di ogni anno (arrotondato a centinaia, come soloDisegnaBarre)
+  var totAnno=anni.map(function(a){ var s=0; categorie.forEach(function(cat){ s+=(perAnnoPerCat[a][cat]||0); }); return s; });
+  var maxVal=Math.max.apply(null, totAnno)||1;
+  maxVal=Math.ceil(maxVal/100)*100; if(maxVal<=0) maxVal=100;
+
+  var gridColor="rgba(184,149,106,0.2)";
+  var textColor="#B8956A";
+
+  ctx.clearRect(0,0,W,H);
+
+  // Griglia orizzontale + label € sull'asse Y (identico a soloDisegnaBarre)
+  var steps=4;
+  ctx.strokeStyle=gridColor; ctx.lineWidth=1;
+  ctx.font="10px 'Nunito',sans-serif"; ctx.fillStyle=textColor; ctx.textAlign="right";
+  for(var i=0;i<=steps;i++){
+    var y=padT+chartH-(chartH/steps)*i;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+chartW,y); ctx.stroke();
+    ctx.fillText(Math.round(maxVal/steps*i)+" €", padL-6, y+4);
+  }
+
+  // Segmento di pila — cima arrotondata solo sul segmento più in alto
+  function seg(x,yTop,w,segH,color,topRound){
+    var r=topRound?Math.min(4,w/2):0;
+    ctx.fillStyle=color;
+    ctx.beginPath();
+    ctx.moveTo(x-w/2+r,yTop);
+    ctx.lineTo(x+w/2-r,yTop);
+    ctx.quadraticCurveTo(x+w/2,yTop,x+w/2,yTop+r);
+    ctx.lineTo(x+w/2,yTop+segH);
+    ctx.lineTo(x-w/2,yTop+segH);
+    ctx.lineTo(x-w/2,yTop+r);
+    ctx.quadraticCurveTo(x-w/2,yTop,x-w/2+r,yTop);
+    ctx.closePath(); ctx.fill();
+  }
+
+  var step=chartW/anni.length;
+  var barW=Math.min(46, step*0.5);
+  ctx.textAlign="center";
+
+  anni.forEach(function(a,idx){
+    var cx=padL+step*idx+step/2;
+    var yBase=padT+chartH; // impilo dal basso verso l'alto
+    // ultima categoria con valore > 0 in quest'anno → cima arrotondata
+    var topIdx=-1;
+    categorie.forEach(function(cat,ci){ if((perAnnoPerCat[a][cat]||0)>0) topIdx=ci; });
+    categorie.forEach(function(cat,ci){
+      var val=perAnnoPerCat[a][cat]||0;
+      if(val<=0) return; // segmento 0 → saltato (colore comunque stabile)
+      var segH=(val/maxVal)*chartH;
+      var yTop=yBase-segH;
+      seg(cx,yTop,barW,segH,coloreByCat[cat],ci===topIdx);
+      yBase=yTop;
+    });
+    // label anno
+    ctx.fillStyle=textColor; ctx.font="9px 'Nunito',sans-serif";
+    var lbl=String(a); if(lbl.length>8) lbl=lbl.substring(0,8)+"…";
+    ctx.fillText(lbl, cx, padT+chartH+14);
+  });
+}
+
 // ── CHIUSURA SOLO (archivia) ──
 function openSoloChiudi(){
   var ent=0, usc=0;
@@ -1090,6 +1229,7 @@ function soloArchiviHtml(){
   });
   var anni=Object.keys(perAnno).sort(function(a,b){return b-a;}); // recenti prima
   var h='<div class="solo-archivi">';
+  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:8px;">'+soloCestinoBtnHtml()+'</div>';
   anni.forEach(function(anno){
     var lista=perAnno[anno];
     var totU=lista.reduce(function(a,c){return a+c.totUscite;},0);
@@ -1104,9 +1244,14 @@ function soloArchiviHtml(){
       h+='<button class="solo-anno-graf-btn" onclick="openSoloGraficiAnno(\''+anno+'\')">📊 Grafici '+anno+'</button>';
       h+='<button class="solo-anno-graf-btn" onclick="openSoloCategorieAnno(\''+anno+'\')">🥧 Categorie '+anno+'</button>';
       lista.forEach(function(c){
-        h+='<button class="solo-mese-row" onclick="openSoloChiusura(\''+c.id+'\')">'
-          +'<span class="solo-mese-nome">'+escapeHtml(c.mese)+'</span>'
-          +'<span class="solo-mese-saldo '+(c.saldo>=0?"pos":"neg")+'">'+eur(c.saldo)+'</span></button>';
+        h+='<div class="solo-mese-wrap">';
+        h+=  '<button class="solo-mese-row" onclick="openSoloChiusura(\''+c.id+'\')">'
+            +'<span class="solo-mese-nome">'+escapeHtml(c.mese)+'</span>'
+            +'<span class="solo-mese-saldo '+(c.saldo>=0?"pos":"neg")+'">'+eur(c.saldo)+'</span></button>';
+        h+=  (soloDelArchivioId===c.id
+              ? '<span class="solo-voce-confirm"><button class="svc-si" onclick="soloDelArchivio(\''+c.id+'\')">Sì</button><button class="svc-no" onclick="soloDelArchivioAnnulla()">No</button></span>'
+              : '<button class="solo-voce-del" onclick="soloDelArchivioChiedi(\''+c.id+'\')" title="Elimina archivio">🗑️</button>');
+        h+='</div>';
       });
       h+='</div>';
     }
@@ -1116,6 +1261,7 @@ function soloArchiviHtml(){
   // modale dei grafici degli anni (barre 2026 vs 2027...) se >1 anno
   if(anni.length>1){
     h+='<button class="solo-anno-graf-btn" style="margin-top:14px;" onclick="openSoloGraficiTuttiAnni()">📈 Confronta gli anni</button>';
+    h+='<button class="solo-anno-graf-btn" onclick="openSoloCategorieAnni()">🥧 Categorie — confronto anni</button>';
   }
   return h;
 }
@@ -1123,6 +1269,22 @@ function soloArchiviHtml(){
 function soloToggleAnno(anno){
   soloAnnoAperto = (soloAnnoAperto==String(anno)) ? null : String(anno);
   renderSolo();
+}
+
+// ── Elimina un archivio (chiusura) → cestino, reversibile (conferma inline) ──
+function soloDelArchivioChiedi(id){ soloDelArchivioId=id; renderSolo(); }
+function soloDelArchivioAnnulla(){ soloDelArchivioId=null; renderSolo(); }
+async function soloDelArchivio(id){
+  var ch=(soloData.chiusure||[]).find(function(x){return x.id===id;});
+  soloDelArchivioId=null;
+  if(!ch){ renderSolo(); return; }
+  var backupChiusure=soloData.chiusure.slice();
+  var backupCestino=getSoloCestino();
+  addAlSoloCestino(ch,"chiusura");
+  soloData.chiusure=soloData.chiusure.filter(function(x){return x.id!==id;});
+  vibra(20); renderSolo(); dot("","Salvataggio...");
+  try{ await post({action:"deleteSoloChiusura",id:id}); dot("ok","Sincronizzata 🐾"); }
+  catch(e){ soloData.chiusure=backupChiusure; setSoloCestino(backupCestino); renderSolo(); dot("err","Errore eliminazione"); }
 }
 
 // ── Dettaglio chiusura, grafici anno, confronto anni (L-3b) ──

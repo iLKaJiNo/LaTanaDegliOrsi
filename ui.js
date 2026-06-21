@@ -346,13 +346,19 @@ function openChiudi(){
   // Mostra riepilogo spese fisse che verranno archiviate
   var totComuni=S.txs.reduce(function(a,t){return a+t.importo;},0);
   var totFisse=S.fisse.reduce(function(a,f){return a+f.importo;},0);
+  // ricorrenti pagate-BPM: confluiranno nello snapshot fisse (mirror di chiudiMese)
+  var ricorrentiBancomat=(S.ricorrenti||[]).filter(function(p){return p.stato==="pagata_bancomat";});
+  totFisse+=ricorrentiBancomat.reduce(function(a,p){return a+p.importo;},0);
   var el=document.getElementById("modal-chiudi-fisse");
   if(el){
-    if(S.fisse.length){
+    if(S.fisse.length||ricorrentiBancomat.length){
       var h='<div class="chiudi-fisse-box">';
       h+='<div class="chiudi-fisse-title">📌 Spese fisse archiviate</div>';
       S.fisse.forEach(function(f){
         h+='<div class="chiudi-fisse-row"><span>'+f.icona+' '+escapeHtml(f.nome)+'</span><span>'+eur(f.importo)+'</span></div>';
+      });
+      ricorrentiBancomat.forEach(function(p){
+        h+='<div class="chiudi-fisse-row"><span>📅 '+escapeHtml(p.nome+" (ricorrente)")+'</span><span>'+eur(p.importo)+'</span></div>';
       });
       h+='<div class="chiudi-fisse-tot"><span>Totale reale mese</span><span>'+eur(totComuni+totFisse)+'</span></div>';
       h+='</div>';
@@ -382,7 +388,7 @@ async function chiudiMese(){
   // confluiscono nello snapshot come voci una-tantum.
   var ricorrentiBancomat=(S.ricorrenti||[]).filter(function(p){return p.stato==="pagata_bancomat";});
   ricorrentiBancomat.forEach(function(p){
-    fisseSnapshot.push({id:p.id,nome:p.nome+" (ricorrente)",importo:p.importo,icona:"📅",scadenza:p.scadenza||""});
+    fisseSnapshot.push({id:p.id,nome:p.nome+" (ricorrente)",importo:p.importo,icona:"📅",scadenza:p.scadenza||"",ric:true});
   });
 var now=new Date();
 var dataLocale=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString();
@@ -583,7 +589,8 @@ async function confermaRipristino(){
   // (righe dello snapshot con icona 📅 e nome "… (ricorrente)"). La scadenza
   // c'è solo per i mesi chiusi dopo l'aggiunta del campo (altrimenti vuota).
   var ricorrentiRip=(c.fisseSnapshot||[]).filter(function(f){
-    return f.icona==="📅" && / \(ricorrente\)$/.test(f.nome||"");
+    // flag esplicito (nuovo) con fallback legacy allo sniff stringa per i mesi chiusi prima del flag
+    return f.ric===true || (f.icona==="📅" && / \(ricorrente\)$/.test(f.nome||""));
   }).map(function(f){
     return {id:f.id, nome:String(f.nome).replace(/ \(ricorrente\)$/,""), importo:f.importo,
             scadenza:f.scadenza||"", stato:"pagata_bancomat", data:new Date().toISOString()};
@@ -685,6 +692,7 @@ async function ripristinaDaArchivioCestino(id){
 
 async function eliminaArchiviazione(id){
   var c=S.chiusure.find(function(x){return x.id===id;});
+  var backupCestino=getArchiviCestino();
   if(c) addAlArchiviCestino(c);
   var backup = S.chiusure.slice();
   S.chiusure=S.chiusure.filter(function(x){return x.id!==id;});
@@ -698,6 +706,7 @@ async function eliminaArchiviazione(id){
   } catch(e){
     dot("err","Errore eliminazione");
     S.chiusure = backup;
+    setArchiviCestino(backupCestino);
     render();
   }
 }

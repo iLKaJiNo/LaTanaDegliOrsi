@@ -20,6 +20,34 @@ function fissaCiclaIcona(){
   if(btn) btn.textContent=fissaIconaSel;
 }
 
+// ── Icone + toggle ricorrenza per le spese ricorrenti comuni ──
+// Set icone a ciclo (stesso meccanismo delle fisse). Default '📅'.
+var RIC_ICONE = ["📅","🚗","🛡️","🏠","💡","🎁","📌"]; // scadenza, auto, assicurazione, casa, utenze, regalo, altro
+var ricIconaSel = "📅";
+function ricCiclaIcona(){
+  var i=RIC_ICONE.indexOf(ricIconaSel);
+  ricIconaSel=RIC_ICONE[(i+1)%RIC_ICONE.length];  // cicla tra le icone
+  var btn=document.getElementById("ricorrente-icona-btn");
+  if(btn) btn.textContent=ricIconaSel;
+}
+// Mostra/nasconde i blocchi ricorrenza in base al toggle "Si ripete"
+function ricorrenteToggleRic(){
+  var on=document.getElementById("ricorrente-ric").checked;
+  document.getElementById("ricorrente-freq-row").style.display = on?"":"none";
+  document.getElementById("ricorrente-fine-row").style.display = on?"":"none";
+  if(!on) document.getElementById("ricorrente-fine-extra").style.display="none";
+  else ricorrenteFineChange();
+  document.getElementById("ricorrente-scad-lbl").textContent = on?"📅 Prossima scadenza":"📅 Scadenza";
+}
+// Mostra/nasconde i campi extra in base al tipo di fine scelto (mirror Solo)
+function ricorrenteFineChange(){
+  var tipo=document.getElementById("ricorrente-fine").value;
+  document.getElementById("ricorrente-fine-extra").style.display = (tipo==="mai")?"none":"flex";
+  document.getElementById("ricorrente-fine-data").style.display  = (tipo==="data")?"":"none";
+  document.getElementById("ricorrente-fine-volte").style.display = (tipo==="volte")?"":"none";
+  document.getElementById("ricorrente-fine-volte-lbl").style.display = (tipo==="volte")?"":"none";
+}
+
 function openNuovaFissa(id){
   editFissaId=id||null;
   var f=id?S.fisse.find(function(x){return x.id===id;}):null;
@@ -200,6 +228,7 @@ function renderRicorrenti(){
     bancomatHtml+='<div class="bancomat-head">💳 Pagate col Conto Comune BPM · in attesa di chiusura</div>';
     bancomat.forEach(function(p){
       bancomatHtml+='<div class="ricorrente-item bancomat-item">';
+      bancomatHtml+='<span class="fissa-icon">'+(p.icona||"📅")+'</span>';
       bancomatHtml+='<div class="ricorrente-body"><div class="ricorrente-nome">✓ '+escapeHtml(p.nome)+'</div>';
       bancomatHtml+='<div class="ricorrente-scad-badge">'+fmtScadenza(p.scadenza)+'</div></div>';
       bancomatHtml+='<div class="ricorrente-imp">'+eur(p.importo)+'</div>';
@@ -223,16 +252,21 @@ function renderRicorrenti(){
   });
   var h="";
   attive.forEach(function(p){
-    var g=giorniAScadenza(p.scadenza);
+    var conclusa=(p.attiva===false);
+    var g=conclusa?null:giorniAScadenza(p.scadenza);
     var cls=classeScadenza(g);
-    h+='<div class="ricorrente-item '+cls+'">';
+    var ic=p.icona||"📅";
+    var freq=p.ricorrente?("ogni "+p.ogniQuanto+" "+(UNITA_LABEL[p.unita]||p.unita)+" · "):"";
+    var badge=conclusa?"conclusa":(freq+fmtScadenza(p.scadenza)+(g!==null?' · '+testoScadenza(g):""));
+    h+='<div class="ricorrente-item '+cls+(conclusa?" conclusa":"")+'">';
+    h+='<span class="fissa-icon">'+ic+'</span>';
     h+='<div class="ricorrente-body">';
     h+='<div class="ricorrente-nome">'+escapeHtml(p.nome)+'</div>';
-    h+='<div class="ricorrente-scad-badge '+cls+'">'+fmtScadenza(p.scadenza)+(g!==null?' · '+testoScadenza(g):"")+'</div>';
+    h+='<div class="ricorrente-scad-badge '+cls+'">'+badge+'</div>';
     h+='</div>';
     h+='<div class="ricorrente-imp">'+eur(p.importo)+'</div>';
     h+='<div class="ricorrente-actions">';
-    h+='<button class="btn-paga-ricorrente" onclick="openPagaRicorrente(\''+p.id+'\')" title="Segna pagata">✓ Paga</button>';
+    if(!conclusa) h+='<button class="btn-paga-ricorrente" onclick="openPagaRicorrente(\''+p.id+'\')" title="Segna pagata">✓ Paga</button>';
     h+='<button class="btn-edit-fissa" onclick="openNuovaRicorrente(\''+p.id+'\')" title="Modifica">✏️</button>';
     h+='<button class="btn-del-fissa" onclick="toggleDelRicorrente(\''+p.id+'\')" title="Elimina">×</button>';
     h+='</div>';
@@ -265,6 +299,19 @@ function openNuovaRicorrente(id){
   // Il campo <input type=date> accetta SOLO "YYYY-MM-DD": normalizzo
   // (la scadenza dal server può essere un ISO completo con ora/Z).
   document.getElementById("ricorrente-scad").value=p?isoDateInput(p.scadenza):"";
+  // icona a rotazione (default '📅')
+  ricIconaSel = (p && p.icona) ? p.icona : "📅";
+  document.getElementById("ricorrente-icona-btn").textContent = ricIconaSel;
+  // campi ricorrenza (caricati dal PUNTO 3; guardie per una-tantum/legacy)
+  var ric = !!(p && p.ricorrente);
+  document.getElementById("ricorrente-ric").checked = ric;
+  document.getElementById("ricorrente-ogni").value = (p && p.ogniQuanto) ? p.ogniQuanto : 1;
+  document.getElementById("ricorrente-unita").value = (p && p.unita) ? p.unita : "mesi";
+  var fineTipo = (p && p.volteRimaste!=null) ? "volte" : ((p && p.fineData) ? "data" : "mai");
+  document.getElementById("ricorrente-fine").value = fineTipo;
+  document.getElementById("ricorrente-fine-data").value = (p && p.fineData) ? isoDateInput(p.fineData) : "";
+  document.getElementById("ricorrente-fine-volte").value = (p && p.volteRimaste!=null) ? p.volteRimaste : 12;
+  ricorrenteToggleRic();
   document.getElementById("modal-ricorrente").classList.add("open");
   setTimeout(function(){document.getElementById("ricorrente-nome").focus();},80);
 }
@@ -275,6 +322,17 @@ async function salvaRicorrente(){
   var imp=parseFloat(document.getElementById("ricorrente-imp").value);
   var scad=document.getElementById("ricorrente-scad").value;
   if(!nome||!imp||imp<=0)return;
+  var icona=ricIconaSel;
+  // modello ricorrenza dal form
+  var ricorrente=document.getElementById("ricorrente-ric").checked;
+  var ogniQuanto=ricorrente?(parseInt(document.getElementById("ricorrente-ogni").value)||1):1;
+  var unita=ricorrente?(document.getElementById("ricorrente-unita").value||"mesi"):"mesi";
+  var fineData=null, volteRimaste=null;
+  if(ricorrente){
+    var fineTipo=document.getElementById("ricorrente-fine").value;
+    if(fineTipo==="data") fineData=document.getElementById("ricorrente-fine-data").value||null;
+    if(fineTipo==="volte") volteRimaste=parseInt(document.getElementById("ricorrente-fine-volte").value)||1;
+  }
   var editId=editRicorrenteId;   // catturo PRIMA: closeNuovaRicorrente() azzera editRicorrenteId
   vibra(20);
   closeNuovaRicorrente();
@@ -282,25 +340,27 @@ async function salvaRicorrente(){
   if(editId){
     var p=S.ricorrenti.find(function(x){return x.id===editId;});
     if(!p)return;
-    var backup={nome:p.nome,importo:p.importo,scadenza:p.scadenza};
-    p.nome=nome;p.importo=imp;p.scadenza=scad;
+    var backup={nome:p.nome,importo:p.importo,scadenza:p.scadenza,icona:p.icona,ricorrente:p.ricorrente,ogniQuanto:p.ogniQuanto,unita:p.unita,fineData:p.fineData,volteRimaste:p.volteRimaste,attiva:p.attiva};
+    p.nome=nome;p.importo=imp;p.scadenza=scad;p.icona=icona;
+    p.ricorrente=ricorrente;p.ogniQuanto=ogniQuanto;p.unita=unita;p.fineData=fineData;p.volteRimaste=volteRimaste;p.attiva=true;
     renderRicorrenti();dot("","Salvataggio...");
     try{
-      await post({action:"editRicorrente",id:editId,nome:nome,importo:imp,scadenza:scad});
+      await post({action:"editRicorrente",id:editId,nome:nome,importo:imp,scadenza:scad,icona:icona,ricorrente:ricorrente,ogniQuanto:ogniQuanto,unita:unita,fineData:fineData,volteRimaste:volteRimaste,attiva:true});
       dot("ok","Sincronizzata 🐾");
     }catch(e){
       dot("err","Errore salvataggio");
-      p.nome=backup.nome;p.importo=backup.importo;p.scadenza=backup.scadenza;
+      p.nome=backup.nome;p.importo=backup.importo;p.scadenza=backup.scadenza;p.icona=backup.icona;
+      p.ricorrente=backup.ricorrente;p.ogniQuanto=backup.ogniQuanto;p.unita=backup.unita;p.fineData=backup.fineData;p.volteRimaste=backup.volteRimaste;p.attiva=backup.attiva;
       renderRicorrenti();
     }
   }else{
     var newId=Date.now().toString();
-    var nuova={id:newId,nome:nome,importo:imp,scadenza:scad,stato:"attiva",data:new Date().toISOString()};
+    var nuova={id:newId,nome:nome,importo:imp,scadenza:scad,stato:"attiva",icona:icona,ricorrente:ricorrente,ogniQuanto:ogniQuanto,unita:unita,fineData:fineData,volteRimaste:volteRimaste,attiva:true,data:new Date().toISOString()};
     S.ricorrenti.push(nuova);
     renderRicorrenti();dot("","Salvataggio...");
     aggiornaPulseRicorrenti();
     try{
-      await post({action:"addRicorrente",id:nuova.id,nome:nuova.nome,importo:nuova.importo,scadenza:nuova.scadenza,stato:"attiva",data:nuova.data});
+      await post({action:"addRicorrente",id:nuova.id,nome:nuova.nome,importo:nuova.importo,scadenza:nuova.scadenza,stato:"attiva",icona:icona,ricorrente:ricorrente,ogniQuanto:ogniQuanto,unita:unita,fineData:fineData,volteRimaste:volteRimaste,attiva:true,data:nuova.data});
       dot("ok","Sincronizzata 🐾");
     }catch(e){
       dot("err","Errore salvataggio");
@@ -343,6 +403,17 @@ function openPagaRicorrente(id){
 }
 function closePagaRicorrente(){document.getElementById("modal-paga-ricorrente").classList.remove("open");pagaRicorrenteId=null;}
 
+// Avanza una ricorrente dopo un pagamento (mirror Solo): nuova scadenza,
+// decrementa volteRimaste, conclude (attiva=false) a fine corsa o oltre fineData.
+function avanzaRicorrente(p){
+  var nuovaScad=avanzaData(p.scadenza,p.ogniQuanto,p.unita);
+  var volte=p.volteRimaste, concludi=false;
+  if(volte!=null){ volte=volte-1; if(volte<=0) concludi=true; }
+  if(p.fineData && new Date(nuovaScad)>new Date(p.fineData)) concludi=true;
+  return concludi ? {scadenza:p.scadenza,volteRimaste:volte,attiva:false}
+                  : {scadenza:nuovaScad,volteRimaste:volte,attiva:true};
+}
+
 // modo: "Luca" | "Ale" | "bancomat"
 async function pagaRicorrente(modo){
   var id=pagaRicorrenteId;
@@ -352,40 +423,79 @@ async function pagaRicorrente(modo){
   closePagaRicorrente();
 
   if(modo==="Luca"||modo==="Ale"){
-    // Diventa una transazione normale nella cassa comune
-    var t={id:Date.now().toString(),chi:modo,importo:p.importo,nota:p.nome+" (ricorrente)",data:new Date().toISOString()};
+    // Pagamento da cassa comune: diventa una transazione.
+    var t={id:Date.now().toString(),chi:modo,importo:p.importo,nota:p.nome+" (ricorrente)",origine:"ricorrente",data:new Date().toISOString()};
     var backupRicorrenti=S.ricorrenti.slice();
+    var av = p.ricorrente ? avanzaRicorrente(p) : null;
+    var backupP = p.ricorrente ? {scadenza:p.scadenza,volteRimaste:p.volteRimaste,attiva:p.attiva} : null;
     S.txs.push(t);
-    // Rimuovo la ricorrente
-    S.ricorrenti=S.ricorrenti.filter(function(x){return x.id!==id;});
+    if(p.ricorrente){
+      // RICORRENTE: la voce resta e avanza
+      p.scadenza=av.scadenza; p.volteRimaste=av.volteRimaste; p.attiva=av.attiva;
+    } else {
+      // UNA-TANTUM: la voce sparisce
+      S.ricorrenti=S.ricorrenti.filter(function(x){return x.id!==id;});
+    }
     render();renderRicorrenti();dot("","Salvataggio...");
     aggiornaPulseRicorrenti();
     var txSalvata=false;
     try{
-      await post({action:"addTransaction",id:t.id,chi:t.chi,importo:t.importo,nota:t.nota,data:t.data});
+      await post({action:"addTransaction",id:t.id,chi:t.chi,importo:t.importo,nota:t.nota,origine:t.origine,data:t.data});
       txSalvata=true;
-      await post({action:"deleteRicorrente",id:id});
+      if(p.ricorrente){
+        await post({action:"editRicorrente",id:id,nome:p.nome,importo:p.importo,scadenza:p.scadenza,icona:p.icona,ricorrente:true,ogniQuanto:p.ogniQuanto,unita:p.unita,fineData:p.fineData,volteRimaste:p.volteRimaste,attiva:p.attiva});
+      } else {
+        await post({action:"deleteRicorrente",id:id});
+      }
       dot("ok","Sincronizzata 🐾");
     }catch(e){
-      // rollback allo stato pre-pagamento: tolgo la transazione e ripristino la ricorrente
+      // rollback: tolgo la transazione e ripristino la ricorrente
       S.txs=S.txs.filter(function(x){return x.id!==t.id;});
-      S.ricorrenti=backupRicorrenti;
-      // caso parziale: se la 1ª post era andata (transazione salvata) ma la 2ª no,
-      // elimino la transazione dal server per non lasciare un movimento orfano
+      if(p.ricorrente){ p.scadenza=backupP.scadenza; p.volteRimaste=backupP.volteRimaste; p.attiva=backupP.attiva; }
+      else { S.ricorrenti=backupRicorrenti; }
+      // parziale: tx salvata ma 2ª post ko → elimino la tx orfana
       if(txSalvata){ try{ await post({action:"deleteTransaction",id:t.id}); }catch(e2){} }
       render();renderRicorrenti();aggiornaPulseRicorrenti();
       dot("err","Errore — riprova");
     }
   } else {
-    // Bancomat condiviso: la ricorrente resta ma cambia stato, confluirà
-    // nello snapshot fisse alla chiusura del mese.
-    p.stato="pagata_bancomat";
-    renderRicorrenti();dot("","Salvataggio...");
-    aggiornaPulseRicorrenti();
-    try{
-      await post({action:"setStatoRicorrente",id:id,stato:"pagata_bancomat"});
-      dot("ok","Sincronizzata 🐾");
-    }catch(e){ dot("err","Errore — riprova"); p.stato="attiva"; renderRicorrenti(); }
+    // Bancomat (Conto Comune BPM).
+    if(p.ricorrente){
+      // RICORRENTE: l'occorrenza corrente resta pagata-BPM come istanza una-tantum,
+      // la voce-template avanza alla prossima scadenza.
+      var istId=Date.now().toString();
+      var istanza={id:istId,nome:p.nome,importo:p.importo,scadenza:p.scadenza,stato:"pagata_bancomat",icona:p.icona,ricorrente:false,ogniQuanto:1,unita:"mesi",fineData:null,volteRimaste:null,attiva:true,data:new Date().toISOString()};
+      var av2=avanzaRicorrente(p);
+      var backupP2={scadenza:p.scadenza,volteRimaste:p.volteRimaste,attiva:p.attiva};
+      S.ricorrenti.push(istanza);
+      p.scadenza=av2.scadenza; p.volteRimaste=av2.volteRimaste; p.attiva=av2.attiva;
+      renderRicorrenti();dot("","Salvataggio...");
+      aggiornaPulseRicorrenti();
+      var istSalvata=false;
+      try{
+        await post({action:"addRicorrente",id:istanza.id,nome:istanza.nome,importo:istanza.importo,scadenza:istanza.scadenza,stato:"pagata_bancomat",icona:istanza.icona,ricorrente:false,ogniQuanto:1,unita:"mesi",fineData:null,volteRimaste:null,attiva:true,data:istanza.data});
+        istSalvata=true;
+        await post({action:"editRicorrente",id:id,nome:p.nome,importo:p.importo,scadenza:p.scadenza,icona:p.icona,ricorrente:true,ogniQuanto:p.ogniQuanto,unita:p.unita,fineData:p.fineData,volteRimaste:p.volteRimaste,attiva:p.attiva});
+        dot("ok","Sincronizzata 🐾");
+      }catch(e){
+        // rollback: tolgo l'istanza e ripristino il template
+        S.ricorrenti=S.ricorrenti.filter(function(x){return x.id!==istId;});
+        p.scadenza=backupP2.scadenza; p.volteRimaste=backupP2.volteRimaste; p.attiva=backupP2.attiva;
+        // parziale: istanza salvata ma 2ª post ko → elimino l'istanza orfana
+        if(istSalvata){ try{ await post({action:"deleteRicorrente",id:istId}); }catch(e2){} }
+        renderRicorrenti();aggiornaPulseRicorrenti();
+        dot("err","Errore — riprova");
+      }
+    } else {
+      // UNA-TANTUM: comportamento attuale (cambia solo stato).
+      p.stato="pagata_bancomat";
+      renderRicorrenti();dot("","Salvataggio...");
+      aggiornaPulseRicorrenti();
+      try{
+        await post({action:"setStatoRicorrente",id:id,stato:"pagata_bancomat"});
+        dot("ok","Sincronizzata 🐾");
+      }catch(e){ dot("err","Errore — riprova"); p.stato="attiva"; renderRicorrenti(); }
+    }
   }
 }
 
@@ -406,8 +516,11 @@ function aggiornaPulseRicorrenti(){
 function renderRiepilogo(){
   var totComuni=S.txs.reduce(function(a,t){return a+t.importo;},0);
   var totFisse=S.fisse.reduce(function(a,f){return a+f.importo;},0);
-  var totale=totComuni+totFisse;
+  // ricorrenti pagate col Conto Comune BPM: riga propria (confluiranno nelle fisse a chiusura)
+  var totRicorrenti=(S.ricorrenti||[]).filter(function(p){return p.stato==="pagata_bancomat";}).reduce(function(a,p){return a+p.importo;},0);
+  var totale=totComuni+totFisse+totRicorrenti;
   document.getElementById("riepilogo-comuni").textContent=eur(totComuni);
+  document.getElementById("riepilogo-ricorrenti").textContent=eur(totRicorrenti);
   document.getElementById("riepilogo-fisse").textContent=eur(totFisse);
   document.getElementById("riepilogo-totale").textContent=eur(totale);
   document.getElementById("riepilogo-pro-capite").textContent=totale>0?"~"+eur(totale/2)+" a testa":"";

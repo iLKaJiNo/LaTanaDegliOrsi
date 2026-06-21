@@ -47,6 +47,7 @@ var editRicorrenteId=null;
 var pagaRicorrenteId=null;
 var delRicorrenteConfirmId=null;
 var delFissaConfirmId=null;
+var UNITA_LABEL={giorni:"giorni",settimane:"settimane",mesi:"mesi",anni:"anni"}; // etichette frequenza (condiviso Solo + comune)
 // ── PROMEMORIA CHIUSURA (Imp-B) ──
 var _chiusuraStash=null;     // voci del mese nuovo messe da parte durante "Archivia"
 var _chiusuraInCorso=false;  // true mentre chiudiMese() è in volo (blocca il ripristino in closeChiudi)
@@ -65,6 +66,7 @@ var soloSegmento="registro"; // "registro" | "ricorrenti"
 var soloRicTipo="uscita";    // tipo nuova ricorrente
 var soloRicDelId=null;       // id ricorrente in attesa conferma elim.
 var soloCatDelId=null;       // id categoria in attesa conferma elim.
+var soloDelArchivioId=null;  // id chiusura archiviata in attesa conferma elim.
 
 // ── AUTH / SESSIONE ────────────────────────────────────
 // La sessione è gestita da Supabase (token salvato e rinnovato
@@ -144,6 +146,15 @@ function ultimoMeseChiuso(){
 }
 function fmt(iso){if(!iso)return"";var d=new Date(iso);return isNaN(d)?iso:String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");}
 function fmtLong(iso){if(!iso)return"";var d=new Date(iso);return isNaN(d)?iso:d.toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});}
+// Avanza una data ISO di (ogni × unita). Condiviso Solo + comune (mirror dell'ex soloAvanzaData).
+function avanzaData(iso, ogni, unita){
+  var d=new Date(iso);
+  if(unita==="giorni") d.setDate(d.getDate()+ogni);
+  else if(unita==="settimane") d.setDate(d.getDate()+ogni*7);
+  else if(unita==="mesi") d.setMonth(d.getMonth()+ogni);
+  else if(unita==="anni") d.setFullYear(d.getFullYear()+ogni);
+  return d.toISOString().slice(0,10);
+}
 var eur=function(n){return Math.abs(Math.round(n*100)/100).toFixed(2).replace(".",",")+"\u00a0\u20ac";};
 // Importo "compatto": interi senza decimali (12 €), non-tondi sempre
 // a DUE decimali (5,30 €). Non arrotonda mai all'intero.
