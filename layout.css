@@ -8,6 +8,7 @@
 #login-screen.active{display:flex;}
 .login-bear{margin-bottom:12px;display:inline-block;animation:sniff 4s ease-in-out infinite;}
 .login-title{font-size:1.625rem;font-weight:800;color:var(--honey);margin-bottom:6px;text-align:center;}
+.login-paw{font-size:1.05rem;text-align:center;margin:2px 0 8px;opacity:.55;}
 .login-sub{font-size:0.8125rem;color:rgba(255,255,255,.4);font-family:'Nunito',sans-serif;font-weight:600;margin-bottom:32px;text-align:center;line-height:1.5;}
 .login-form{width:100%;max-width:320px;display:flex;flex-direction:column;gap:12px;}
 .login-inp-wrap{position:relative;}
@@ -37,6 +38,7 @@
 .header-bear{line-height:1;flex-shrink:0;display:inline-block;animation:sniff 4s ease-in-out infinite;}
 @keyframes sniff{0%,100%{transform:rotate(-6deg);}50%{transform:rotate(6deg) translateY(-3px);}}
 .header-titles h1{font-size:1.25rem;font-weight:800;color:var(--honey);letter-spacing:-.2px;text-shadow:0 2px 6px rgba(0,0,0,.3);}
+.header-titles h1::after{content:' 🐾';font-size:0.8em;opacity:.5;}
 .header-titles p{font-size:0.75rem;color:rgba(255,255,255,.4);font-family:'Nunito',sans-serif;font-weight:600;margin-top:1px;}
 .header-right{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
 .header-actions{display:flex;align-items:center;gap:8px;}
@@ -72,5 +74,6 @@
   .tab-page[data-tab="fisso"].active .riepilogo-card,
   .tab-page[data-tab="fisso"].active .ricorrenti-card{grid-column:auto;margin-top:14px;}
   .tab-page[data-tab="solo"].active{display:block !important;grid-column:1/-1;max-width:680px;margin:0 auto;width:100%;}
+  .tab-page[data-tab="impostazioni"].active{display:block !important;grid-column:1/-1;max-width:680px;margin:0 auto;width:100%;}
 }
 

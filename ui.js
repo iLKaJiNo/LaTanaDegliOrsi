@@ -1279,7 +1279,7 @@ function applySoloVis(){
   var btn = document.querySelector(".tab-btn.tab-solo");
   if(btn) btn.style.display = on ? "" : "none";
   var ctrl = document.getElementById("imp-solo-vis-btn");
-  if(ctrl) ctrl.innerHTML = on ? "👁 Visibile" : "🙈 Nascosto";
+  if(ctrl) ctrl.classList.toggle("off", !on);   // OFF = icona spenta (grayscale), come tema/orme
 }
 function toggleSoloVis(){
   var on = !soloVisibile();

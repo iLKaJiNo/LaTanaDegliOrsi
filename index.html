@@ -30,10 +30,11 @@ if("serviceWorker" in navigator){
 <div id="login-screen">
   <img src="./bear.svg" class="login-bear" alt="Orso" style="width:4.5rem;height:4.5rem;">
   <div class="login-title">La Tana degli Orsi</div>
+  <div class="login-paw" aria-hidden="true">🐾</div>
   <div class="login-sub">Solo gli Orsi autorizzati<br>possono accedere alla Tana</div>
   <div class="login-form">
     <div class="login-inp-wrap">
-      <input class="login-inp" type="password" id="login-pw" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      <input class="login-inp" type="password" id="login-pw" placeholder="Password" autocomplete="current-password" oninput="resetLoginBear()" onkeydown="if(event.key==='Enter')doLogin()">
       <button class="toggle-pw" onclick="togglePwVisibility()" tabindex="-1">&#x1F441;</button>
     </div>
     <button class="login-btn" id="login-btn" onclick="doLogin()"><img src="./bear.svg" style="width:1.125rem;height:1.125rem;vertical-align:middle;margin-right:6px;" alt=""> Entra nella Tana</button>
@@ -54,7 +55,7 @@ if("serviceWorker" in navigator){
       <img src="./bear.svg" class="header-bear" alt="Orso" style="width:2.25rem;height:2.25rem;">
       <div class="header-titles">
         <h1>La Tana degli Orsi</h1>
-        <p>Luca &amp; Ale &mdash; cassa comune &#x1F36F;</p>
+        <p>Luca &#x1F36F; Ale</p>
       </div>
       <div class="header-right">
         <div class="header-actions">
@@ -77,7 +78,7 @@ if("serviceWorker" in navigator){
     <div class="tab-page active" data-tab="tana">
 
       <!-- Promemoria chiusura mese precedente (Imp-B): popolato da showPromemoriaChiusura() -->
-      <div id="promemoria-chiusura" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;background:var(--honey-bg);border:1.5px solid var(--honey-brd);border-radius:var(--r-md);padding:10px 14px;margin-bottom:12px;"></div>
+      <div id="promemoria-chiusura" class="promemoria-banner"></div>
 
       <div class="saldo-card">
         <div class="saldo-inner">
@@ -184,11 +185,11 @@ if("serviceWorker" in navigator){
             <span class="riepilogo-row-val" id="riepilogo-comuni">--- €</span>
           </div>
 <div class="riepilogo-row">
-            <span class="riepilogo-row-lbl">📅 Spese ricorrenti (conto condiviso)</span>
+            <span class="riepilogo-row-lbl">📅 Spese ricorrenti (Conto Comune BPM)</span>
             <span class="riepilogo-row-val" id="riepilogo-ricorrenti">--- €</span>
           </div>
           <div class="riepilogo-row">
-            <span class="riepilogo-row-lbl">📌 Spese fisse (conto condiviso)</span>
+            <span class="riepilogo-row-lbl">📌 Spese fisse (Conto Comune BPM)</span>
             <span class="riepilogo-row-val" id="riepilogo-fisse">--- €</span>
           </div>
           <div class="riepilogo-totale">
@@ -233,62 +234,60 @@ if("serviceWorker" in navigator){
     ══════════════════════════════════════ -->
     <div class="tab-page" data-tab="impostazioni">
 
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-        <button onclick="switchTab('tana')" title="Torna alla Tana"
-          style="background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text2);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.85rem;padding:9px 14px;cursor:pointer;-webkit-appearance:none;">&#8592; Torna</button>
-        <h2 style="margin:0;font-family:'Baloo 2',cursive;color:var(--text);font-size:1.2rem;">&#x1F36A; Impostazioni</h2>
+      <div class="imp-head">
+        <button class="imp-back" onclick="switchTab('tana')" title="Torna alla Tana">&#8592; Torna</button>
+        <h2 class="imp-title">&#x1F36A; Impostazioni</h2>
       </div>
 
       <!-- Aspetto -->
       <div class="form-card">
         <span class="section-lbl">Aspetto</span>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div class="imp-row">
           <div>
-            <div style="font-weight:700;color:var(--text);font-family:'Baloo 2',cursive;">Tema</div>
-            <div style="font-size:0.78rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;">Aspetto chiaro o scuro</div>
+            <div class="imp-row-title">Tema</div>
+            <div class="imp-row-sub">Aspetto chiaro o scuro</div>
           </div>
-          <button id="btn-theme" onclick="toggleTheme()" title="Cambia tema"
-            style="background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:1.1rem;padding:8px 14px;cursor:pointer;-webkit-appearance:none;line-height:1;">&#x1F319;</button>
+          <button id="btn-theme" class="imp-btn-theme" onclick="toggleTheme()" title="Cambia tema">&#x1F319;</button>
+        </div>
+        <div class="imp-row">
+          <div>
+            <div class="imp-row-title">Orme di sfondo</div>
+            <div class="imp-row-sub">Texture leggera di orme dietro l'app</div>
+          </div>
+          <button id="btn-paws" class="imp-btn-theme off" onclick="togglePawBg()" title="Orme di sfondo">&#x1F43E;</button>
         </div>
       </div>
 
       <!-- Account & guida -->
       <div class="form-card">
         <span class="section-lbl">Account &amp; guida</span>
-        <button onclick="openCambioPassword()"
-          style="width:100%;text-align:left;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.9rem;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;-webkit-appearance:none;">&#x1F511; Cambia password</button>
-        <button onclick="openGuida()"
-          style="width:100%;text-align:left;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.9rem;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;margin-top:10px;-webkit-appearance:none;">&#x2753; Guida della Tana</button>
-        <button onclick="avviaBenvenuto()"
-          style="width:100%;text-align:left;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.9rem;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;margin-top:10px;-webkit-appearance:none;">&#x1F43E; Rivedi il tour di benvenuto</button>
+        <button class="imp-btn" onclick="openCambioPassword()">&#x1F511; Cambia password</button>
+        <button class="imp-btn" onclick="openGuida()">&#x2753; Guida della Tana</button>
+        <button class="imp-btn" onclick="avviaBenvenuto()">&#x1F43E; Rivedi il tour di benvenuto</button>
       </div>
 
       <!-- Orso Solo -->
       <div class="form-card">
         <span class="section-lbl">Orso Solo</span>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div class="imp-row">
           <div>
-            <div style="font-weight:700;color:var(--text);font-family:'Baloo 2',cursive;">Mostra nella barra</div>
-            <div style="font-size:0.78rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;">Nasconde solo il bottone, i conti continuano a girare</div>
+            <div class="imp-row-title">Mostra nella barra</div>
+            <div class="imp-row-sub">Nasconde solo il bottone, i conti continuano a girare</div>
           </div>
-          <button id="imp-solo-vis-btn" onclick="toggleSoloVis()" title="Mostra/Nascondi Orso Solo"
-            style="background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.85rem;padding:9px 14px;cursor:pointer;-webkit-appearance:none;white-space:nowrap;">&#x1F441; Visibile</button>
+          <button id="imp-solo-vis-btn" class="imp-btn-theme" onclick="toggleSoloVis()" title="Mostra/Nascondi Orso Solo"><img src="./bearface.svg" alt=""></button>
         </div>
-        <button onclick="switchTab('solo')"
-          style="width:100%;text-align:left;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.9rem;padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:12px;-webkit-appearance:none;">
+        <button class="imp-btn imp-btn-col imp-btn-spaced" onclick="switchTab('solo')">
           <span>&#x1F510; Cambia PIN</span>
-          <span style="font-size:0.72rem;color:var(--text3);font-weight:600;">Si trova dentro l'area Orso Solo</span>
+          <span class="imp-btn-sub">Si trova dentro l'area Orso Solo</span>
         </button>
       </div>
 
       <!-- Dati -->
       <div class="form-card">
         <span class="section-lbl">Dati</span>
-        <button onclick="esportaBackupJSON()"
-          style="width:100%;text-align:left;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.9rem;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;-webkit-appearance:none;">&#x2B07;&#xFE0F; Esporta backup (JSON)</button>
-        <button onclick="esportaTxtCSV()"
-          style="width:100%;text-align:left;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.9rem;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;margin-top:10px;-webkit-appearance:none;">&#x1F4C4; Esporta spese (CSV)</button>
-        <div style="font-size:0.72rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;margin-top:10px;">Backup della cassa comune. L'area Orso Solo non &egrave; inclusa.</div>
+        <button class="imp-btn" onclick="esportaBackupJSON()">&#x2B07;&#xFE0F; Esporta backup (JSON)</button>
+        <button class="imp-btn" onclick="esportaTxtCSV()">&#x1F4C4; Esporta spese (CSV)</button>
+        <div class="imp-note">Backup della cassa comune. L'area Orso Solo non &egrave; inclusa.</div>
       </div>
 
     </div>
@@ -562,7 +561,7 @@ if("serviceWorker" in navigator){
         volta e vengono incluse automaticamente nel totale alla chiusura del mese.
         Le <strong>ricorrenti</strong> sono spese future con una scadenza (la rata del condominio, il regalo): quando arriva il momento si
         possono pagare <strong>dalla cassa</strong> (diventano una spesa normale) oppure segnare come
-        <strong>pagate col bancomat</strong> condiviso, ed entrano nel conteggio della chiusura.
+        <strong>Pagate con Conto Comune BPM</strong> condiviso, ed entrano nel conteggio della chiusura.
       </div>
     </details>
 

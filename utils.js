@@ -32,6 +32,7 @@ var editDebitoId=null;
 var prevSaldo=null;
 var annoAperto=String(new Date().getFullYear()); // anno in corso aperto di default nell'archivio
 var THEME_KEY="tana_theme";
+var PAW_BG_KEY="tana_paws_bg";   // orme di sfondo (default ON; preferenza salvata vince)
 var SOLO_VIS_KEY="tana_solo_visibile"; // visibilità del bottone Orso Solo in tab-bar (default ON)
 var filterChi="tutti"; // "tutti" | "Luca" | "Ale"
 // Lista spesa
@@ -55,8 +56,6 @@ var _chiusuraInCorso=false;  // true mentre chiudiMese() è in volo (blocca il r
 var soloChi=null;          // "Luca"/"Ale": chi è sbloccato in questa sessione (null = bloccato)
 var soloSbloccato=false;   // true dopo PIN corretto; si azzera a ogni riapertura app
 var soloProfili={Luca:null, Ale:null};  // pin_hash dei due, caricati dal DB
-var soloSaldoPartenza=0;   // saldo iniziale del periodo corrente (per-orso, default 0)
-var soloEditSaldo=false;   // true mentre si modifica il saldo di partenza
 var soloData={voci:[], ricorrenti:[], chiusure:[], categorie:[]};  // dati dell'orso sbloccato
 var soloCategorie=["Mutuo Tana","Stipendio","TasseTasseTasse!","Moto","Altro"]; // editabili
 var _soloPinBuffer="";     // cifre digitate nel tastierino PIN
@@ -73,9 +72,17 @@ var soloDelArchivioId=null;  // id chiusura archiviata in attesa conferma elim.
 // automaticamente). Niente più hash nel codice sorgente.
 function togglePwVisibility(){var i=document.getElementById("login-pw");i.type=i.type==="password"?"text":"password";}
 
+// Riporta l'orso del login allo stato normale (no arrabbiato/shake).
+// Chiamato a inizio tentativo e quando l'utente ri-digita la password.
+function resetLoginBear(){
+  var b=document.querySelector(".login-bear");
+  if(b){ b.src="./bear.svg"; b.classList.remove("shake"); }
+}
+
 async function doLogin(){
   var pw=document.getElementById("login-pw").value;
   if(!pw)return;
+  resetLoginBear();   // ogni tentativo riparte con l'orso normale
   var btn=document.getElementById("login-btn");
   btn.disabled=true;
   document.getElementById("login-error").textContent="";
@@ -87,8 +94,13 @@ for(var i=0;i<TANA_EMAILS.length;i++){
 }
   document.getElementById("login-loading").textContent="";
   if(res.error){
+    var isCred=res.error.message.indexOf("credentials")>-1;
     document.getElementById("login-error").textContent=
-      res.error.message.indexOf("credentials")>-1 ? "Password errata. Riprova." : "Errore di rete. Riprova.";
+      isCred ? "Password errata. Riprova." : "Errore di rete. Riprova.";
+    if(isCred){   // credenziali errate → orso guardiano arrabbiato + scuotimento
+      var b=document.querySelector(".login-bear");
+      if(b){ b.src="./bearface.svg"; b.classList.add("shake"); }
+    }
     document.getElementById("login-pw").value="";
     btn.disabled=false;
     return;
@@ -118,6 +130,24 @@ function toggleTheme(){
   var saved=localStorage.getItem(THEME_KEY);
   // Se non salvato, default chiaro
   applyTheme(saved==="dark");
+}
+
+// ── ORME DI SFONDO (opt-in) ──
+function applyPawBg(on){
+  document.body.classList.toggle("paws-on", on);
+  var btn=document.getElementById("btn-paws");
+  if(btn) btn.classList.toggle("off", !on);   // OFF = icona spenta (grayscale)
+}
+function togglePawBg(){
+  var on=!document.body.classList.contains("paws-on");
+  localStorage.setItem(PAW_BG_KEY, on?"on":"off");
+  applyPawBg(on);
+}
+function initPawBg(){
+  var saved=localStorage.getItem(PAW_BG_KEY);
+  // Prima volta (preferenza assente): orme ON di default.
+  // Una preferenza esplicita salvata ("on"/"off") vince sempre.
+  applyPawBg(saved===null ? true : saved==="on");
 }
 
 // ── PWA BANNER ──

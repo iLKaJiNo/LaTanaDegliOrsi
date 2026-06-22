@@ -9,6 +9,7 @@
 .saldo-inner{padding:22px 24px 20px;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;position:relative;overflow:hidden;}
 .saldo-left{flex:1;min-width:0;}
 .saldo-lbl{font-size:0.625rem;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.4);font-family:'Nunito',sans-serif;font-weight:700;margin-bottom:6px;}
+.saldo-lbl::before{content:'🐾 ';font-size:1.50em;opacity:.99;letter-spacing:0;}
 .saldo-num{font-size:3.25rem;font-weight:800;letter-spacing:-3px;line-height:1;color:var(--honey);text-shadow:0 3px 10px rgba(0,0,0,.25);transition:color .35s;}
 @keyframes saldoBump{0%{transform:scale(1);}30%{transform:scale(1.10);}65%{transform:scale(.96);}100%{transform:scale(1);}}
 .saldo-num.bump{animation:saldoBump .45s cubic-bezier(.4,0,.2,1);}
@@ -122,6 +123,29 @@
 /* ── FORM CARD ── */
 .form-card{background:var(--card);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow-md);border:1.5px solid var(--border);margin-bottom:12px;}
 .section-lbl{font-size:0.625rem;letter-spacing:3px;text-transform:uppercase;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:700;margin-bottom:14px;display:block;}
+
+/* ── IMPOSTAZIONI ── */
+.imp-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.imp-title{margin:0;font-family:'Baloo 2',cursive;color:var(--text);font-size:1.2rem;}
+.imp-back{background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text2);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.85rem;padding:9px 14px;cursor:pointer;-webkit-appearance:none;}
+.imp-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.imp-row+.imp-row{margin-top:14px;}
+.imp-row-title{font-weight:700;color:var(--text);font-family:'Baloo 2',cursive;}
+.imp-row-sub{font-size:0.78rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;}
+.imp-btn{width:100%;text-align:left;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.9rem;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;-webkit-appearance:none;}
+.imp-btn+.imp-btn{margin-top:10px;}
+.imp-btn-spaced{margin-top:12px;}
+.imp-btn-col{flex-direction:column;align-items:flex-start;gap:2px;}
+.imp-btn-sub{font-size:0.72rem;color:var(--text3);font-weight:600;}
+.imp-pill{background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:'Baloo 2',cursive;font-weight:700;font-size:0.85rem;padding:9px 14px;cursor:pointer;-webkit-appearance:none;white-space:nowrap;}
+.imp-btn-theme{background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:1.1rem;padding:8px 14px;cursor:pointer;-webkit-appearance:none;line-height:1;}
+#btn-paws.off,
+#imp-solo-vis-btn.off{filter:grayscale(1);opacity:.45;}   /* OFF = icona spenta; ON = piena (default base) */
+#imp-solo-vis-btn img{width:1.4rem;height:1.4rem;object-fit:contain;display:block;}
+.imp-note{font-size:0.72rem;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;margin-top:10px;}
+/* Banner promemoria chiusura (pagina Tana) */
+.promemoria-banner{display:none;align-items:center;gap:10px;flex-wrap:wrap;background:var(--honey-bg);border:1.5px solid var(--honey-brd);border-radius:var(--r-md);padding:10px 14px;margin-bottom:12px;}
+
 .toggle{display:flex;gap:10px;margin-bottom:14px;}
 .toggle-btn{flex:1;padding:11px 8px;border-radius:var(--r-md);border:2px solid var(--border);background:var(--card2);color:var(--text2);cursor:pointer;font-family:'Baloo 2',cursive;font-size:0.9375rem;font-weight:700;transition:all .18s;line-height:1.25;-webkit-appearance:none; display:flex; flex-direction:column; align-items:center; justify-content:center;}
 .toggle-btn div {display:flex; align-items:center; justify-content:center;}
@@ -260,6 +284,7 @@
 .modal-input-row{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
 .modal-input-row label{display:flex;align-items:center;font-size:0.8125rem;color:var(--text2);font-weight:700;font-family:'Nunito',sans-serif;}
 .modal-input-row input,.modal-input-row select{height:44px;border-radius:var(--r-md);border:2px solid var(--border);background:var(--card2);color:var(--text);font-family:'Baloo 2',cursive;font-size:1rem;font-weight:700;padding:0 14px;outline:none;-webkit-appearance:none;}
+.modal-input-row input[type="checkbox"]{-webkit-appearance:auto;appearance:auto;width:18px;height:18px;flex:0 0 auto;padding:0;border:none;background:none;accent-color:var(--honey-d);cursor:pointer;}
 .modal-input-row input:focus,.modal-input-row select:focus{border-color:var(--honey);}
 .modal-btns{display:flex;gap:10px;}
 .btn-conferma{flex:1;height:46px;border-radius:var(--r-md);border:none;background:linear-gradient(135deg,var(--brown),var(--brown-d));color:var(--honey);font-family:'Baloo 2',cursive;font-size:0.9375rem;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(58,30,10,.25);transition:opacity .15s;-webkit-appearance:none;}
@@ -362,15 +387,8 @@ body.dark{
   --shadow-md:0 4px 20px rgba(0,0,0,.50);
   --shadow-lg:0 8px 32px rgba(0,0,0,.60);
 }
-.btn-theme{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:var(--r-sm);color:rgba(255,255,255,.45);font-size:0.875rem;padding:4px 8px;cursor:pointer;transition:all .15s;-webkit-appearance:none;line-height:1;}
-.btn-theme:hover{background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);}
 .tab-btn.active::before{content:'';position:absolute;top:0;left:25%;right:25%;height:2px;background:var(--honey);border-radius:0 0 3px 3px;}
 .tab-btn{position:relative;}
-
-/* ── SEGMENTO MESI/ANNI ── */
-.archivio-segment{display:flex;gap:6px;background:var(--card2);border-radius:var(--r-md);padding:4px;margin-bottom:16px;}
-.archivio-seg-btn{flex:1;border:none;background:transparent;color:var(--text2);font-family:'Baloo 2',cursive;font-size:0.9375rem;font-weight:700;padding:9px 8px;border-radius:var(--r-sm);cursor:pointer;transition:all .18s;-webkit-appearance:none;}
-.archivio-seg-btn.active{background:var(--card);color:var(--honey-d);box-shadow:var(--shadow-sm);}
 
 /* ── CARD ANNO ── */
 .anno-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow-sm);}
@@ -383,12 +401,6 @@ body.dark{
 .anno-stat-row strong{color:var(--text2);}
 .anno-mesi{display:none;border-top:1px solid var(--border);padding-top:10px;margin-top:4px;}
 .anno-mesi.open{display:block;}
-.anno-mese-mini{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);}
-.anno-mese-mini:last-child{border-bottom:none;}
-.anno-mese-mini-nome{font-size:0.8125rem;font-weight:700;color:var(--text);}
-.anno-mese-mini-tot{font-size:0.8125rem;font-weight:800;color:var(--honey-d);}
-.anno-mese-mini-btn{height:26px;padding:0 10px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--card2);color:var(--text2);font-family:'Baloo 2',cursive;font-size:0.6875rem;font-weight:700;cursor:pointer;-webkit-appearance:none;transition:all .15s;}
-.anno-mese-mini-btn:hover{border-color:var(--honey-brd);background:var(--honey-bg);color:var(--honey-d);}
 
 /* ── VALIDAZIONE INPUT ── */
 .inp.invalid{border-color:var(--berry)!important;background:var(--berry-bg)!important;}
@@ -639,7 +651,7 @@ body.dark{
   .header-inner{gap:10px;}
   .header-actions{gap:6px;}
   .btn-logout{font-size:0.625rem;padding:3px 8px;}
-  .btn-theme,.btn-pw{padding:3px 6px;}
+  .btn-pw{padding:3px 6px;}
   .sync-txt{font-size:0.625rem;}
 }
 
@@ -815,6 +827,17 @@ body.dark .calc-key{background:rgba(255,255,255,.06);}
 /* GATE (scelta orso + PIN) */
 .solo-gate{display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-md);padding:30px 22px;max-width:340px;margin:18px auto;}
 .solo-gate-icon{font-size:3.5rem;line-height:1;margin-bottom:10px;}
+/* Orso "guardiano/arrabbiato": l'<img> combacia con l'emoji del gate (3.5rem), niente layout-shift */
+#solo-gate-icon img{width:3.5rem;height:3.5rem;object-fit:contain;display:block;}
+/* Scuotimento riusabile: .login-bear (pw errata) e #solo-gate-icon img (PIN errato) */
+@keyframes shake{
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-6px);}
+  40%{transform:translateX(6px);}
+  60%{transform:translateX(-4px);}
+  80%{transform:translateX(4px);}
+}
+.shake{animation:shake .4s ease-in-out;}
 .solo-gate-title{font-size:1.5rem;font-weight:800;color:var(--text);margin-bottom:6px;}
 .solo-gate-sub{font-size:0.875rem;color:var(--text2);font-family:'Nunito',sans-serif;font-weight:600;line-height:1.5;margin-bottom:22px;}
 .solo-gate-chi{display:flex;gap:14px;width:100%;}
@@ -898,7 +921,7 @@ body.dark .solo-tipo-btn,body.dark .solo-cat-sel{background:rgba(255,255,255,.06
 .solo-cat-item{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
 .solo-cat-ic{flex:0 0 auto;width:42px;height:42px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--card2);font-size:1.25rem;cursor:pointer;-webkit-appearance:none;}
 .solo-cat-nome{flex:1;min-width:0;height:42px;}
-.solo-cat-add{margin-top:6px;}
+.solo-cat-add{margin-top:6px;margin-bottom:16px;}
 body.dark .solo-seg-btn,body.dark .solo-cat-manage,body.dark .solo-cat-ic{background:rgba(255,255,255,.06);}
 
 /* Orso Solo: gruppo bottoni header (cambia PIN + blocca) */
@@ -916,9 +939,6 @@ body.dark .solo-cat-arr{background:rgba(255,255,255,.06);}
 /* ── ORSO SOLO: azioni saldo, grafici, chiusura ── */
 .solo-saldo-actions{display:flex;gap:8px;margin-top:12px;}
 .solo-saldo-act{flex:1;height:36px;border-radius:var(--r-sm);border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:700;cursor:pointer;-webkit-appearance:none;}
-.solo-graf-toggle{display:flex;gap:8px;margin:6px 0 14px;}
-.solo-graf-btn{flex:1;height:38px;border-radius:var(--r-sm);border:2px solid var(--border);background:var(--card2);color:var(--text2);font-family:'Baloo 2',cursive;font-size:0.875rem;font-weight:700;cursor:pointer;-webkit-appearance:none;}
-.solo-graf-btn.active{background:var(--brown-d);color:var(--honey);border-color:transparent;}
 .solo-graf-canvas-wrap{display:flex;justify-content:center;padding:10px 0;}
 .solo-graf-legenda{margin-top:10px;}
 .solo-graf-leg-row{display:flex;align-items:center;gap:8px;font-size:0.875rem;padding:4px 0;color:var(--text2);font-weight:700;}

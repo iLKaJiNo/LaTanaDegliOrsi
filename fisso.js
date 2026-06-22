@@ -11,7 +11,7 @@
 // ── SPESE FISSE (condivise via GAS) ──
 // Set icone per le spese fisse (congruente al tipo di spesa). Selettore a ciclo,
 // stesso meccanismo delle categorie Solo.
-var FISSE_ICONE = ["🏠","💡","🔥","📱","📺","📌"]; // mutuo, luce, gas, telefono, abbonamenti, altro
+var FISSE_ICONE = ["🏠","💡","🔥","📱","📺","🛡️","🛤️","🧮","📌"]; // mutuo, luce, gas, telefono, abbonamenti, altro
 var fissaIconaSel = "🏠";
 function fissaCiclaIcona(){
   var i=FISSE_ICONE.indexOf(fissaIconaSel);
@@ -22,7 +22,7 @@ function fissaCiclaIcona(){
 
 // ── Icone + toggle ricorrenza per le spese ricorrenti comuni ──
 // Set icone a ciclo (stesso meccanismo delle fisse). Default '📅'.
-var RIC_ICONE = ["📅","🚗","🛡️","🏠","💡","🎁","📌"]; // scadenza, auto, assicurazione, casa, utenze, regalo, altro
+var RIC_ICONE = ["📅","🚗","🛡️","🏠","💡","🎁","⌛","🛍️","📌"]; // scadenza, auto, assicurazione, casa, utenze, regalo, altro
 var ricIconaSel = "📅";
 function ricCiclaIcona(){
   var i=RIC_ICONE.indexOf(ricIconaSel);

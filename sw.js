@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tana-SUPA-v56';
+const CACHE_NAME = 'tana-SUPA-v68';
 const ASSETS = [
   './',
   './index.html',
@@ -16,6 +16,8 @@ const ASSETS = [
   './app.js',
   './manifest.json',
   './bear.svg',
+  './bearface.svg',
+  './pawprints.svg',
   './bear-empty.png',
   './bear-192.png',
   './bear-512.png',

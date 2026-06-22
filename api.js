@@ -14,6 +14,7 @@ function skeletons(){document.getElementById("storico").innerHTML='<span class="
 // ── AVVIO APP (chiamato da authInit dopo il login) ──
 function appStart(){
   initTheme();
+  initPawBg();
   applySoloVis();
   initTabSwipe();
   maybeBenvenuto();
@@ -229,8 +230,6 @@ async function runAction(p){
     // — Orso Solo: PIN —
     case "setSoloPin":
       r=await sb.from("solo_profili").update({pin_hash:p.pinHash}).eq("proprietario",p.proprietario); break;
-    case "setSoloSaldoPartenza":
-      r=await sb.from("solo_profili").update({saldo_partenza:p.valore}).eq("proprietario",p.proprietario); break;
 
     // — Orso Solo: voci registro —
     case "addSoloVoce":

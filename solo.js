@@ -43,7 +43,7 @@ function renderSoloGate(el){
   var primoAccesso = !soloProfili[soloChi];
   el.innerHTML=
     '<div class="solo-gate">'
-    +'<div class="solo-gate-icon">'+(primoAccesso?"🆕":"🔒")+'</div>'
+    +'<div class="solo-gate-icon" id="solo-gate-icon">'+(primoAccesso?'<img src="./bearface.svg" alt="">':"🔒")+'</div>'
     +'<h2 class="solo-gate-title">'+escapeHtml(soloChi)+'</h2>'
     +'<p class="solo-gate-sub">'+(primoAccesso
         ? "Scegli un PIN di 4 cifre<br>per proteggere la tua area."
@@ -76,6 +76,12 @@ function soloPinBack(){
 }
 async function soloPinDigit(n){
   if(_soloPinBuffer.length>=4) return;
+  // Ricominciando a digitare dopo un errore, l'orso arrabbiato torna 🔒
+  // (solo per chi ha già un PIN; al primo accesso resta l'orso guardiano).
+  if(_soloPinBuffer.length===0 && soloProfili[soloChi]){
+    var ic=document.getElementById("solo-gate-icon");
+    if(ic) ic.innerHTML="🔒";
+  }
   _soloPinBuffer+=n;
   soloRenderDots();
   if(_soloPinBuffer.length===4){
@@ -114,6 +120,9 @@ async function soloVerificaPin(pin){
 function soloPinErrore(msg){
   var e=document.getElementById("solo-pin-err");
   if(e) e.textContent=msg;
+  // L'icona del gate diventa l'orso arrabbiato che scuote (sblocco 🔒 → orso).
+  var ic=document.getElementById("solo-gate-icon");
+  if(ic) ic.innerHTML='<img src="./bearface.svg" class="shake" alt="">';
   _soloPinBuffer="";
   soloRenderDots();
 }
@@ -136,34 +145,18 @@ async function caricaSolo(){
       sb.from("solo_voci").select("*").eq("proprietario",soloChi).order("data",{ascending:false}),
       sb.from("solo_ricorrenti").select("*").eq("proprietario",soloChi).order("prossima_scadenza",{ascending:true}),
       sb.from("solo_chiusure").select("*").eq("proprietario",soloChi).order("data",{ascending:false}),
-      sb.from("solo_categorie").select("*").eq("proprietario",soloChi).order("ordine",{ascending:true}),
-      sb.from("solo_profili").select("saldo_partenza").eq("proprietario",soloChi).single()
+      sb.from("solo_categorie").select("*").eq("proprietario",soloChi).order("ordine",{ascending:true})
     ]);
     soloData.voci       = (ris[0].data||[]).map(function(r){return{id:r.id,tipo:r.tipo,importo:parseFloat(r.importo)||0,categoria:r.categoria||"Altro",nota:r.nota||"",data:r.data||"",origine:r.origine||null};});
     soloData.ricorrenti = (ris[1].data||[]).map(function(r){return{id:r.id,nome:r.nome,tipo:r.tipo,importo:parseFloat(r.importo)||0,categoria:r.categoria||"Altro",ogniQuanto:r.ogni_quanto||1,unita:r.unita||"mesi",prossimaScadenza:r.prossima_scadenza||"",fineData:r.fine_data||null,volteRimaste:r.volte_rimaste!=null?r.volte_rimaste:null,attiva:r.attiva!==false};});
     soloData.chiusure   = (ris[2].data||[]).map(function(r){return{id:r.id,mese:r.mese,totEntrate:parseFloat(r.tot_entrate)||0,totUscite:parseFloat(r.tot_uscite)||0,saldo:parseFloat(r.saldo)||0,data:r.data||"",voci:r.voci||[],torta:r.torta||[]};});
     soloData.categorie  = (ris[3].data||[]).map(function(r){return{id:r.id,icona:r.icona||"📌",nome:r.nome,ordine:r.ordine||0,protetta:!!r.protetta};});
-    soloSaldoPartenza   = ris[4].data ? (parseFloat(ris[4].data.saldo_partenza)||0) : 0;
   }catch(e){ /* offline */ }
 }
 
 // Saldo personale: entrate − uscite
 function soloSaldo(){
-  return Math.round(soloData.voci.reduce(function(a,v){ return v.tipo==="entrata" ? a+v.importo : a-v.importo; }, soloSaldoPartenza)*100)/100;
-}
-
-function soloEditSaldoPartenza(){ soloEditSaldo=true; renderSolo(); setTimeout(function(){var e=document.getElementById("solo-sp-inp");if(e)e.focus();},40); }
-function soloAnnullaSaldoPartenza(){ soloEditSaldo=false; renderSolo(); }
-async function soloSalvaSaldoPartenza(){
-  var v=parseFloat((document.getElementById("solo-sp-inp")||{}).value);
-  if(isNaN(v)) v=0;
-  v=Math.round(v*100)/100;
-  var backup=soloSaldoPartenza;
-  soloSaldoPartenza=v; soloEditSaldo=false;
-  renderSolo();
-  dot("","Salvataggio...");
-  try{ await post({action:"setSoloSaldoPartenza",proprietario:soloChi,valore:v}); dot("ok","Sincronizzata 🐾"); }
-  catch(e){ soloSaldoPartenza=backup; renderSolo(); dot("err","Errore"); }
+  return Math.round(soloData.voci.reduce(function(a,v){ return v.tipo==="entrata" ? a+v.importo : a-v.importo; }, 0)*100)/100;
 }
 
 // ── APP sbloccata (I-1: placeholder; in I-2 diventa il registro) ──
@@ -175,17 +168,12 @@ function renderSoloApp(el){
   el.innerHTML=
     '<div class="solo-head">'
     +'<div class="solo-head-chi">🐻‍❄️ '+escapeHtml(soloChi)+'</div>'
-    +'<div class="solo-head-btns"><button class="solo-lock-btn" onclick="soloCambiaPin()">🔑</button>'
+    +'<div class="solo-head-btns">'+soloCestinoBtnHtml()+'<button class="solo-lock-btn" onclick="soloCambiaPin()">🔑</button>'
     +'<button class="solo-lock-btn" onclick="soloLock()">🔒 Blocca</button></div>'
     +'</div>'
     +'<div class="solo-saldo-card">'
     +'<div class="solo-saldo-lbl">Saldo personale</div>'
-    +'<div class="solo-saldo-val '+(s>=0?"pos":"neg")+'">'+eur(s)+'</div>'
-    +'<div style="margin-top:14px;display:flex;justify-content:center;">'
-    +(soloEditSaldo
-      ? '<div class="edit-saldo-form"><label>🍯 Saldo di partenza</label><div class="erow"><input class="inp-saldo" id="solo-sp-inp" type="number" inputmode="decimal" step="0.01" value="'+soloSaldoPartenza+'" onkeydown="if(event.key===\'Enter\')soloSalvaSaldoPartenza()"><span style="color:rgba(255,255,255,.4);font-weight:700;font-size:16px">&euro;</span><button class="btn-ok" onclick="soloSalvaSaldoPartenza()">Salva</button><button class="btn-cancel-sm" onclick="soloAnnullaSaldoPartenza()">&times;</button></div></div>'
-      : '<div class="saldo-base"><div class="saldo-base-lbl">Saldo di partenza</div><div class="saldo-base-val">'+eur(soloSaldoPartenza)+'</div><button class="btn-edit-saldo" onclick="soloEditSaldoPartenza()">✏️ Modifica</button></div>')
-    +'</div>'
+    +'<div class="solo-saldo-val '+(s>=0?"pos":"neg")+'">'+eur(s)+' <span class="solo-saldo-icona">'+(s>0?"🥧":s<0?"🕸️":"🍯")+'</span></div>'
     +'</div>'
     // Segmento a 3: Registro / Ricorrenti / Archivi
     +'<div class="solo-seg solo-seg-3">'
@@ -214,7 +202,7 @@ function soloRegistroHtml(catOpts){
     +'<button class="solo-add-btn" onclick="soloAddVoce()">🐻‍❄️ Aggiungi voce</button>'
     +'</div>'
     +'<div class="solo-storico">'
-    +'<div class="solo-storico-head" style="display:flex;align-items:center;justify-content:space-between;"><span>Movimenti</span>'+soloCestinoBtnHtml()+'</div>'
+    +'<div class="solo-storico-head"><span>Movimenti</span></div>'
     +soloStoricoHtml()
     +'</div>'
     +(soloData.voci.length ? '<button class="solo-chiudi-mese-btn" onclick="openSoloChiudi()">🌙 Chiudi e archivia il mese</button>' : '');
@@ -397,7 +385,7 @@ function soloRicorrentiHtml(cats){
   h+='<button class="solo-add-btn" onclick="soloAddRicorrente()">🔁 Aggiungi ricorrente</button>';
   h+='</div>';
   // lista ricorrenti
-  h+='<div class="solo-storico"><div class="solo-storico-head" style="display:flex;align-items:center;justify-content:space-between;"><span>Le tue ricorrenti</span>'+soloCestinoBtnHtml()+'</div>';
+  h+='<div class="solo-storico"><div class="solo-storico-head"><span>Le tue ricorrenti</span></div>';
   if(!(soloData.ricorrenti||[]).length){
     h+='<div class="empty"><span class="e-icon">🔁</span>Nessuna ricorrente.<br>Mutuo, stipendio, bollo... aggiungile qui!</div>';
   } else {
@@ -776,7 +764,7 @@ async function soloCatRinomina(id,nome){
   c.nome=nome.trim()||c.nome;
   try{ await post({action:"updateSoloCategoria",id:id,icona:c.icona,nome:c.nome}); }catch(e){}
 }
-var SOLO_ICONE=["📌","🏠","💼","📋","🏍️","🐾","🍯","🛒","🍔","⛽","💊","🎁","✈️","🎬","📱","💡","👕","🐶","☕","🏋️"];
+var SOLO_ICONE=["📌","🏠","💼","📋","🏍️","🐾","🍯","🛒","🍔","⛽","💊","🎁","✈️","🎬","📱","💡","👕","🐶","☕","🏋️","🍕","🛍️","🧣","🧸","🧩","🌿","🥧","🧮","🪵","🪨"];
 async function soloCatCambiaIcona(id){
   var c=soloData.categorie.find(function(x){return x.id===id;}); if(!c) return;
   var i=SOLO_ICONE.indexOf(c.icona);
@@ -1229,7 +1217,6 @@ function soloArchiviHtml(){
   });
   var anni=Object.keys(perAnno).sort(function(a,b){return b-a;}); // recenti prima
   var h='<div class="solo-archivi">';
-  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:8px;">'+soloCestinoBtnHtml()+'</div>';
   anni.forEach(function(anno){
     var lista=perAnno[anno];
     var totU=lista.reduce(function(a,c){return a+c.totUscite;},0);
