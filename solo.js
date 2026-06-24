@@ -45,7 +45,7 @@ function renderSoloGate(el){
     '<div class="solo-gate">'
     +'<div class="solo-gate-icon" id="solo-gate-icon">'+(primoAccesso?'<img src="./bearface.svg" alt="">':"🔒")+'</div>'
     +'<h2 class="solo-gate-title">'+escapeHtml(soloChi)+'</h2>'
-    +'<p class="solo-gate-sub">'+(primoAccesso
+    +'<p class="solo-gate-sub" id="solo-gate-sub">'+(primoAccesso
         ? "Scegli un PIN di 4 cifre<br>per proteggere la tua area."
         : "Inserisci il tuo PIN<br>per entrare.")+'</p>'
     +'<div class="solo-pin-dots" id="solo-pin-dots"></div>'
@@ -57,11 +57,12 @@ function renderSoloGate(el){
     +  '<button class="solo-pin-key solo-pin-annulla" onclick="soloAnnullaChi()">✕</button>'
     +'</div></div>';
   _soloPinBuffer="";
+  _soloPinNuovo=null;
   soloRenderDots();
 }
 
 function soloScegliChi(c){ soloChi=c; renderSolo(); }
-function soloAnnullaChi(){ soloChi=null; _soloPinBuffer=""; renderSolo(); }
+function soloAnnullaChi(){ soloChi=null; _soloPinBuffer=""; _soloPinNuovo=null; renderSolo(); }
 
 function soloRenderDots(){
   var d=document.getElementById("solo-pin-dots");
@@ -95,14 +96,37 @@ async function soloVerificaPin(pin){
   var hash=await sha256(pin);
   var primoAccesso = !soloProfili[soloChi];
   if(primoAccesso){
-    // Imposto il PIN sul profilo
+    // Doppia immissione: prima memorizzo, poi chiedo conferma.
+    if(_soloPinNuovo===null){
+      // 1ª immissione: NON salvo, chiedo di ripetere.
+      _soloPinNuovo=hash;
+      var sub=document.getElementById("solo-gate-sub");
+      if(sub) sub.innerHTML="Ripeti il PIN<br>per confermare.";
+      _soloPinBuffer="";
+      soloRenderDots();
+      return;
+    }
+    // 2ª immissione: confronto con la prima.
+    if(hash!==_soloPinNuovo){
+      _soloPinNuovo=null;
+      var subR=document.getElementById("solo-gate-sub");
+      if(subR) subR.innerHTML="Scegli un PIN di 4 cifre<br>per proteggere la tua area.";
+      soloPinErrore("I PIN non coincidono, riprova.");
+      vibra([60,40,60]);
+      return;
+    }
+    // Coincidono → imposto il PIN sul profilo.
     try{
       await post({action:"setSoloPin", proprietario:soloChi, pinHash:hash});
       soloProfili[soloChi]=hash;
+      _soloPinNuovo=null;
       soloSbloccato=true;
       await caricaSolo();
       renderSolo();
     }catch(e){
+      _soloPinNuovo=null;
+      var subE=document.getElementById("solo-gate-sub");
+      if(subE) subE.innerHTML="Scegli un PIN di 4 cifre<br>per proteggere la tua area.";
       soloPinErrore("Errore nel salvataggio. Riprova.");
     }
   } else {

@@ -44,7 +44,7 @@ async function saveEditDebito(){
   var nota=document.getElementById("ed-nota").value.trim();
   var ds=document.getElementById("ed-data").value;
   var dataISO=ds?new Date(ds+"T12:00:00").toISOString():d.data;
-  var backup={prestatore:d.prestatore,debitore:d.debitore,importoOriginale:d.importoOriginale,nota:d.nota,data:d.data};
+  var backup={prestatore:d.prestatore,debitore:d.debitore,importoOriginale:d.importoOriginale,importoResiduo:d.importoResiduo,nota:d.nota,data:d.data};
   // Aggiorna importoResiduo proporzionalmente se l'importo originale cambia
   var ratio=d.importoOriginale>0?d.importoResiduo/d.importoOriginale:1;
   d.prestatore=prestatore;d.debitore=debitore;d.importoOriginale=imp;
@@ -56,7 +56,7 @@ async function saveEditDebito(){
     dot("ok","Sincronizzata \uD83D\uDC3E");
   }catch(e){
     dot("err","Errore salvataggio");
-    d.prestatore=backup.prestatore;d.debitore=backup.debitore;d.importoOriginale=backup.importoOriginale;d.nota=backup.nota;d.data=backup.data;
+    d.prestatore=backup.prestatore;d.debitore=backup.debitore;d.importoOriginale=backup.importoOriginale;d.importoResiduo=backup.importoResiduo;d.nota=backup.nota;d.data=backup.data;
     render();
   }
 }

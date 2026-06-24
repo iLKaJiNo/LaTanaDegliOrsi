@@ -154,6 +154,7 @@ async function ripristinaDaCestino(id){
   var c=getCestino();
   var t=c.find(function(x){return x.id===id;});
   if(!t)return;
+  var backupCestino=c.slice();
   // Rimuovi dal cestino e re-inserisci con nuovo id
   var newId=Date.now().toString();
   var tx={id:newId,chi:t.chi,importo:t.importo,nota:t.nota,data:t.data};
@@ -167,6 +168,7 @@ async function ripristinaDaCestino(id){
   }catch(e){
     dot("err","Errore ripristino");
     S.txs=S.txs.filter(function(x){return x.id!==newId;});
+    setCestino(backupCestino);  // rimetto nel cestino, niente perdita
     render();
   }
 }
@@ -174,6 +176,7 @@ async function ripristinaDaCestino(id){
 async function deleteTx(id){
   // Salva nel cestino prima di eliminare
   var t=S.txs.find(function(x){return x.id===id;});
+  var backupCestino=getCestino();
   if(t) addAlCestino(t);
   var backup=S.txs.slice();
   vibra([20,30,20]);
@@ -187,6 +190,7 @@ async function deleteTx(id){
   }catch(e){
     dot("err","Errore salvataggio");
     S.txs=backup;
+    setCestino(backupCestino);  // tolgo la copia aggiunta al cestino, niente duplicato
     render();
   }
 }
@@ -418,8 +422,15 @@ S.chiusure.unshift(chiusura);sortChiusure();S.saldoIniziale=nuovoSaldo;S.txs=[];
     // Per ciascun orso, deposito nel suo registro personale una voce
     // pari al TOTALE che ha speso in cassa comune questo mese (intero,
     // non metà). origine collegata alla chiusura per il ripristino.
-    try{ await depositaQuoteSolo(chiusura); }catch(e){ console.error("Ponte Solo:",e); }
-    dot("ok","Mese chiuso \uD83C\uDF19");
+    var ponteSoloOk=true;
+    try{ await depositaQuoteSolo(chiusura); }
+    catch(e){ ponteSoloOk=false; console.error("Ponte Solo:",e); }
+    if(ponteSoloOk){
+      dot("ok","Mese chiuso \uD83C\uDF19");
+    }else{
+      dot("err","Ponte Solo incompleto");
+      setTimeout(function(){ alert("\u26A0\uFE0F Ponte Solo incompleto: alcune quote 'Cassa Comune' non sono finite nel registro Solo. Riapri il mese (ripristina e richiudi) oppure riprova."); }, 400);
+    }
     // Imp-B: su successo S.txs (vuoto) accoglie il mese nuovo messo da parte
     if(_chiusuraStash){S.txs=S.txs.concat(_chiusuraStash);_chiusuraStash=null;render();}
     _chiusuraInCorso=false;
@@ -441,6 +452,7 @@ async function depositaQuoteSolo(chiusura){
     if(tot[t.chi]!==undefined) tot[t.chi]+=t.importo;
   });
   var orsi=["Luca","Ale"];
+  var falliti=[];   // solo errori reali (non offline: quelli li accoda post())
   for(var i=0;i<orsi.length;i++){
     var chi=orsi[i];
     var importo=Math.round(tot[chi]*100)/100;
@@ -455,12 +467,19 @@ async function depositaQuoteSolo(chiusura){
       data:chiusura.data,
       origine:"chiusura:"+chiusura.id
     };
-    await post({action:"addSoloVoce",voce:voce});
-    // Se è l'orso attualmente sbloccato, aggiorno anche la vista locale
-    if(soloSbloccato && soloChi===chi){
-      soloData.voci.unshift(voce);
+    try{
+      await post({action:"addSoloVoce",voce:voce});
+      // Se è l'orso attualmente sbloccato, aggiorno anche la vista locale
+      if(soloSbloccato && soloChi===chi){
+        soloData.voci.unshift(voce);
+      }
+    }catch(e){
+      // offline → post() l'ha già accodata, si reinvierà: nessun avviso.
+      // errore reale → lo registro per avvisare l'utente.
+      if(!errDiRete(e)) falliti.push(chi);
     }
   }
+  if(falliti.length) throw new Error("Ponte Solo incompleto: "+falliti.join(", "));
 }
 
 // Ponte inverso: alla ripristino di un mese, rimuove dal Solo le voci
@@ -476,18 +495,29 @@ async function rimuoviQuoteSolo(chiusura){
   var res;
   try{
     res=await sb.from("solo_voci").select("*").eq("origine",origine);
-  }catch(e){ return; }
-  if(!res || res.error || !res.data) return;
+  }catch(e){
+    // Lettura quote fallita (rete/DB): non proseguo su dati non letti.
+    // Propago al caller (ripristino) che avvisa con lo stesso alert di M3.
+    throw new Error("Ponte Solo inverso: lettura quote fallita");
+  }
+  if(!res || res.error || !res.data){
+    throw new Error("Ponte Solo inverso: lettura quote fallita");
+  }
 
   var modificate=[];
+  var falliti=[];   // solo errori reali (non offline)
   for(var i=0;i<res.data.length;i++){
     var v=res.data[i];
     var atteso=attesi[v.proprietario];
     if(Math.abs((parseFloat(v.importo)||0) - atteso) < 0.005){
       // intatta → elimino
-      await post({action:"deleteSoloVoce",id:v.id});
-      if(soloSbloccato && soloChi===v.proprietario){
-        soloData.voci=soloData.voci.filter(function(x){return x.id!==v.id;});
+      try{
+        await post({action:"deleteSoloVoce",id:v.id});
+        if(soloSbloccato && soloChi===v.proprietario){
+          soloData.voci=soloData.voci.filter(function(x){return x.id!==v.id;});
+        }
+      }catch(e){
+        if(!errDiRete(e)) falliti.push(v.proprietario);
       }
     } else {
       modificate.push(v.proprietario);
@@ -500,6 +530,7 @@ async function rimuoviQuoteSolo(chiusura){
       alert("⚠️ Nel registro Solo c'erano voci 'Cassa Comune' di questo mese già modificate ("+modificate.join(", ")+"). Non le ho toccate: controllale a mano.");
     }, 400);
   }
+  if(falliti.length) throw new Error("Ponte Solo inverso incompleto: "+falliti.join(", "));
 }
 
 // ── STORICO MESE ARCHIVIATO ──
@@ -616,7 +647,11 @@ async function confermaRipristino(){
     // ── PONTE INVERSO → ORSO SOLO ──
     // Rimuovo le voci "Cassa Comune" che questa chiusura aveva depositato,
     // ma solo se intatte. Quelle modificate/spostate vengono segnalate.
-    try{ await rimuoviQuoteSolo(c); }catch(e){ console.error("Ponte inverso:",e); }
+    try{ await rimuoviQuoteSolo(c); }
+    catch(e){
+      console.error("Ponte inverso:",e);
+      setTimeout(function(){ alert("⚠️ Ponte Solo inverso incompleto: alcune voci 'Cassa Comune' non sono state rimosse dal registro Solo. Controllale a mano o riprova il ripristino."); }, 400);
+    }
     dot("ok","Ripristinato \uD83D\uDD04");
   } catch(e){
     dot("err","Errore ripristino");

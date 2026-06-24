@@ -325,6 +325,9 @@ async function salvaRicorrente(){
   var icona=ricIconaSel;
   // modello ricorrenza dal form
   var ricorrente=document.getElementById("ricorrente-ric").checked;
+  // Una ricorrente che SI RIPETE deve avere una scadenza di partenza: se manca,
+  // default a oggi (evita avanzaData su data vuota). Le una-tantum restano senza.
+  if(ricorrente && !scad) scad=new Date().toISOString().slice(0,10);
   var ogniQuanto=ricorrente?(parseInt(document.getElementById("ricorrente-ogni").value)||1):1;
   var unita=ricorrente?(document.getElementById("ricorrente-unita").value||"mesi"):"mesi";
   var fineData=null, volteRimaste=null;

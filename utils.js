@@ -11,7 +11,7 @@ var SUPABASE_URL = "https://yupqbobnqtcajvxjhgjg.supabase.co";        // es. htt
 var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1cHFib2JucXRjYWp2eGpoZ2pnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzI0MjEsImV4cCI6MjA5Njg0ODQyMX0.Q4ch-6vbaQYeUaPNiGchLQ_4-uxYhJDT2rIhWthRBTk";      // la chiave "anon / public"
 // Email dell'utente condiviso creato in Authentication → Users.
 // La schermata di login chiede solo la password, come sempre.
-var TANA_EMAILS = ["orsi@tana.casa", "prova@tana.db"];
+var TANA_EMAILS = ["orsi@tana.casa"];
 
 // Client Supabase (la libreria è caricata in index.html prima di questo file)
 var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -59,6 +59,7 @@ var soloProfili={Luca:null, Ale:null};  // pin_hash dei due, caricati dal DB
 var soloData={voci:[], ricorrenti:[], chiusure:[], categorie:[]};  // dati dell'orso sbloccato
 var soloCategorie=["Mutuo Tana","Stipendio","TasseTasseTasse!","Moto","Altro"]; // editabili
 var _soloPinBuffer="";     // cifre digitate nel tastierino PIN
+var _soloPinNuovo=null;    // primo accesso: hash della 1ª immissione, in attesa di conferma
 var soloTipoNuova="uscita"; // tipo della voce in inserimento
 var soloDelConfirmId=null;  // id voce in attesa di conferma eliminazione
 var soloSegmento="registro"; // "registro" | "ricorrenti"
@@ -179,6 +180,7 @@ function fmtLong(iso){if(!iso)return"";var d=new Date(iso);return isNaN(d)?iso:d
 // Avanza una data ISO di (ogni × unita). Condiviso Solo + comune (mirror dell'ex soloAvanzaData).
 function avanzaData(iso, ogni, unita){
   var d=new Date(iso);
+  if(isNaN(d)) d=new Date();  // data mancante/invalida → riparto da oggi (niente crash su toISOString)
   if(unita==="giorni") d.setDate(d.getDate()+ogni);
   else if(unita==="settimane") d.setDate(d.getDate()+ogni*7);
   else if(unita==="mesi") d.setMonth(d.getMonth()+ogni);
