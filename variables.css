@@ -39,4 +39,5 @@ body{font-family:'Baloo 2',cursive;background:var(--bg);color:var(--text);min-he
 body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 60% 40% at 90% 10%,rgba(244,168,39,.09) 0%,transparent 100%),radial-gradient(ellipse 50% 50% at 10% 85%,rgba(74,124,64,.07) 0%,transparent 100%);}
 /* Orme di sfondo (opt-in): layer texture SOPRA i gradienti di body::before, senza sostituirli. */
 body.paws-on::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:url('./pawprints.svg');background-repeat:repeat;background-size:120px;opacity:.06;}
-
+/* In dark mode le orme nere sparirebbero sul fondo scuro → le schiarisco */
+body.dark.paws-on::after{filter:invert(1);opacity:.05;}
