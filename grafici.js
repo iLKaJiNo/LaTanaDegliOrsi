@@ -141,26 +141,29 @@ function drawChart(){
   var canvas=document.getElementById("grafico-canvas");
   var ctx=canvas.getContext("2d");
   var haCorrente=(graficoBarrePeriodo==="mesi" && S.txs.length>0);
+  function fisseDi(c){ return (c.fisseSnapshot||[]).reduce(function(a,f){return a+(parseFloat(f.importo)||0);},0); }
   var dati;
   if(graficoBarrePeriodo==="anni"){
-    // Consuntivo per anno dei soli mesi ARCHIVIATI (no mese corrente).
-    var perAnno={};
+    var perAnno={}, perAnnoF={};
     S.chiusure.forEach(function(c){
       var anno=new Date(c.data).getFullYear();
       var tot=c.totale||c.txs.reduce(function(a,t){return a+(parseFloat(t.importo)||0);},0);
       perAnno[anno]=(perAnno[anno]||0)+tot;
+      perAnnoF[anno]=(perAnnoF[anno]||0)+fisseDi(c);
     });
-    var anni=Object.keys(perAnno).sort(); // crescente
-    dati=anni.map(function(a){ return {label:String(a),val:Math.round(perAnno[a])}; });
+    var anni=Object.keys(perAnno).sort();
+    dati=anni.map(function(a){ return {label:String(a),cassa:Math.round(perAnno[a]),fisse:Math.round(perAnnoF[a])}; });
   }else{
     var chiusure=[].concat(S.chiusure).reverse();
     var totCorrente=S.txs.reduce(function(a,t){return a+t.importo;},0);
+    var fisseCorrente=(S.fisse||[]).reduce(function(a,f){return a+(parseFloat(f.importo)||0);},0);
     dati=chiusure.map(function(c){
       var tot=c.totale||c.txs.reduce(function(a,t){return a+(parseFloat(t.importo)||0);},0);
-      return{label:c.mese,val:Math.round(tot)};
+      return{label:c.mese,cassa:Math.round(tot),fisse:Math.round(fisseDi(c))};
     });
-    if(haCorrente){dati.push({label:"Mese corrente",val:Math.round(totCorrente)});}
+    if(haCorrente){dati.push({label:"Mese corrente",cassa:Math.round(totCorrente),fisse:Math.round(fisseCorrente)});}
   }
+  dati.forEach(function(d){ d.val=d.cassa+d.fisse; });
 
   if(!dati.length){
     ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -174,14 +177,16 @@ function drawChart(){
   canvas.height=rect.height*dpr;
   ctx.scale(dpr,dpr);
   var W=rect.width, H=rect.height;
-  var padL=44, padR=16, padT=20, padB=48;
+  var padL=44, padR=16, padT=28, padB=48;
   var chartW=W-padL-padR, chartH=H-padT-padB;
 
   var maxVal=Math.max.apply(null,dati.map(function(d){return d.val;}))||1;
   maxVal=Math.ceil(maxVal/100)*100;
 
-  var barColor="rgba(107,63,32,0.75)";
-  var barColorLast="rgba(244,168,39,0.85)";
+  var colCassa="rgba(107,63,32,0.75)";
+  var colCassaLast="rgba(244,168,39,0.85)";
+  var colFisse="rgba(74,124,64,0.80)";
+  var colFisseLast="rgba(74,124,64,0.55)";
   var lineColor="#F4A827";
   var gridColor="rgba(184,149,106,0.2)";
   var textColor="#B8956A";
@@ -199,29 +204,31 @@ function drawChart(){
 
   var barW=Math.max(8,Math.min(36,(chartW/dati.length)*0.55));
   var step=chartW/dati.length;
-  ctx.font="bold 10px 'Nunito',sans-serif";ctx.textAlign="center";
+  ctx.textAlign="center";
 
   var points=[];
   dati.forEach(function(d,i){
     var x=padL+step*i+step/2;
-    var bh=(d.val/maxVal)*chartH;
-    var y=padT+chartH-bh;
     var isLast=(haCorrente && i===dati.length-1);
-    ctx.fillStyle=isLast?barColorLast:barColor;
-    var r=Math.min(4,barW/2);
-    ctx.beginPath();
-    ctx.moveTo(x-barW/2+r,y);
-    ctx.lineTo(x+barW/2-r,y);
-    ctx.quadraticCurveTo(x+barW/2,y,x+barW/2,y+r);
-    ctx.lineTo(x+barW/2,y+bh);
-    ctx.lineTo(x-barW/2,y+bh);
-    ctx.lineTo(x-barW/2,y+r);
-    ctx.quadraticCurveTo(x-barW/2,y,x-barW/2+r,y);
-    ctx.closePath();
-    ctx.fill();
+    var totBh=(d.val/maxVal)*chartH;
+    var yTot=padT+chartH-totBh;
+    var baseY=padT+chartH;
+
+    var cassaBh=(d.cassa/maxVal)*chartH;
+    var yCassa=baseY-cassaBh;
+    ctx.fillStyle=isLast?colCassaLast:colCassa;
+    ctx.fillRect(x-barW/2,yCassa,barW,cassaBh);
+
+    var fisseBh=(d.fisse/maxVal)*chartH;
+    if(fisseBh>0){
+      ctx.fillStyle=isLast?colFisseLast:colFisse;
+      ctx.fillRect(x-barW/2,yCassa-fisseBh,barW,fisseBh);
+    }
+
     ctx.fillStyle=isLast?lineColor:textColor;
     ctx.font="bold 10px 'Nunito',sans-serif";
-    ctx.fillText(d.val+" €",x,y-5);
+    ctx.fillText(d.val+" €",x,yTot-5);
+
     ctx.fillStyle=textColor;
     ctx.font="9px 'Nunito',sans-serif";
     var lbl=d.label.length>8?d.label.substring(0,8)+"…":d.label;
@@ -230,8 +237,16 @@ function drawChart(){
       var parts=d.label.split(" ");
       if(parts.length>1){ctx.fillText(parts[parts.length-1],x,padT+chartH+25);}
     }
-    points.push({x:x,y:y});
+    points.push({x:x,y:yTot});
   });
+
+  ctx.textAlign="left";
+  ctx.font="9px 'Nunito',sans-serif";
+  var ly=padT-15;
+  ctx.fillStyle=colCassa; ctx.fillRect(padL,ly,9,9);
+  ctx.fillStyle=textColor; ctx.fillText("Cassa",padL+12,ly+8);
+  ctx.fillStyle=colFisse; ctx.fillRect(padL+58,ly,9,9);
+  ctx.fillStyle=textColor; ctx.fillText("Fisse",padL+70,ly+8);
 
   if(points.length>1){
     ctx.strokeStyle=lineColor;
@@ -240,19 +255,15 @@ function drawChart(){
     ctx.lineCap="round";
     ctx.beginPath();
     ctx.moveTo(points[0].x,points[0].y);
-    for(var i=1;i<points.length;i++){
-      var mx=(points[i-1].x+points[i].x)/2;
-      ctx.bezierCurveTo(mx,points[i-1].y,mx,points[i].y,points[i].x,points[i].y);
+    for(var j=1;j<points.length;j++){
+      var mx=(points[j-1].x+points[j].x)/2;
+      ctx.bezierCurveTo(mx,points[j-1].y,mx,points[j].y,points[j].x,points[j].y);
     }
     ctx.stroke();
     ctx.fillStyle=lineColor;
-    points.forEach(function(p){
-      ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();
-    });
+    points.forEach(function(p){ ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill(); });
     ctx.fillStyle="#fff";
-    points.forEach(function(p){
-      ctx.beginPath();ctx.arc(p.x,p.y,2,0,Math.PI*2);ctx.fill();
-    });
+    points.forEach(function(p){ ctx.beginPath();ctx.arc(p.x,p.y,2,0,Math.PI*2);ctx.fill(); });
   }
 }
 

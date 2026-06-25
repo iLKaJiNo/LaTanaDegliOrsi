@@ -150,8 +150,9 @@ Dalla schermata Impostazioni è possibile esportare:
 
 ## Stato del progetto
 
-Progetto personale a sviluppo singolo, pensato per l'uso reale di coppia. In evoluzione continua
-verso la release 1.0.
+**Versione 1.0 — in produzione.** 🍯 Progetto personale a sviluppo singolo, in uso reale di
+coppia. Dati reali migrati dalla precedente versione su Google Apps Script (ora ritirata);
+backend Supabase con RLS e RPC blindate. Manutenzione e piccoli ritocchi all'occorrenza.
 
 <div align="center">
 

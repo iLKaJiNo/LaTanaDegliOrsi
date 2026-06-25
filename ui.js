@@ -544,7 +544,7 @@ function openStoricoMese(id){
     // Sezione transazioni: solo se il mese ha movimenti
     if(c.txs.length){
     var run=c.saldoIniziale;
-    h+='<div class="row-start"><span>\uD83C\uDF32 Debito di partenza</span><strong>'+eurInt(c.saldoIniziale)+'</strong></div>';
+    h+='<div class="row-start"><span>\uD83C\uDF32 Debito di partenza ('+(c.saldoIniziale>0?"Ale Orsa":c.saldoIniziale<0?"Luca Orso":"in pari")+')</span><strong>'+eurInt(c.saldoIniziale)+'</strong></div>';
     c.txs.forEach(function(t){
       run=t.chi==="Luca"?run+t.importo:run-t.importo;
       var isL=t.chi==="Luca";
@@ -553,7 +553,7 @@ function openStoricoMese(id){
       h+='<div class="tx '+(isL?"luca":"ale")+'"><div class="tx-ava '+(isL?"l":"a")+'"><img src="./bear.svg" style="width:1.25rem;height:1.25rem;"></div><div class="tx-body"><div class="tx-nota">'+escapeHtml(t.nota||(isL?"Spesa Luca":"Spesa Ale"))+'</div><div class="tx-sub"><span class="tx-date">'+fmt(t.data)+'</span><span class="tx-who '+(isL?"l":"a")+'">'+t.chi+'</span></div></div><div class="tx-nums"><div class="tx-imp '+(isL?"l":"a")+'">'+eurInt(t.importo)+'</div><div class="tx-after '+ac+'">&rarr; '+eurInt(run)+' '+al+'</div></div></div>';
     });
     var fcol=c.saldo>0?"var(--berry)":c.saldo<0?"var(--moss)":"var(--moss)";
-    h+='<div class="row-start" style="margin-top:8px;"><span>\uD83C\uDFC1 Debito finale</span><strong style="color:'+fcol+'">'+eurInt(c.saldo)+'</strong></div>';
+    h+='<div class="row-start" style="margin-top:8px;"><span>\uD83C\uDFC1 Debito finale ('+(c.saldo>0?"Ale Orsa":c.saldo<0?"Luca Orso":"in pari")+')</span>style="color:'+fcol+'">'+eurInt(c.saldo)+'</strong></div>';
     }
     // Snapshot spese fisse
     var totF=0;
