@@ -1,7 +1,7 @@
 <div align="center">
   <img src="./bear.svg" width="96" height="96" alt="Orso">
 
-# La Tana degli Orsi 🐻🍯
+# La Tana degli Orsi 🍯
 
 **Cassa comune di coppia — semplice, dolce, tutta nostra.**
 
