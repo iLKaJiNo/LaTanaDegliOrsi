@@ -228,8 +228,8 @@ async function runAction(p){
       break;
 
     // — Orso Solo: PIN —
-    case "setSoloPin":
-      r=await sb.from("solo_profili").update({pin_hash:p.pinHash}).eq("proprietario",p.proprietario); break;
+case "setSoloPin":
+      r=await sb.from("solo_profili").upsert({proprietario:p.proprietario,pin_hash:p.pinHash},{onConflict:"proprietario"}); break;
 
     // — Orso Solo: voci registro —
     case "addSoloVoce":

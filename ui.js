@@ -597,6 +597,12 @@ function closeStoricoMese(){document.getElementById("modal-storico-mese").classL
 
 function openRipristino(id){
   var c=S.chiusure.find(function(x){return x.id===id;});if(!c)return;
+  // Si ripristina solo il mese più recente (chiusure ordinate desc): ripristinare
+  // un mese vecchio sovrascriverebbe i successivi (Maggio che cancella Giugno).
+  if(!S.chiusure[0] || S.chiusure[0].id!==id){
+    alert("Puoi ripristinare solo l'ultimo mese archiviato ("+(S.chiusure[0]?S.chiusure[0].mese:"—")+").\nRipristina prima i mesi più recenti.");
+    return;
+  }
   ripristinoTarget=c;
   document.getElementById("modal-rip-txt").textContent='Vuoi ripristinare "'+c.mese+'"? Tornerai allo stato esatto di quel mese.';
   document.getElementById("modal-rip-val").textContent=eurInt(c.saldo);
@@ -942,8 +948,13 @@ function renderArchivioTab(){
     mesi.forEach(function(c){
       var cls=saldoCls(c.saldo);
       var desc=c.saldo>0?"Ale Orsa in debito di "+eurInt(c.saldo):c.saldo<0?"Luca Orso in debito di "+eurInt(Math.abs(c.saldo)):"In pari";
+      var si=c.saldoIniziale||0;
+      var descIni=si>0?"Ale Orsa doveva "+eurInt(si):si<0?"Luca Orso doveva "+eurInt(Math.abs(si)):"in pari";
       var tot=c.totale||c.txs.reduce(function(a,t){return a+(parseFloat(t.importo)||0);},0);
-      h+='<div class="chiusura-row"><div class="chiusura-top"><div class="chiusura-info"><div class="chiusura-mese">🌙 '+escapeHtml(c.mese)+'</div><div class="chiusura-meta">'+c.txs.length+' voci · chiuso il '+fmt(c.data)+'</div></div><div class="chiusura-saldo '+saldoCls(c.saldo)+'">'+eurInt(c.saldo)+'</div></div><div class="chiusura-desc">'+desc+'</div><div class="chiusura-totale">🛒 Totale spese mese: <strong>'+eurInt(tot)+'</strong></div><div class="chiusura-btns"><button class="btn-storico-mese" onclick="openStoricoMese(\''+c.id+'\')">📋 Vedi storico</button><button class="btn-ripristina" onclick="openRipristino(\''+c.id+'\')">🔄 Ripristina</button><button class="btn-elimina-arch" onclick="toggleEliminaConfirm(\''+c.id+'\')" title="Elimina">🗑️</button></div>';
+      var ripBtn=(S.chiusure[0]&&S.chiusure[0].id===c.id)
+        ? '<button class="btn-ripristina" onclick="openRipristino(\''+c.id+'\')">🔄 Ripristina</button>'
+        : '';
+      h+='<div class="chiusura-row"><div class="chiusura-top"><div class="chiusura-info"><div class="chiusura-mese">🌙 '+escapeHtml(c.mese)+'</div><div class="chiusura-meta">'+c.txs.length+' voci · chiuso il '+fmt(c.data)+'</div></div><div class="chiusura-saldo '+saldoCls(c.saldo)+'">'+eurInt(c.saldo)+'</div></div><div class="chiusura-desc">🌲 '+descIni+' → 🌙 '+desc+'</div><div class="chiusura-totale">🛒 Totale spese mese: <strong>'+eurInt(tot)+'</strong></div><div class="chiusura-btns"><button class="btn-storico-mese" onclick="openStoricoMese(\''+c.id+'\')">📋 Vedi storico</button>'+ripBtn+'<button class="btn-elimina-arch" onclick="toggleEliminaConfirm(\''+c.id+'\')" title="Elimina">🗑️</button></div>';
       if(eliminaConfirmId===c.id){h+='<div class="elimina-arch-confirm"><span>Eliminare definitivamente questo mese?</span><button class="btn-yes" onclick="eliminaArchiviazione(\''+c.id+'\')">Sì</button><button class="btn-no" onclick="toggleEliminaConfirm(\''+c.id+'\')">No</button></div>';}
       h+='</div>';
     });
