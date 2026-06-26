@@ -853,7 +853,7 @@ function render(){
     }
     h+='</div>';
 
-    h+='<div class="row-start"><span>\uD83C\uDF32 Debito di partenza</span><strong>'+eurInt(S.saldoIniziale)+'</strong></div>';
+    h+='<div class="row-start"><span>\uD83C\uDF32 Debito di partenza ('+(S.saldoIniziale>0?"Ale Orsa":S.saldoIniziale<0?"Luca Orso":"in pari")+')</span><strong>'+eurInt(S.saldoIniziale)+'</strong></div>';
 
     var umc=ultimoMeseChiuso();
     filtered.forEach(function(t){
@@ -912,10 +912,13 @@ function renderArchivioTab(){
   // Riepilogo archivio + Grafico (in cima)
   var totAnnuale=S.chiusure.reduce(function(a,c){return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));},0);
   var mediaAnnuale=S.chiusure.length>0?Math.round(totAnnuale/S.chiusure.length):0;
+  var totFisseAnnuale=S.chiusure.reduce(function(a,c){var f=c.fisseSnapshot||[];return a+f.reduce(function(b,x){return b+(parseFloat(x.importo)||0);},0);},0);
+  var totRealeAnnuale=totAnnuale+totFisseAnnuale;
+  var mediaRealeAnnuale=S.chiusure.length>0?Math.round(totRealeAnnuale/S.chiusure.length):0;
   h+='<div class="chiusure-section">';
   h+='<div class="chiusure-head-row"><span class="chiusure-head">📦 '+S.chiusure.length+' mesi archiviati</span><button class="btn-grafico" onclick="openGrafico(\'barre\')">📊 Grafico</button><button class="btn-grafico" onclick="esportaPDFComplessivo()">📄 PDF completo</button></div>';
-  h+='<div class="chiusura-totale" style="margin-bottom:4px;">📅 Totale archivio: <strong>'+eurInt(totAnnuale)+'</strong></div>';
-  h+='<div class="chiusura-totale" style="margin-bottom:12px;">📊 Media mensile: <strong>'+eurInt(mediaAnnuale)+'</strong></div>';
+  h+='<div class="chiusura-totale" style="margin-bottom:4px;">📅 Totale archivio: <strong>'+eurInt(totAnnuale)+'</strong> cassa · <strong>'+eur(totRealeAnnuale)+'</strong> reale</div>';
+  h+='<div class="chiusura-totale" style="margin-bottom:12px;">📊 Media mensile: <strong>'+eurInt(mediaAnnuale)+'</strong> cassa · <strong>'+eur(mediaRealeAnnuale)+'</strong> reale</div>';
 
   // Accordion: anni che raggruppano i mesi (card ricche). Anno corrente aperto di default.
   var anniMap={};

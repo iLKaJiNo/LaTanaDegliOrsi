@@ -9,7 +9,6 @@
 .saldo-inner{padding:22px 24px 20px;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;position:relative;overflow:hidden;}
 .saldo-left{flex:1;min-width:0;}
 .saldo-lbl{font-size:0.625rem;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.4);font-family:'Nunito',sans-serif;font-weight:700;margin-bottom:6px;}
-.saldo-lbl::before{content:'🐾 ';font-size:1.50em;opacity:.99;letter-spacing:0;}
 .saldo-num{font-size:3.25rem;font-weight:800;letter-spacing:-3px;line-height:1;color:var(--honey);text-shadow:0 3px 10px rgba(0,0,0,.25);transition:color .35s;}
 @keyframes saldoBump{0%{transform:scale(1);}30%{transform:scale(1.10);}65%{transform:scale(.96);}100%{transform:scale(1);}}
 .saldo-num.bump{animation:saldoBump .45s cubic-bezier(.4,0,.2,1);}
@@ -121,7 +120,7 @@
 .del-debito-confirm span{flex:1;color:var(--berry);font-size:0.75rem;font-weight:700;font-family:'Nunito',sans-serif;}
 
 /* ── FORM CARD ── */
-.form-card{background:var(--card);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow-md);border:1.5px solid var(--border);margin-bottom:12px;}
+.form-card{background:var(--card);border-radius:var(--r-lg);padding:20px 20px 11px;box-shadow:var(--shadow-md);border:1.5px solid var(--border);margin-bottom:12px;}
 .section-lbl{font-size:0.625rem;letter-spacing:3px;text-transform:uppercase;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:700;margin-bottom:14px;display:block;}
 
 /* ── IMPOSTAZIONI ── */
@@ -165,7 +164,7 @@
 .btn-add:hover{opacity:.9;}.btn-add:active{transform:scale(.97);}
 .btn-add:disabled{opacity:.3;cursor:default;box-shadow:none;}
 .btn-add.flash{background:linear-gradient(135deg,var(--moss),#2E5C24);color:#fff;}
-.status-lbl{font-size:0.75rem;text-align:center;margin-top:8px;min-height:18px;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;}
+.status-lbl{font-size:0.75rem;text-align:center;margin-top:4px;min-height:8px;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:600;}
 
 /* ── CHIUDI MESE ── */
 .chiudi-card{background:var(--card);border-radius:var(--r-lg);padding:16px 20px;box-shadow:var(--shadow-sm);border:1.5px dashed var(--honey-brd);margin-bottom:16px;}
