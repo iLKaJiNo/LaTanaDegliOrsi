@@ -938,14 +938,21 @@ function openSoloChiusura(id){
   // elenco movimenti archiviati
   if((c.voci||[]).length){
     h+='<div class="solo-storico-head" style="margin-top:14px;">Movimenti del periodo</div>';
-    c.voci.forEach(function(v){
+    var _arows=c.voci.map(function(v){
       var entrata=v.tipo==="entrata";
-      h+='<div class="solo-voce '+(entrata?"entrata":"uscita")+'" style="cursor:default;">'
+      return '<div class="solo-voce '+(entrata?"entrata":"uscita")+'" style="cursor:default;">'
         +'<div class="solo-voce-cat">'+(soloIconaCat(v.categoria))+'</div>'
         +'<div class="solo-voce-body"><div class="solo-voce-nota">'+escapeHtml(v.nota||(entrata?"Entrata":"Uscita"))+'</div>'
         +'<div class="solo-voce-data">'+fmt(v.data)+'</div></div>'
         +'<div class="solo-voce-imp '+(entrata?"pos":"neg")+'">'+(entrata?"+":"−")+eur(v.importo)+'</div></div>';
     });
+    if(_arows.length<=3){ h+=_arows.join(''); }
+    else{
+      var _an=_arows.length-3, _akey="solo_archivio_aperto_"+soloChi, _aap=accordionAperto(_akey,true);
+      h+=_arows.slice(0,3).join('')
+        +'<button id="solo-arch-acc-btn" onclick="accordionToggle(\'solo-arch-acc-box\',\'solo-arch-acc-btn\',\''+_akey+'\')" style="'+ACCORDION_BTN_STYLE+'">'+(_aap?"\u25BE Nascondi le voci precedenti":("\u25B8 Mostra le altre "+_an+" voci"))+'</button>'
+        +'<div id="solo-arch-acc-box" data-open="'+(_aap?"1":"0")+'" data-count="'+_an+'" style="overflow:hidden;transition:max-height .35s ease;max-height:'+(_aap?"none":"0px")+';">'+_arows.slice(3).join('')+'</div>';
+    }
   }
   document.getElementById("solo-chiusura-titolo").textContent=c.mese;
   body.innerHTML=h;
