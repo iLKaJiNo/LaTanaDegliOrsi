@@ -246,14 +246,16 @@ case "setSoloPin":
       r=await sb.from("solo_ricorrenti").insert({id:p.ric.id,proprietario:p.ric.proprietario,nome:p.ric.nome,
         tipo:p.ric.tipo,importo:p.ric.importo,categoria:p.ric.categoria,ogni_quanto:p.ric.ogniQuanto,
         unita:p.ric.unita,prossima_scadenza:p.ric.prossimaScadenza,
-        fine_data:p.ric.fineData||null,volte_rimaste:p.ric.volteRimaste,attiva:p.ric.attiva!==false}); break;
+        fine_data:p.ric.fineData||null,volte_rimaste:p.ric.volteRimaste,attiva:p.ric.attiva!==false,
+        automatica:p.ric.automatica===true}); break;
     case "updateSoloRicorrenteScadenza":
       r=await sb.from("solo_ricorrenti").update({prossima_scadenza:p.prossimaScadenza}).eq("id",p.id); break;
     case "updateSoloRicorrente":
       r=await sb.from("solo_ricorrenti").update({nome:p.ric.nome,tipo:p.ric.tipo,importo:p.ric.importo,
         categoria:p.ric.categoria,ogni_quanto:p.ric.ogniQuanto,unita:p.ric.unita,
         prossima_scadenza:p.ric.prossimaScadenza,fine_data:p.ric.fineData||null,
-        volte_rimaste:p.ric.volteRimaste,attiva:p.ric.attiva!==false}).eq("id",p.ric.id); break;
+        volte_rimaste:p.ric.volteRimaste,attiva:p.ric.attiva!==false,
+        automatica:p.ric.automatica===true}).eq("id",p.ric.id); break;
     case "deleteSoloRicorrente":
       r=await sb.from("solo_ricorrenti").delete().eq("id",p.id); break;
 

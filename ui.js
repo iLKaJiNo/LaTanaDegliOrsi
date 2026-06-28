@@ -534,6 +534,31 @@ async function rimuoviQuoteSolo(chiusura){
 }
 
 // ── STORICO MESE ARCHIVIATO ──
+// ── Accordion riusabile (storico comune + registro Solo) ──
+// Stato ricordato in localStorage sotto la chiave passata. Default: aperto.
+var ACCORDION_BTN_STYLE="display:block;width:100%;background:rgba(120,80,40,.05);border:1px dashed var(--border);border-radius:10px;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:700;font-size:.78rem;padding:7px 8px;margin:8px 0;cursor:pointer;";
+function accordionAperto(key, def){
+  try{ var v=localStorage.getItem(key); return v===null?def:(v==="1"); }catch(e){ return def; }
+}
+function accordionToggle(boxId, btnId, key){
+  var box=document.getElementById(boxId); if(!box) return;
+  var btn=document.getElementById(btnId);
+  var n=box.getAttribute("data-count")||"";
+  var apri=box.getAttribute("data-open")!=="1";
+  if(apri){
+    box.style.maxHeight=box.scrollHeight+"px";
+    box.setAttribute("data-open","1");
+    setTimeout(function(){ if(box.getAttribute("data-open")==="1") box.style.maxHeight="none"; },360);
+  } else {
+    box.style.maxHeight=box.scrollHeight+"px";
+    void box.offsetHeight; // forza un reflow prima di collassare
+    requestAnimationFrame(function(){ box.style.maxHeight="0px"; });
+    box.setAttribute("data-open","0");
+  }
+  if(btn) btn.innerHTML = apri ? "\u25BE Nascondi le voci precedenti" : ("\u25B8 Mostra le altre "+n+" voci");
+  try{ localStorage.setItem(key, apri?"1":"0"); }catch(e){}
+}
+
 function openStoricoMese(id){
   var c=S.chiusure.find(function(x){return x.id===id;});if(!c)return;
   document.getElementById("modal-storico-titolo").textContent="\uD83D\uDCE6 "+c.mese;
@@ -545,13 +570,20 @@ function openStoricoMese(id){
     if(c.txs.length){
     var run=c.saldoIniziale;
     h+='<div class="row-start"><span>\uD83C\uDF32 Debito di partenza ('+(c.saldoIniziale>0?"Ale Orsa":c.saldoIniziale<0?"Luca Orso":"in pari")+')</span><strong>'+eurInt(c.saldoIniziale)+'</strong></div>';
-    c.txs.forEach(function(t){
+    var _rows=c.txs.map(function(t){
       run=t.chi==="Luca"?run+t.importo:run-t.importo;
       var isL=t.chi==="Luca";
       var ac=run>0?"ac":run<0?"lc":"pc";
       var al=run>0?"ale <img src='./bear.svg' style='width:0.625rem;height:0.625rem;'>":run<0?"luca <img src='./bear.svg' style='width:0.625rem;height:0.625rem;'>":"pari \uD83C\uDF6F";
-      h+='<div class="tx '+(isL?"luca":"ale")+'"><div class="tx-ava '+(isL?"l":"a")+'"><img src="./bear.svg" style="width:1.25rem;height:1.25rem;"></div><div class="tx-body"><div class="tx-nota">'+escapeHtml(t.nota||(isL?"Spesa Luca":"Spesa Ale"))+'</div><div class="tx-sub"><span class="tx-date">'+fmt(t.data)+'</span><span class="tx-who '+(isL?"l":"a")+'">'+t.chi+'</span></div></div><div class="tx-nums"><div class="tx-imp '+(isL?"l":"a")+'">'+eurInt(t.importo)+'</div><div class="tx-after '+ac+'">&rarr; '+eurInt(run)+' '+al+'</div></div></div>';
+      return '<div class="tx '+(isL?"luca":"ale")+'"><div class="tx-ava '+(isL?"l":"a")+'"><img src="./bear.svg" style="width:1.25rem;height:1.25rem;"></div><div class="tx-body"><div class="tx-nota">'+escapeHtml(t.nota||(isL?"Spesa Luca":"Spesa Ale"))+'</div><div class="tx-sub"><span class="tx-date">'+fmt(t.data)+'</span><span class="tx-who '+(isL?"l":"a")+'">'+t.chi+'</span></div></div><div class="tx-nums"><div class="tx-imp '+(isL?"l":"a")+'">'+eurInt(t.importo)+'</div><div class="tx-after '+ac+'">&rarr; '+eurInt(run)+' '+al+'</div></div></div>';
     });
+    if(_rows.length<=3){ h+=_rows.join(''); }
+    else{
+      var _n=_rows.length-3, _key="tana_storico_comune_aperto", _ap=accordionAperto(_key,true);
+      h+='<button id="stc-acc-btn" onclick="accordionToggle(\'stc-acc-box\',\'stc-acc-btn\',\''+_key+'\')" style="'+ACCORDION_BTN_STYLE+'">'+(_ap?"\u25BE Nascondi le voci precedenti":("\u25B8 Mostra le altre "+_n+" voci"))+'</button>';
+      h+='<div id="stc-acc-box" data-open="'+(_ap?"1":"0")+'" data-count="'+_n+'" style="overflow:hidden;transition:max-height .35s ease;max-height:'+(_ap?"none":"0px")+';">'+_rows.slice(0,_n).join('')+'</div>';
+      h+=_rows.slice(_n).join('');
+    }
     var fcol=c.saldo>0?"var(--berry)":c.saldo<0?"var(--moss)":"var(--moss)";
     h+='<div class="row-start" style="margin-top:8px;"><span>\uD83C\uDFC1 Debito finale ('+(c.saldo>0?"Ale Orsa":c.saldo<0?"Luca Orso":"in pari")+')</span><strong style="color:'+fcol+'">'+eurInt(c.saldo)+'</strong></div>';
     }
@@ -856,23 +888,32 @@ function render(){
     h+='<div class="row-start"><span>\uD83C\uDF32 Debito di partenza ('+(S.saldoIniziale>0?"Ale Orsa":S.saldoIniziale<0?"Luca Orso":"in pari")+')</span><strong>'+eurInt(S.saldoIniziale)+'</strong></div>';
 
     var umc=ultimoMeseChiuso();
-    filtered.forEach(function(t){
+    var _rows=filtered.map(function(t){
       var id=t.id,isL=t.chi==="Luca";
       var isRetro=umc&&(t.data||"").slice(0,7)<=umc;
       var after=afterMap[id]||0;
-      if(delId===id){h+='<div class="del-confirm"><span>\uD83D\uDDD1\uFE0F Eliminare questa voce?</span><button class="btn-yes" onclick="deleteTx(\''+id+'\')">S\u00ec</button><button class="btn-no" onclick="delId=null;render()">No</button></div>';return;}
+      if(delId===id){return '<div class="del-confirm"><span>\uD83D\uDDD1\uFE0F Eliminare questa voce?</span><button class="btn-yes" onclick="deleteTx(\''+id+'\')">S\u00ec</button><button class="btn-no" onclick="delId=null;render()">No</button></div>';}
       var ac=after>0?"ac":after<0?"lc":"pc";
       var al=after>0?"ale <img src='./bear.svg' style='width:0.625rem;height:0.625rem;'>":after<0?"luca <img src='./bear.svg' style='width:0.625rem;height:0.625rem;'>":"pari \uD83C\uDF6F";
-      h+='<div class="tx '+(isL?"luca":"ale")+(isRetro?" tx-retro":"")+'">';
-      h+='<div class="tx-ava '+(isL?"l":"a")+'"><img src="./bear.svg" style="width:1.375rem;height:1.375rem;"></div>';
-      h+='<div class="tx-body"><div class="tx-nota">'+escapeHtml(t.nota||(isL?"Spesa Luca":"Spesa Ale"))+'</div>';
-      h+='<div class="tx-sub"><span class="tx-date">'+fmt(t.data)+'</span>'+(isRetro?'<span class="tx-retro-badge" title="Spesa retrodatata — il mese è già archiviato">🕓</span>':'')+'<span class="tx-who '+(isL?"l":"a")+'">'+t.chi+'</span></div></div>';
-      h+='<div class="tx-nums"><div class="tx-imp '+(isL?"l":"a")+'">'+eurInt(t.importo)+'</div>';
-      h+='<div class="tx-after '+ac+'">&rarr; '+eurInt(after)+' '+al+'</div></div>';
-      h+='<button class="btn-del" onclick="openEditTx(\''+id+'\')" title="Modifica" style="color:var(--honey-d);border-color:var(--honey-brd);background:var(--honey-bg);">✏️</button>';
-      h+='<button class="btn-del" onclick="delId=\''+id+'\';render()" aria-label="Elimina">&times;</button>';
-      h+='</div>';
+      var _r='<div class="tx '+(isL?"luca":"ale")+(isRetro?" tx-retro":"")+'">';
+      _r+='<div class="tx-ava '+(isL?"l":"a")+'"><img src="./bear.svg" style="width:1.375rem;height:1.375rem;"></div>';
+      _r+='<div class="tx-body"><div class="tx-nota">'+escapeHtml(t.nota||(isL?"Spesa Luca":"Spesa Ale"))+'</div>';
+      _r+='<div class="tx-sub"><span class="tx-date">'+fmt(t.data)+'</span>'+(isRetro?'<span class="tx-retro-badge" title="Spesa retrodatata — il mese è già archiviato">🕓</span>':'')+'<span class="tx-who '+(isL?"l":"a")+'">'+t.chi+'</span></div></div>';
+      _r+='<div class="tx-nums"><div class="tx-imp '+(isL?"l":"a")+'">'+eurInt(t.importo)+'</div>';
+      _r+='<div class="tx-after '+ac+'">&rarr; '+eurInt(after)+' '+al+'</div></div>';
+      _r+='<button class="btn-del" onclick="openEditTx(\''+id+'\')" title="Modifica" style="color:var(--honey-d);border-color:var(--honey-brd);background:var(--honey-bg);">✏️</button>';
+      _r+='<button class="btn-del" onclick="delId=\''+id+'\';render()" aria-label="Elimina">&times;</button>';
+      _r+='</div>';
+      return _r;
     });
+    if(_rows.length<=3){ h+=_rows.join(''); }
+    else{
+      var _n=_rows.length-3, _key="tana_storico_corrente_aperto", _ap=accordionAperto(_key,true);
+      var _btn='<button id="tsc-acc-btn" onclick="accordionToggle(\'tsc-acc-box\',\'tsc-acc-btn\',\''+_key+'\')" style="'+ACCORDION_BTN_STYLE+'">'+(_ap?"\u25BE Nascondi le voci precedenti":("\u25B8 Mostra le altre "+_n+" voci"))+'</button>';
+      var _boxOpen='<div id="tsc-acc-box" data-open="'+(_ap?"1":"0")+'" data-count="'+_n+'" style="overflow:hidden;transition:max-height .35s ease;max-height:'+(_ap?"none":"0px")+';">';
+      if(sortDateAsc){ h+=_btn+_boxOpen+_rows.slice(0,_n).join('')+'</div>'+_rows.slice(_n).join(''); }
+      else{ h+=_rows.slice(0,3).join('')+_btn+_boxOpen+_rows.slice(3).join('')+'</div>'; }
+    }
 
     if(filtered.length===0 && S.txs.length>0){
       h+='<div class="empty" style="padding:24px 0;"><span style="font-size:32px;">🔍</span><br>Nessuna voce con questi filtri.</div>';

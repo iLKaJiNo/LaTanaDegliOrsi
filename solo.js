@@ -122,6 +122,7 @@ async function soloVerificaPin(pin){
       _soloPinNuovo=null;
       soloSbloccato=true;
       await caricaSolo();
+      await soloAutoRegistraScadute();
       renderSolo();
     }catch(e){
       _soloPinNuovo=null;
@@ -134,6 +135,7 @@ async function soloVerificaPin(pin){
     if(hash===soloProfili[soloChi]){
       soloSbloccato=true;
       await caricaSolo();
+      await soloAutoRegistraScadute();
       renderSolo();
     } else {
       soloPinErrore("PIN errato.");
@@ -172,7 +174,7 @@ async function caricaSolo(){
       sb.from("solo_categorie").select("*").eq("proprietario",soloChi).order("ordine",{ascending:true})
     ]);
     soloData.voci       = (ris[0].data||[]).map(function(r){return{id:r.id,tipo:r.tipo,importo:parseFloat(r.importo)||0,categoria:r.categoria||"Altro",nota:r.nota||"",data:r.data||"",origine:r.origine||null};});
-    soloData.ricorrenti = (ris[1].data||[]).map(function(r){return{id:r.id,nome:r.nome,tipo:r.tipo,importo:parseFloat(r.importo)||0,categoria:r.categoria||"Altro",ogniQuanto:r.ogni_quanto||1,unita:r.unita||"mesi",prossimaScadenza:r.prossima_scadenza||"",fineData:r.fine_data||null,volteRimaste:r.volte_rimaste!=null?r.volte_rimaste:null,attiva:r.attiva!==false};});
+    soloData.ricorrenti = (ris[1].data||[]).map(function(r){return{id:r.id,nome:r.nome,tipo:r.tipo,importo:parseFloat(r.importo)||0,categoria:r.categoria||"Altro",ogniQuanto:r.ogni_quanto||1,unita:r.unita||"mesi",prossimaScadenza:r.prossima_scadenza||"",fineData:r.fine_data||null,volteRimaste:r.volte_rimaste!=null?r.volte_rimaste:null,attiva:r.attiva!==false,automatica:r.automatica===true};});
     soloData.chiusure   = (ris[2].data||[]).map(function(r){return{id:r.id,mese:r.mese,totEntrate:parseFloat(r.tot_entrate)||0,totUscite:parseFloat(r.tot_uscite)||0,saldo:parseFloat(r.saldo)||0,data:r.data||"",voci:r.voci||[],torta:r.torta||[]};});
     soloData.categorie  = (ris[3].data||[]).map(function(r){return{id:r.id,icona:r.icona||"📌",nome:r.nome,ordine:r.ordine||0,protetta:!!r.protetta};});
   }catch(e){ /* offline */ }
@@ -236,7 +238,7 @@ function soloStoricoHtml(){
   if(!soloData.voci.length){
     return '<div class="empty"><span class="e-icon">🐻‍❄️</span>Ancora nessun movimento.<br>Registra entrate e uscite qui sopra!</div>';
   }
-  return soloData.voci.map(function(v){
+  var _rows=soloData.voci.map(function(v){
     var entrata=v.tipo==="entrata";
     var ic=soloIconaCat(v.categoria);
     return '<div class="solo-voce '+(entrata?"entrata":"uscita")+'">'
@@ -253,7 +255,12 @@ function soloStoricoHtml(){
             : '<button class="solo-voce-del" onclick="openSoloEditVoce(\''+v.id+'\')" title="Modifica">✏️</button>')
           + '<button class="solo-voce-del" onclick="soloDelChiedi(\''+v.id+'\')">🗑️</button>'))
       +'</div>';
-  }).join('');
+  });
+  if(_rows.length<=3) return _rows.join('');
+  var _n=_rows.length-3, _key="solo_registro_aperto_"+soloChi, _ap=accordionAperto(_key,true);
+  return _rows.slice(0,3).join('')
+    +'<button id="solo-reg-acc-btn" onclick="accordionToggle(\'solo-reg-acc-box\',\'solo-reg-acc-btn\',\''+_key+'\')" style="'+ACCORDION_BTN_STYLE+'">'+(_ap?"\u25BE Nascondi le voci precedenti":("\u25B8 Mostra le altre "+_n+" voci"))+'</button>'
+    +'<div id="solo-reg-acc-box" data-open="'+(_ap?"1":"0")+'" data-count="'+_n+'" style="overflow:hidden;transition:max-height .35s ease;max-height:'+(_ap?"none":"0px")+';">'+_rows.slice(3).join('')+'</div>';
 }
 
 // Restituisce l'icona della categoria dato il nome (per lo storico)
@@ -406,6 +413,11 @@ function soloRicorrentiHtml(cats){
   h+='<div class="solo-freq-row" id="solo-ric-fine-extra" style="display:none;">'
     +'<input class="inp" type="date" id="solo-ric-fine-data" style="flex:1;display:none;">'
     +'<input class="inp solo-freq-n" type="number" id="solo-ric-fine-volte" min="1" step="1" value="12" inputmode="numeric" style="display:none;"><span id="solo-ric-fine-volte-lbl" style="display:none;">volte</span></div>';
+  h+='<div class="solo-freq-row"><span>Esecuzione</span>'
+    +'<div class="solo-tipo-toggle" style="flex:1;">'
+    +'<button type="button" class="solo-tipo-btn" style="'+(!soloRicAuto?"background:var(--honey);color:#3a2e00;":"")+'" onclick="soloRicSetAuto(false)" title="La registri tu quando scade">✋ Manuale</button>'
+    +'<button type="button" class="solo-tipo-btn" style="'+(soloRicAuto?"background:var(--honey);color:#3a2e00;":"")+'" onclick="soloRicSetAuto(true)" title="Si registra da sola alla scadenza">⚡ Automatica</button>'
+    +'</div></div>';
   h+='<button class="solo-add-btn" onclick="soloAddRicorrente()">🔁 Aggiungi ricorrente</button>';
   h+='</div>';
   // lista ricorrenti
@@ -429,7 +441,9 @@ function soloRicorrentiHtml(cats){
         +'<div class="solo-voce-data">ogni '+r.ogniQuanto+' '+UNITA_LABEL[r.unita]+(conclusa?"":" · prossima: "+fmt(r.prossimaScadenza))+fineInfo+'</div>'
         +'</div>'
         +'<div class="solo-voce-imp '+(entrata?"pos":"neg")+'">'+(entrata?"+":"−")+eur(r.importo)+'</div>'
-        +(scaduta
+        +(r.automatica
+          ? '<span class="solo-ric-auto" style="font-size:1.1rem;opacity:.85;align-self:center;padding:0 6px;" title="Automatica: si registra da sola">⚡</span>'
+          : scaduta
           ? '<button class="solo-ric-paga" onclick="soloPagaRicorrente(\''+r.id+'\')" title="Registra e avanza">✓</button>'
           : '')
         +(soloRicDelId===r.id
@@ -444,6 +458,8 @@ function soloRicorrentiHtml(cats){
 }
 
 function soloRicSetTipo(t){ soloRicTipo=t; renderSolo(); }
+var soloRicAuto=false;
+function soloRicSetAuto(v){ soloRicAuto=!!v; renderSolo(); }
 function soloOggiISO(){ var d=new Date(); return d.toISOString().slice(0,10); }
 function soloRicScaduta(r){
   if(r.attiva===false) return false;  // conclusa: niente più avvisi
@@ -468,7 +484,7 @@ async function soloAddRicorrente(){
   var fineData=null, volteRimaste=null;
   if(fineTipo==="data") fineData=document.getElementById("solo-ric-fine-data").value||null;
   if(fineTipo==="volte") volteRimaste=parseInt(document.getElementById("solo-ric-fine-volte").value)||1;
-  var r={id:Date.now().toString(),proprietario:soloChi,nome:nome,tipo:soloRicTipo,importo:imp,categoria:cat,ogniQuanto:ogni,unita:unita,prossimaScadenza:scad,fineData:fineData,volteRimaste:volteRimaste,attiva:true};
+  var r={id:Date.now().toString(),proprietario:soloChi,nome:nome,tipo:soloRicTipo,importo:imp,categoria:cat,ogniQuanto:ogni,unita:unita,prossimaScadenza:scad,fineData:fineData,volteRimaste:volteRimaste,attiva:true,automatica:soloRicAuto};
   soloData.ricorrenti.push(r);
   soloData.ricorrenti.sort(function(a,b){return (a.prossimaScadenza||"").localeCompare(b.prossimaScadenza||"");});
   vibra(30);
@@ -543,6 +559,50 @@ async function soloPagaRicorrente(id){
   }
 }
 
+// Opzione A — le ricorrenti "automatiche" si registrano da sole all'avvio.
+// Per ognuna scaduta crea una voce DATATA AL GIORNO DI SCADENZA e avanza,
+// recuperando anche più cicli arretrati (guard anti-loop). Persiste come la
+// paga manuale; se una post fallisce fa rollback dello step e si ferma.
+async function soloAutoRegistraScadute(){
+  if(!soloChi || !(soloData.ricorrenti||[]).length) return false;
+  var oggi=new Date(); oggi.setHours(23,59,59,999);
+  var qualcosa=false;
+  for(var i=0;i<soloData.ricorrenti.length;i++){
+    var r=soloData.ricorrenti[i];
+    if(!r.automatica || r.attiva===false || !r.prossimaScadenza) continue;
+    var guard=0;
+    while(r.attiva!==false && r.prossimaScadenza && new Date(r.prossimaScadenza)<=oggi && guard<240){
+      guard++;
+      var scad=String(r.prossimaScadenza).slice(0,10);
+      var nuovaScad=avanzaData(r.prossimaScadenza, r.ogniQuanto, r.unita);
+      var v={id:Date.now().toString()+"x"+i+"-"+guard,proprietario:soloChi,tipo:r.tipo,importo:r.importo,categoria:r.categoria,nota:r.nome,data:new Date(scad+"T12:00:00").toISOString(),origine:"ric:"+r.id};
+      var bk={prossimaScadenza:r.prossimaScadenza,volteRimaste:r.volteRimaste,attiva:r.attiva};
+      var concludi=false;
+      if(r.volteRimaste!=null){ r.volteRimaste-=1; if(r.volteRimaste<=0) concludi=true; }
+      if(r.fineData && new Date(nuovaScad)>new Date(r.fineData)) concludi=true;
+      soloData.voci.unshift(v);
+      if(concludi){ r.attiva=false; } else { r.prossimaScadenza=nuovaScad; }
+      var voceSalvata=false;
+      try{
+        await post({action:"addSoloVoce",voce:v});
+        voceSalvata=true;
+        await post({action:"updateSoloRicorrente",ric:r});
+        qualcosa=true;
+      }catch(e){
+        soloData.voci=soloData.voci.filter(function(x){return x.id!==v.id;});
+        r.prossimaScadenza=bk.prossimaScadenza; r.volteRimaste=bk.volteRimaste; r.attiva=bk.attiva;
+        if(voceSalvata){ try{ await post({action:"deleteSoloVoce",id:v.id}); }catch(e2){} }
+        return qualcosa;
+      }
+    }
+  }
+  if(qualcosa){
+    soloData.voci.sort(function(a,b){return (b.data||"").localeCompare(a.data||"");});
+    soloData.ricorrenti.sort(function(a,b){return (a.prossimaScadenza||"").localeCompare(b.prossimaScadenza||"");});
+  }
+  return qualcosa;
+}
+
 function soloRicDelChiedi(id){ soloRicDelId=id; renderSolo(); }
 function soloRicDelAnnulla(){ soloRicDelId=null; renderSolo(); }
 async function soloDelRicorrente(id){
@@ -582,6 +642,7 @@ function openSoloEditRic(id){
   var riattRow=document.getElementById("solo-er-riattiva-row");
   document.getElementById("solo-er-riattiva").checked=false;
   riattRow.style.display = (r.attiva===false) ? "" : "none";
+  document.getElementById("solo-er-auto").checked = (r.automatica===true);
   soloEditRicFineChange();
   document.getElementById("modal-solo-edit-ric").classList.add("open");
   setTimeout(function(){document.getElementById("solo-er-nome").focus();},80);
@@ -619,6 +680,7 @@ async function soloSalvaEditRic(){
   else if(fineTipo==="volte"){ r.volteRimaste=parseInt(document.getElementById("solo-er-fine-volte").value)||1; r.fineData=null; }
   else { r.fineData=null; r.volteRimaste=null; }
   r.prossimaScadenza = document.getElementById("solo-er-scad").value || r.prossimaScadenza;
+  r.automatica = document.getElementById("solo-er-auto").checked;
   // riattivazione: solo se era conclusa e l'utente ha spuntato "Riattiva"
   if(backup.attiva===false){
     var riatt=document.getElementById("solo-er-riattiva");
