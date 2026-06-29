@@ -123,7 +123,7 @@ async function soloVerificaPin(pin){
       soloSbloccato=true;
       await caricaSolo();
       await soloAutoRegistraScadute();
-      renderSolo();
+      soloCheckPromemoria(); renderSolo();
     }catch(e){
       _soloPinNuovo=null;
       var subE=document.getElementById("solo-gate-sub");
@@ -136,7 +136,7 @@ async function soloVerificaPin(pin){
       soloSbloccato=true;
       await caricaSolo();
       await soloAutoRegistraScadute();
-      renderSolo();
+      soloCheckPromemoria(); renderSolo();
     } else {
       soloPinErrore("PIN errato.");
       vibra([60,40,60]);
@@ -185,6 +185,34 @@ function soloSaldo(){
   return Math.round(soloData.voci.reduce(function(a,v){ return v.tipo==="entrata" ? a+v.importo : a-v.importo; }, 0)*100)/100;
 }
 
+// Promemoria chiusura Solo: il registro vivo abbraccia >1 mese? → c'è un mese
+// vecchio da archiviare. Mirror del promemoria comune (qui valutato a sblocco,
+// perché il bridge può aver iniettato voci mentre l'orso non era in sessione).
+function soloCheckPromemoria(){
+  _soloPromemoriaMese=null;
+  if(_soloPromemoriaOff) return;            // rispetta il "Più tardi" di sessione
+  var voci=soloData.voci||[];
+  if(voci.length<2) return;
+  var minYM="9999-99", maxYM="";
+  voci.forEach(function(v){
+    var ym=(v.data||"").slice(0,7); if(!ym) return;
+    if(ym<minYM) minYM=ym;
+    if(ym>maxYM) maxYM=ym;
+  });
+  if(minYM!=="9999-99" && minYM<maxYM) _soloPromemoriaMese=minYM;
+}
+
+// "2026-06" → "Giugno 2026" (etichetta amichevole, language-aware)
+function soloMeseLabel(ym){
+  var p=(ym||"").split("-"); if(p.length<2) return ym||"";
+  var d=new Date(parseInt(p[0],10), parseInt(p[1],10)-1, 1);
+  var s=d.toLocaleDateString("it-IT",{month:"long",year:"numeric"});
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+
+function soloPromemoriaPiuTardi(){ _soloPromemoriaOff=true; _soloPromemoriaMese=null; renderSolo(); }
+function soloPromemoriaArchivia(){ _soloPromemoriaMese=null; openSoloChiudi(); }
+
 // ── APP sbloccata (I-1: placeholder; in I-2 diventa il registro) ──
 function renderSoloApp(el){
   var s=soloSaldo();
@@ -197,6 +225,11 @@ function renderSoloApp(el){
     +'<div class="solo-head-btns">'+soloCestinoBtnHtml()+'<button class="solo-lock-btn" onclick="soloCambiaPin()">🔑</button>'
     +'<button class="solo-lock-btn" onclick="soloLock()">🔒 Blocca</button></div>'
     +'</div>'
+    +(_soloPromemoriaMese
+      ? '<div class="promemoria-banner" style="display:flex;">🌙 Hai voci di '+soloMeseLabel(_soloPromemoriaMese)+' ancora da archiviare. Vuoi chiudere il mese?'
+        +'<button onclick="soloPromemoriaArchivia()" style="background:var(--honey-d);border:none;border-radius:var(--r-sm);color:#fff;font-family:\'Baloo 2\',cursive;font-weight:700;font-size:.8rem;padding:7px 12px;cursor:pointer;-webkit-appearance:none;">Archivia</button>'
+        +'<button onclick="soloPromemoriaPiuTardi()" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text2);font-family:\'Baloo 2\',cursive;font-weight:700;font-size:.8rem;padding:7px 12px;cursor:pointer;-webkit-appearance:none;">Più tardi</button></div>'
+      : '')
     +'<div class="solo-saldo-card">'
     +'<div class="solo-saldo-lbl">Saldo personale</div>'
     +'<div class="solo-saldo-val '+(s>=0?"pos":"neg")+'">'+eur(s)+' <span class="solo-saldo-icona">'+(s>0?"🥧":s<0?"🕸️":"🍯")+'</span></div>'
@@ -890,6 +923,7 @@ function soloLock(){
   soloChi=null;
   _soloPinBuffer="";
   soloData={voci:[], ricorrenti:[], chiusure:[], categorie:[]};
+  _soloPromemoriaOff=false; _soloPromemoriaMese=null;
   renderSolo();
 }
 
