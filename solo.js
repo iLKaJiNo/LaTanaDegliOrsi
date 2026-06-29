@@ -324,6 +324,7 @@ async function soloAddVoce(){
   var v={id:Date.now().toString(),proprietario:soloChi,tipo:soloTipoNuova,importo:imp,categoria:cat,nota:nota,data:new Date().toISOString(),origine:null};
   soloData.voci.unshift(v);
   vibra(30);
+  soloCheckPromemoria();
   renderSolo();
   dot("","Salvataggio...");
   try{
