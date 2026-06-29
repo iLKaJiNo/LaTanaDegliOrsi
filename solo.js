@@ -231,6 +231,7 @@ function soloRegistroHtml(catOpts){
     +'<div class="solo-storico-head"><span>Movimenti</span></div>'
     +soloStoricoHtml()
     +'</div>'
+    +(soloData.voci.some(function(v){return v.tipo==="uscita";}) ? '<button class="solo-anno-graf-btn" onclick="openSoloCategorieMese()">🥧 Spese per categoria (mese corrente)</button>' : '')
     +(soloData.voci.length ? '<button class="solo-chiudi-mese-btn" onclick="openSoloChiudi()">🌙 Chiudi e archivia il mese</button>' : '');
 }
 
@@ -910,6 +911,8 @@ function soloCambiaPin(){
 //  ORSO SOLO — Grafici e Chiusure (L-2)
 // ════════════════════════════════════════════════════════
 var SOLO_PALETTE=["#F4A827","#A83225","#4A7C40","#6B3FA0","#C87D0A","#6B3F1F","#89C082","#B89CD8","#E08078","#4A2A0F"];
+var soloCatTipo="uscita";   // faccia mostrata: "uscita" | "entrata"
+var _soloCatRerender=null;  // closure che ridisegna la vista categorie aperta
 
 // ── DETTAGLIO CHIUSURA (con torta dello snapshot) ──
 function openSoloChiusura(id){
@@ -920,20 +923,13 @@ function openSoloChiusura(id){
     +'<div class="riepilogo-mese-row"><span>➕ Entrate</span><span>'+eur(c.totEntrate)+'</span></div>'
     +'<div class="riepilogo-mese-row"><span>➖ Uscite</span><span>'+eur(c.totUscite)+'</span></div>'
     +'<div class="riepilogo-mese-row tot"><span>💰 Saldo</span><span>'+eur(c.saldo)+'</span></div></div>';
-  // torta dallo snapshot
-  var torta=(c.torta||[]).filter(function(t){return t.val>0;});
-  if(torta.length){
-    var tot=torta.reduce(function(a,x){return a+x.val;},0);
-    h+='<div class="solo-graf-canvas-wrap"><canvas id="solo-chiusura-canvas"></canvas></div>';
-    h+='<div class="solo-graf-legenda">';
-    torta.forEach(function(t,i){
-      var perc=Math.round(t.val/tot*100);
-      h+='<div class="torta-legenda-item"><div class="torta-legenda-dot" style="background:'+SOLO_PALETTE[i%SOLO_PALETTE.length]+'"></div>'
-        +'<span>'+(t.icona||"📌")+' '+escapeHtml(t.nome)+'</span>'
-        +'<span class="torta-legenda-val">'+eur(t.val)+' ('+perc+'%)</span></div>';
-    });
-    h+='<div class="torta-legenda-item" style="border-top:1px solid var(--border);padding-top:6px;margin-top:2px;"><span style="color:var(--text3);">Totale</span><span class="torta-legenda-val">'+eur(tot)+'</span></div>';
-    h+='</div>';
+  // grafico categorie con toggle — da c.voci; fallback legacy c.torta (solo uscite)
+  var vociC=(c.voci && c.voci.length)
+    ? c.voci.slice()
+    : (c.torta||[]).map(function(t){return {tipo:"uscita",categoria:t.nome,importo:t.val||0};});
+  if(vociC.length){
+    h+='<div class="solo-graf-canvas-wrap" id="solo-chiusura-canvas-wrap"><canvas id="solo-chiusura-canvas"></canvas></div>';
+    h+='<div class="solo-graf-legenda" id="solo-chiusura-legenda"></div>';
   }
   // elenco movimenti archiviati
   if((c.voci||[]).length){
@@ -957,7 +953,11 @@ function openSoloChiusura(id){
   document.getElementById("solo-chiusura-titolo").textContent=c.mese;
   body.innerHTML=h;
   document.getElementById("modal-solo-chiusura").classList.add("open");
-  if(torta.length) setTimeout(function(){ soloDisegnaTorta(torta, torta.reduce(function(a,x){return a+x.val;},0), "solo-chiusura-canvas"); }, 40);
+  if(vociC.length){
+    soloCatTipo="uscita";
+    _soloCatRerender=function(){ soloRenderCategorieDonutInto(vociC,"solo-chiusura-canvas-wrap","solo-chiusura-legenda","solo-chiusura-canvas"); };
+    _soloCatRerender();
+  }
 }
 function closeSoloChiusura(){ document.getElementById("modal-solo-chiusura").classList.remove("open"); }
 
@@ -986,29 +986,47 @@ function closeSoloGrafanno(){ document.getElementById("modal-solo-grafanno").cla
 // ── CATEGORIE DI UN ANNO (donut uscite per categoria, base archivi) ──
 function openSoloCategorieAnno(anno){
   var chiusure=(soloData.chiusure||[]).filter(function(c){return String(new Date(c.data).getFullYear())===String(anno);});
-  // Aggrego le USCITE per categoria su tutto l'anno (robusto: voci → fallback torta).
-  var perCat={};
+  var voci=[];
   chiusure.forEach(function(c){
-    if(c.voci && c.voci.length){
-      c.voci.forEach(function(v){ if(v.tipo==="uscita") perCat[v.categoria]=(perCat[v.categoria]||0)+v.importo; });
-    } else if(c.torta && c.torta.length){
-      c.torta.forEach(function(t){ perCat[t.nome]=(perCat[t.nome]||0)+(t.val||0); });
-    }
+    if(c.voci && c.voci.length){ c.voci.forEach(function(v){ voci.push(v); }); }
+    else if(c.torta && c.torta.length){ c.torta.forEach(function(t){ voci.push({tipo:"uscita",categoria:t.nome,importo:t.val||0}); }); }
+  });
+  soloCatTipo="uscita";
+  _soloCatRerender=function(){ soloRenderCategorieDonutInto(voci,"solo-categorie-canvas-wrap","solo-categorie-legenda","solo-categorie-canvas"); };
+  document.getElementById("solo-categorie-titolo").textContent="Categorie "+anno;
+  document.getElementById("modal-solo-categorie").classList.add("open");
+  _soloCatRerender();
+}
+
+function soloCatSetTipo(t){
+  soloCatTipo=(t==="entrata")?"entrata":"uscita";
+  if(_soloCatRerender) _soloCatRerender();
+}
+
+// Render condiviso torta categorie. voci = dataset (live o snapshot),
+// filtrato per soloCatTipo. Usato da mese corrente, anno e dettaglio mese.
+function soloRenderCategorieDonutInto(voci, wrapId, legId, canvasId){
+  var leg=document.getElementById(legId);
+  var wrap=document.getElementById(wrapId);
+  if(!leg) return;
+  var perCat={};
+  (voci||[]).forEach(function(v){
+    if(v.tipo===soloCatTipo) perCat[v.categoria]=(perCat[v.categoria]||0)+v.importo;
   });
   var torta=Object.keys(perCat).map(function(k){return{nome:k,val:Math.round(perCat[k]*100)/100,icona:soloIconaCat(k)};});
   torta.sort(function(a,b){return b.val-a.val;});
   var tot=torta.reduce(function(a,x){return a+x.val;},0);
-  document.getElementById("solo-categorie-titolo").textContent="Categorie "+anno;
-  var wrap=document.getElementById("solo-categorie-canvas-wrap");
-  var leg=document.getElementById("solo-categorie-legenda");
+  var toggle='<div class="solo-tipo-toggle" style="margin-bottom:12px;">'
+    +'<button class="solo-tipo-btn'+(soloCatTipo==="uscita"?" on-uscita":"")+'" onclick="soloCatSetTipo(\'uscita\')">➖ Uscite</button>'
+    +'<button class="solo-tipo-btn'+(soloCatTipo==="entrata"?" on-entrata":"")+'" onclick="soloCatSetTipo(\'entrata\')">➕ Entrate</button>'
+    +'</div>';
   if(tot<=0){
-    wrap.style.display="none";
-    leg.innerHTML='<div class="grafico-empty">Nessuna spesa per categoria in '+anno+'</div>';
-    document.getElementById("modal-solo-categorie").classList.add("open");
+    if(wrap) wrap.style.display="none";
+    leg.innerHTML=toggle+'<div class="grafico-empty">'+(soloCatTipo==="entrata"?"Nessuna entrata per categoria":"Nessuna uscita per categoria")+'</div>';
     return;
   }
-  wrap.style.display="";
-  var h="";
+  if(wrap) wrap.style.display="";
+  var h=toggle;
   torta.forEach(function(t,i){
     var perc=Math.round(t.val/tot*100);
     h+='<div class="torta-legenda-item"><div class="torta-legenda-dot" style="background:'+SOLO_PALETTE[i%SOLO_PALETTE.length]+'"></div>'
@@ -1017,10 +1035,19 @@ function openSoloCategorieAnno(anno){
   });
   h+='<div class="torta-legenda-item" style="border-top:1px solid var(--border);padding-top:6px;margin-top:2px;"><span style="color:var(--text3);">Totale</span><span class="torta-legenda-val">'+eur(tot)+'</span></div>';
   leg.innerHTML=h;
-  document.getElementById("modal-solo-categorie").classList.add("open");
-  setTimeout(function(){ soloDisegnaTorta(torta, tot, "solo-categorie-canvas"); }, 40);
+  setTimeout(function(){ soloDisegnaTorta(torta, tot, canvasId); }, 40);
 }
 function closeSoloCategorieAnno(){ document.getElementById("modal-solo-categorie").classList.remove("open"); }
+
+// ── CATEGORIE DEL MESE CORRENTE (donut categorie, voci live, toggle uscite/entrate) ──
+function openSoloCategorieMese(){
+  var voci=(soloData.voci||[]).slice();
+  soloCatTipo="uscita";
+  _soloCatRerender=function(){ soloRenderCategorieDonutInto(voci,"solo-categorie-canvas-wrap","solo-categorie-legenda","solo-categorie-canvas"); };
+  document.getElementById("solo-categorie-titolo").textContent="Categorie — mese corrente";
+  document.getElementById("modal-solo-categorie").classList.add("open");
+  _soloCatRerender();
+}
 function closeSoloCategorieAnni(){ document.getElementById("modal-solo-categorie-anni").classList.remove("open"); }
 
 // ── CATEGORIE CROSS-ANNO (barre impilate, una pila per anno) ──
