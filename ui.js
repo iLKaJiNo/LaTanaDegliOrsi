@@ -559,12 +559,44 @@ function accordionToggle(boxId, btnId, key){
   try{ localStorage.setItem(key, apri?"1":"0"); }catch(e){}
 }
 
+// Campo rinomina dentro il dettaglio chiusura. tipo = "comune" | "solo".
+function renameChiusuraFieldHtml(tipo,id,mese){
+  return '<div style="margin-bottom:14px;">'
+    +'<div style="font-size:.72rem;color:var(--text3);font-family:\'Nunito\',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;padding-left:2px;">✏️ Nome del mese</div>'
+    +'<div style="display:flex;gap:8px;align-items:center;">'
+    +'<input class="inp" id="rinomina-chiusura-input" type="text" value="'+escapeHtml(mese||"")+'" placeholder="Es. Giugno 2026" style="flex:1;margin:0;" onkeydown="if(event.key===\'Enter\')salvaRinominaChiusura(\''+tipo+'\',\''+id+'\')">'
+    +'<button onclick="salvaRinominaChiusura(\''+tipo+'\',\''+id+'\')" style="flex:0 0 auto;background:var(--honey-d);border:none;border-radius:var(--r-sm);color:#fff;font-family:\'Baloo 2\',cursive;font-weight:700;font-size:.85rem;padding:9px 14px;cursor:pointer;-webkit-appearance:none;">Salva</button>'
+    +'</div></div>';
+}
+
+async function salvaRinominaChiusura(tipo,id){
+  var inp=document.getElementById("rinomina-chiusura-input");
+  if(!inp) return;
+  var nuovo=inp.value.trim();
+  if(!nuovo) return;
+  if(tipo==="comune"){
+    var c=S.chiusure.find(function(x){return x.id===id;}); if(!c || c.mese===nuovo) return;
+    var bk=c.mese; c.mese=nuovo;
+    var t=document.getElementById("modal-storico-titolo"); if(t) t.textContent="📦 "+nuovo;
+    render(); dot("","Salvataggio...");
+    try{ await post({action:"renameChiusura",id:id,mese:nuovo}); dot("ok","Rinominato 🐾"); }
+    catch(e){ c.mese=bk; if(t) t.textContent="📦 "+bk; render(); dot("err","Errore salvataggio"); }
+  } else {
+    var sc=(soloData.chiusure||[]).find(function(x){return x.id===id;}); if(!sc || sc.mese===nuovo) return;
+    var bk2=sc.mese; sc.mese=nuovo;
+    var t2=document.getElementById("solo-chiusura-titolo"); if(t2) t2.textContent=nuovo;
+    renderSolo(); dot("","Salvataggio...");
+    try{ await post({action:"renameSoloChiusura",id:id,mese:nuovo}); dot("ok","Rinominato 🐾"); }
+    catch(e){ sc.mese=bk2; if(t2) t2.textContent=bk2; renderSolo(); dot("err","Errore salvataggio"); }
+  }
+}
+
 function openStoricoMese(id){
   var c=S.chiusure.find(function(x){return x.id===id;});if(!c)return;
   document.getElementById("modal-storico-titolo").textContent="\uD83D\uDCE6 "+c.mese;
   document.getElementById("modal-storico-sub").textContent=c.txs.length+" voci \u00b7 chiuso il "+fmtLong(c.data);
-  var h="";
-  if(!c.txs.length && !(c.fisseSnapshot && c.fisseSnapshot.length)){h='<div style="text-align:center;color:var(--text3);padding:20px;font-size:14px;">'+fraseVuoto("mese")+'</div>';}
+  var h=renameChiusuraFieldHtml("comune",c.id,c.mese);
+  if(!c.txs.length && !(c.fisseSnapshot && c.fisseSnapshot.length)){h+='<div style="text-align:center;color:var(--text3);padding:20px;font-size:14px;">'+fraseVuoto("mese")+'</div>';}
   else{
     // Sezione transazioni: solo se il mese ha movimenti
     if(c.txs.length){

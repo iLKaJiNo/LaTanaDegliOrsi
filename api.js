@@ -175,6 +175,8 @@ async function runAction(p){
       r=await sb.from("chiusure").upsert({id:p.chiusura.id,mese:p.chiusura.mese,saldo:p.chiusura.saldo,
         data:p.chiusura.data,saldo_iniziale:p.chiusura.saldoIniziale,txs:p.chiusura.txs,
         totale:p.chiusura.totale,fisse_snapshot:p.chiusura.fisseSnapshot||[]}); break;
+    case "renameChiusura":
+      r=await sb.from("chiusure").update({mese:p.mese}).eq("id",p.id); break;
 
     // — Debiti diretti —
     case "addDebito":
@@ -276,6 +278,8 @@ case "setSoloPin":
         voci:p.ch.voci||[],torta:p.ch.torta||[]}); break;
     case "deleteSoloChiusura":
       r=await sb.from("solo_chiusure").delete().eq("id",p.id); break;
+    case "renameSoloChiusura":
+      r=await sb.from("solo_chiusure").update({mese:p.mese}).eq("id",p.id); break;
 
     default:
       // Azioni legacy del vecchio backend GAS: non servono più

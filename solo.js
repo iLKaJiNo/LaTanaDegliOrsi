@@ -954,7 +954,8 @@ function openSoloChiusura(id){
   var c=(soloData.chiusure||[]).find(function(x){return x.id===id;});
   if(!c) return;
   var body=document.getElementById("solo-chiusura-body");
-  var h='<div class="riepilogo-mese">'
+  var h=renameChiusuraFieldHtml("solo",c.id,c.mese)
+    +'<div class="riepilogo-mese">'
     +'<div class="riepilogo-mese-row"><span>➕ Entrate</span><span>'+eur(c.totEntrate)+'</span></div>'
     +'<div class="riepilogo-mese-row"><span>➖ Uscite</span><span>'+eur(c.totUscite)+'</span></div>'
     +'<div class="riepilogo-mese-row tot"><span>💰 Saldo</span><span>'+eur(c.saldo)+'</span></div></div>';
