@@ -280,6 +280,8 @@ case "setSoloPin":
       r=await sb.from("solo_chiusure").delete().eq("id",p.id); break;
     case "renameSoloChiusura":
       r=await sb.from("solo_chiusure").update({mese:p.mese}).eq("id",p.id); break;
+    case "ripristinaSolo":
+      r=await sb.rpc("ripristina_solo_mese",{p_id:p.id}); break;
 
     default:
       // Azioni legacy del vecchio backend GAS: non servono più

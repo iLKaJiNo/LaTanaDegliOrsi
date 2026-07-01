@@ -329,7 +329,25 @@ if("serviceWorker" in navigator){
     <div class="modal-icon" style="text-align:center;">📦</div>
     <h2 style="text-align:center;" id="solo-chiusura-titolo">Chiusura</h2>
     <div id="solo-chiusura-body"></div>
-    <div class="modal-btns"><button class="btn-conferma" onclick="closeSoloChiusura()">🐾 Chiudi</button></div>
+    <div class="modal-btns"><button class="btn-annulla" id="btn-ripristina-solo">🔄 Ripristina</button><button class="btn-conferma" onclick="closeSoloChiusura()">🐾 Chiudi</button></div>
+  </div>
+</div>
+
+<!-- MODALE RIPRISTINO SOLO -->
+<div class="modal-overlay" id="modal-ripristino-solo" onclick="if(event.target===this)closeSoloRipristino()">
+  <div class="modal">
+    <div class="modal-icon">🔄</div>
+    <h2>Ripristina mese</h2>
+    <p id="solo-rip-txt"></p>
+    <div class="modal-saldo-box">
+      <div class="mlbl">Saldo del mese</div>
+      <div class="mval" id="solo-rip-val">---</div>
+    </div>
+    <div class="modal-warn">⚠️ Le voci torneranno nel registro corrente e la chiusura sarà rimossa dall'archivio.</div>
+    <div class="modal-btns">
+      <button class="btn-annulla" onclick="closeSoloRipristino()">Annulla</button>
+      <button class="btn-conferma" onclick="soloConfermaRipristino()">🔄 Ripristina</button>
+    </div>
   </div>
 </div>
 

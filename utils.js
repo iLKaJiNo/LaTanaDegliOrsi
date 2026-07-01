@@ -69,6 +69,7 @@ var soloCatDelId=null;       // id categoria in attesa conferma elim.
 var soloDelArchivioId=null;  // id chiusura archiviata in attesa conferma elim.
 var _soloPromemoriaMese=null;  // "YYYY-MM" del mese vecchio da chiudere (null = nessuno)
 var _soloPromemoriaOff=false;  // true se l'orso ha scelto "Più tardi" in questa sessione
+var soloRipristinoTarget=null; // chiusura Solo in attesa di conferma ripristino
 
 // ── AUTH / SESSIONE ────────────────────────────────────
 // La sessione è gestita da Supabase (token salvato e rinnovato

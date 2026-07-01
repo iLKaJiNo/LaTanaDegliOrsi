@@ -994,8 +994,52 @@ function openSoloChiusura(id){
     _soloCatRerender=function(){ soloRenderCategorieDonutInto(vociC,"solo-chiusura-canvas-wrap","solo-chiusura-legenda","solo-chiusura-canvas"); };
     _soloCatRerender();
   }
+  var _btnRip=document.getElementById("btn-ripristina-solo");
+  if(_btnRip) _btnRip.onclick=function(){ closeSoloChiusura(); soloOpenRipristino(id); };
 }
 function closeSoloChiusura(){ document.getElementById("modal-solo-chiusura").classList.remove("open"); }
+
+function soloOpenRipristino(id){
+  var c=(soloData.chiusure||[]).find(function(x){return x.id===id;}); if(!c) return;
+  // solo l'ultimo mese archiviato (come il comune)
+  var latest=null;
+  (soloData.chiusure||[]).forEach(function(x){ if(!latest || (x.data||"")>(latest.data||"")) latest=x; });
+  if(!latest || latest.id!==id){
+    alert("Puoi ripristinare solo l'ultimo mese archiviato ("+(latest?latest.mese:"—")+").");
+    return;
+  }
+  // registro corrente vuoto (mai sovrascrivere)
+  if((soloData.voci||[]).length){
+    alert("Prima svuota o chiudi il mese corrente: il ripristino non sovrascrive le voci esistenti.");
+    return;
+  }
+  soloRipristinoTarget=c;
+  document.getElementById("solo-rip-txt").textContent='Vuoi ripristinare "'+c.mese+'"? Le voci torneranno nel mese corrente.';
+  document.getElementById("solo-rip-val").textContent=eur(c.saldo);
+  document.getElementById("modal-ripristino-solo").classList.add("open");
+}
+
+function closeSoloRipristino(){
+  document.getElementById("modal-ripristino-solo").classList.remove("open");
+  soloRipristinoTarget=null;
+}
+
+async function soloConfermaRipristino(){
+  var c=soloRipristinoTarget; if(!c) return;
+  vibra([25,40,25]);
+  closeSoloRipristino();
+  dot("","Ripristino...");
+  try{
+    await post({action:"ripristinaSolo", id:c.id});
+    await caricaSolo();     // ricarico stato canonico (voci + chiusure) dal DB
+    renderSolo();
+    dot("ok","Ripristinato 🔄");
+  }catch(e){
+    dot("err","Errore ripristino");
+    // stato non mutato prima del reload → niente da rollbackare; l'archivio
+    // resta invariato in UI. Un nuovo sblocco riconcilia comunque col DB.
+  }
+}
 
 // Disegna torta/ciambella su un canvas dato
 function soloDisegnaTorta(voci, tot, canvasId){

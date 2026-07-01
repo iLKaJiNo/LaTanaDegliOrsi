@@ -667,6 +667,10 @@ function openRipristino(id){
     alert("Puoi ripristinare solo l'ultimo mese archiviato ("+(S.chiusure[0]?S.chiusure[0].mese:"—")+").\nRipristina prima i mesi più recenti.");
     return;
   }
+  if(S.txs.length){
+    alert("Prima svuota o chiudi il mese corrente: il ripristino non sovrascrive le spese esistenti.");
+    return;
+  }
   ripristinoTarget=c;
   document.getElementById("modal-rip-txt").textContent='Vuoi ripristinare "'+c.mese+'"? Tornerai allo stato esatto di quel mese.';
   document.getElementById("modal-rip-val").textContent=eurInt(c.saldo);
