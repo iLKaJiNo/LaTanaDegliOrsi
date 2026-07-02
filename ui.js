@@ -1179,6 +1179,7 @@ function renderLista(){
     var nn=document.getElementById("note-textarea");
     if(nn){nn.value=notaVal;nn.focus();}
   }
+  var _naf=document.getElementById("note-textarea"); if(_naf) notaAutoGrow(_naf);
 }
 
 // ── Lista Spesa — CRUD ───────────────────────────────────
@@ -1278,7 +1279,13 @@ async function svuotaLista(){
 }
 
 // ── Note Condivise ───────────────────────────────────────
+function notaAutoGrow(el){
+  if(!el) return;
+  el.style.height="auto";
+  el.style.height=el.scrollHeight+"px";
+}
 function onNotaInput(){
+  var _ta=document.getElementById("note-textarea"); if(_ta) notaAutoGrow(_ta);
   var statusEl=document.getElementById("note-status");
   if(statusEl)statusEl.textContent="✏️ modificando…";
   clearTimeout(_notaTimer);

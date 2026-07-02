@@ -635,7 +635,7 @@ body.dark{
   border:2px solid var(--border);background:var(--card2);
   color:var(--text);font-family:'Nunito',sans-serif;
   font-size:0.875rem;font-weight:600;padding:12px;outline:none;
-  resize:vertical;transition:border-color .18s;line-height:1.6;
+  resize:none;overflow-y:hidden;transition:border-color .18s;line-height:1.6;
   -webkit-appearance:none;box-sizing:border-box;
 }
 .note-textarea:focus  { border-color:var(--honey); }
