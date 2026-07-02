@@ -994,8 +994,9 @@ function renderArchivioTab(){
   var mediaRealeAnnuale=S.chiusure.length>0?Math.round(totRealeAnnuale/S.chiusure.length):0;
   h+='<div class="chiusure-section">';
   h+='<div class="chiusure-head-row"><span class="chiusure-head">📦 '+S.chiusure.length+' mesi archiviati</span><button class="btn-grafico" onclick="openGrafico(\'barre\')">📊 Grafico</button><button class="btn-grafico" onclick="esportaPDFComplessivo()">📄 PDF completo</button></div>';
-  h+='<div class="chiusura-totale" style="margin-bottom:4px;">📅 Totale archivio: <strong>'+eurInt(totAnnuale)+'</strong> cassa · <strong>'+eur(totRealeAnnuale)+'</strong> reale</div>';
-  h+='<div class="chiusura-totale" style="margin-bottom:12px;">📊 Media mensile: <strong>'+eurInt(mediaAnnuale)+'</strong> cassa · <strong>'+eur(mediaRealeAnnuale)+'</strong> reale</div>';
+  h+='<div style="font-size:.72rem;color:var(--text3);font-family:\'Nunito\',sans-serif;font-weight:700;margin-bottom:6px;">💰 Cassa = spese condivise · 📌 Reale = cassa + fisse</div>';
+  h+='<div class="chiusura-totale" style="margin-bottom:4px;">📅 Totale: <strong>'+eurInt(totAnnuale)+'</strong> cassa · <strong>'+eur(totRealeAnnuale)+'</strong> reale</div>';
+  h+='<div class="chiusura-totale" style="margin-bottom:12px;">📊 Media/mese: <strong>'+eurInt(mediaAnnuale)+'</strong> cassa · <strong>'+eur(mediaRealeAnnuale)+'</strong> reale</div>';
 
   // Accordion: anni che raggruppano i mesi (card ricche). Anno corrente aperto di default.
   var anniMap={};

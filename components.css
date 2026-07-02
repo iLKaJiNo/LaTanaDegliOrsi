@@ -304,9 +304,10 @@
 .grafico-wrap{position:relative;width:100%;margin-bottom:12px;}
 .grafico-canvas{width:100%;height:220px;display:block;border-radius:var(--r-md);}
 .grafico-empty{text-align:center;color:var(--text3);font-size:0.875rem;padding:40px 0;font-family:'Nunito',sans-serif;font-weight:600;}
-.grafico-toggle{display:flex;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:12px;}
-.grafico-toggle-btn{flex:1;height:34px;background:none;border:none;font-family:'Baloo 2',cursive;font-size:0.8125rem;font-weight:700;color:var(--text3);cursor:pointer;transition:all .18s;-webkit-appearance:none;}
-.grafico-toggle-btn.active{background:var(--brown-d);color:var(--honey);}
+.grafico-toggle{display:flex;gap:8px;margin-bottom:12px;}
+.grafico-toggle-btn{flex:1;height:40px;border-radius:var(--r-md);border:2px solid var(--border);background:var(--card2);color:var(--text2);font-family:'Baloo 2',cursive;font-size:0.9375rem;font-weight:700;cursor:pointer;transition:all .15s;-webkit-appearance:none;}
+.grafico-toggle-btn.active{background:var(--brown-d);color:var(--honey);border-color:transparent;}
+body.dark .grafico-toggle-btn{background:rgba(255,255,255,.06);}
 .torta-wrap{width:100%;display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:12px;}
 .torta-canvas{width:180px;height:180px;display:block;}
 .torta-legenda{display:flex;flex-direction:column;gap:8px;width:100%;padding:0 8px;}
