@@ -772,7 +772,6 @@ if("serviceWorker" in navigator){
   <div class="modal modal-grafico">
     <div class="modal-icon" id="grafico-icon">&#x1F4CA;</div>
     <h2 id="grafico-titolo">Spese mensili</h2>
-    <div id="grafico-stats" style="font-size:13px;font-family:'Nunito',sans-serif;font-weight:600;color:var(--text2);text-align:center;margin-bottom:10px;"></div>
     <div id="grafico-barre-wrap" class="grafico-wrap">
       <div class="grafico-toggle">
         <button class="grafico-toggle-btn active" id="gp-mesi" onclick="setGraficoPeriodo('mesi')">📅 Mesi</button>
@@ -784,6 +783,7 @@ if("serviceWorker" in navigator){
       <canvas class="torta-canvas" id="grafico-torta-canvas"></canvas>
       <div class="torta-legenda" id="grafico-torta-legenda"></div>
     </div>
+    <div id="grafico-stats" style="font-size:13px;font-family:'Nunito',sans-serif;font-weight:600;color:var(--text2);text-align:center;margin-top:10px;"></div>
     <div class="modal-btns">
       <button class="btn-conferma" onclick="closeGrafico()">Chiudi</button>
     </div>

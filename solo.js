@@ -43,7 +43,7 @@ function renderSoloGate(el){
   var primoAccesso = !soloProfili[soloChi];
   el.innerHTML=
     '<div class="solo-gate">'
-    +'<div class="solo-gate-icon" id="solo-gate-icon">'+(primoAccesso?'<img src="./bearface.svg" alt="">':"🔒")+'</div>'
+    +'<div class="solo-gate-icon" id="solo-gate-icon"><img src="./bear.svg" alt=""></div>'
     +'<h2 class="solo-gate-title">'+escapeHtml(soloChi)+'</h2>'
     +'<p class="solo-gate-sub" id="solo-gate-sub">'+(primoAccesso
         ? "Scegli un PIN di 4 cifre<br>per proteggere la tua area."
@@ -81,7 +81,7 @@ async function soloPinDigit(n){
   // (solo per chi ha già un PIN; al primo accesso resta l'orso guardiano).
   if(_soloPinBuffer.length===0 && soloProfili[soloChi]){
     var ic=document.getElementById("solo-gate-icon");
-    if(ic) ic.innerHTML="🔒";
+    if(ic) ic.innerHTML='<img src="./bear.svg" alt="">';
   }
   _soloPinBuffer+=n;
   soloRenderDots();
@@ -1428,8 +1428,10 @@ function soloArchiviHtml(){
       +'<span class="solo-anno-chev">'+(aperto?"▴":"▾")+'</span></button>';
     if(aperto){
       h+='<div class="solo-anno-body">';
-      h+='<button class="solo-anno-graf-btn" onclick="openSoloGraficiAnno(\''+anno+'\')">📊 Grafici '+anno+'</button>';
-      h+='<button class="solo-anno-graf-btn" onclick="openSoloCategorieAnno(\''+anno+'\')">🥧 Categorie '+anno+'</button>';
+      h+='<div style="display:flex;gap:8px;margin-bottom:8px;">'
+        +'<button class="solo-cat-manage" onclick="openSoloGraficiAnno(\''+anno+'\')" title="Grafici '+anno+'">📊</button>'
+        +'<button class="solo-cat-manage" onclick="openSoloCategorieAnno(\''+anno+'\')" title="Categorie '+anno+'">🥧</button>'
+        +'</div>';
       lista.forEach(function(c){
         h+='<div class="solo-mese-wrap">';
         h+=  '<button class="solo-mese-row" onclick="openSoloChiusura(\''+c.id+'\')">'
