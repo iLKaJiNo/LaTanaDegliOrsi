@@ -31,10 +31,10 @@ function openGrafico(vista){
     },0);
     var totFisseAnnuale=S.chiusure.reduce(function(a,c){var f=c.fisseSnapshot||[];return a+f.reduce(function(b,x){return b+(parseFloat(x.importo)||0);},0);},0);
     var totRealeAnnuale=totAnnuale+totFisseAnnuale;
-    var mediaAnnuale=S.chiusure.length>0?Math.round(totAnnuale/S.chiusure.length):0;
-    var mediaRealeAnnuale=S.chiusure.length>0?Math.round(totRealeAnnuale/S.chiusure.length):0;
-    if(st) st.innerHTML=S.chiusure.length>0
-      ?'<span>📅 Totale: <strong>'+eurInt(totAnnuale)+'</strong> cassa · <strong>'+eur(totRealeAnnuale)+'</strong> reale</span><br><span>📊 Media: <strong>'+eurInt(mediaAnnuale)+'</strong> cassa · <strong>'+eur(mediaRealeAnnuale)+'</strong> reale</span>'
+    var n=S.chiusure.length;
+    var mediaRealeAnnuale=n>0?Math.round(totRealeAnnuale/n):0;
+    if(st) st.innerHTML=n>0
+      ?'<span>💰 Totale: <strong>'+eur(totRealeAnnuale)+'</strong></span><br><span>📊 Media/mese: <strong>'+eurInt(mediaRealeAnnuale)+'</strong> <span style="color:var(--text3);">(su '+n+' '+(n===1?'mese':'mesi')+')</span></span>'
       :'';
   }
   document.getElementById("modal-grafico").classList.add("open");
