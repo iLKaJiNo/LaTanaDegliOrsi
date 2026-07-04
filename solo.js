@@ -232,7 +232,7 @@ function renderSoloApp(el){
       : '')
     +'<div class="solo-saldo-card">'
     +'<div class="solo-saldo-lbl">Saldo personale</div>'
-    +'<div class="solo-saldo-val '+(s>=0?"pos":"neg")+'">'+eur(s)+' <span class="solo-saldo-icona">'+(s>0?"🥧":s<0?"🕸️":"🍯")+'</span></div>'
+    +'<div class="solo-saldo-val '+(s>=0?"pos":"neg")+'">'+eur(s)+' <span class="solo-saldo-icona" onclick="openSoloCategorieMese()" style="cursor:pointer;" title="Spese per categoria">'+(s>0?"🥧":s<0?"🕸️":"🍯")+'</span></div>'
     +'</div>'
     // Segmento a 3: Registro / Ricorrenti / Archivi
     +'<div class="solo-seg solo-seg-3">'
@@ -264,7 +264,6 @@ function soloRegistroHtml(catOpts){
     +'<div class="solo-storico-head"><span>Movimenti</span></div>'
     +soloStoricoHtml()
     +'</div>'
-    +(soloData.voci.some(function(v){return v.tipo==="uscita";}) ? '<button class="solo-anno-graf-btn" onclick="openSoloCategorieMese()">🥧 Spese per categoria (mese corrente)</button>' : '')
     +(soloData.voci.length ? '<button class="solo-chiudi-mese-btn" onclick="openSoloChiudi()">🌙 Chiudi e archivia il mese</button>' : '');
 }
 
@@ -1402,7 +1401,7 @@ async function soloConfermaChiudi(){
 //  ORSO SOLO — Archivi (L-3a)
 //  Le chiusure raggruppate per anno (automatico, per data).
 // ════════════════════════════════════════════════════════
-var soloAnnoAperto=null;
+var soloAnnoAperto=String(new Date().getFullYear());
 
 function soloArchiviHtml(){
   var chiusure=soloData.chiusure||[];
@@ -1420,14 +1419,21 @@ function soloArchiviHtml(){
   anni.forEach(function(anno){
     var lista=perAnno[anno];
     var totU=lista.reduce(function(a,c){return a+c.totUscite;},0);
+    var totE=lista.reduce(function(a,c){return a+(c.totEntrate||0);},0);
+    var n=lista.length;
+    var mU=n>0?Math.round(totU/n):0, mE=n>0?Math.round(totE/n):0;
     var aperto=(soloAnnoAperto==String(anno));
     h+='<div class="solo-anno-group">';
     h+='<button class="solo-anno-head'+(aperto?" aperto":"")+'" onclick="soloToggleAnno(\''+anno+'\')">'
       +'<span class="solo-anno-titolo">📅 '+anno+'</span>'
-      +'<span class="solo-anno-meta">'+lista.length+' mesi · '+eur(totU)+' spesi</span>'
+      +'<span class="solo-anno-meta">'+n+' '+(n===1?'mese':'mesi')+'</span>'
       +'<span class="solo-anno-chev">'+(aperto?"▴":"▾")+'</span></button>';
     if(aperto){
       h+='<div class="solo-anno-body">';
+      h+='<div style="background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:10px 14px;margin-bottom:8px;font-family:\'Nunito\',sans-serif;font-weight:700;font-size:.875rem;color:var(--text2);display:flex;flex-direction:column;gap:4px;">'
+        +'<span>➖ Uscite: <strong style="color:var(--berry);">'+eur(totU)+'</strong> · media <strong>'+eurInt(mU)+'</strong>/mese</span>'
+        +'<span>➕ Entrate: <strong style="color:var(--moss);">'+eur(totE)+'</strong> · media <strong>'+eurInt(mE)+'</strong>/mese</span>'
+        +'</div>';
       h+='<div style="display:flex;gap:8px;margin-bottom:8px;">'
         +'<button class="solo-cat-manage" onclick="openSoloGraficiAnno(\''+anno+'\')" title="Grafici '+anno+'">📊</button>'
         +'<button class="solo-cat-manage" onclick="openSoloCategorieAnno(\''+anno+'\')" title="Categorie '+anno+'">🥧</button>'
