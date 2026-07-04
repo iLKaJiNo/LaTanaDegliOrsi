@@ -987,16 +987,8 @@ function renderArchivioTab(){
   }
 
   // Riepilogo archivio + Grafico (in cima)
-  var totAnnuale=S.chiusure.reduce(function(a,c){return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));},0);
-  var mediaAnnuale=S.chiusure.length>0?Math.round(totAnnuale/S.chiusure.length):0;
-  var totFisseAnnuale=S.chiusure.reduce(function(a,c){var f=c.fisseSnapshot||[];return a+f.reduce(function(b,x){return b+(parseFloat(x.importo)||0);},0);},0);
-  var totRealeAnnuale=totAnnuale+totFisseAnnuale;
-  var mediaRealeAnnuale=S.chiusure.length>0?Math.round(totRealeAnnuale/S.chiusure.length):0;
   h+='<div class="chiusure-section">';
   h+='<div class="chiusure-head-row"><span class="chiusure-head">📦 '+S.chiusure.length+' mesi archiviati</span><button class="btn-grafico" onclick="openGrafico(\'barre\')">📊 Grafico</button><button class="btn-grafico" onclick="esportaPDFComplessivo()">📄 PDF completo</button></div>';
-  h+='<div style="font-size:.72rem;color:var(--text3);font-family:\'Nunito\',sans-serif;font-weight:700;margin-bottom:6px;">💰 Cassa = spese condivise · 📌 Reale = cassa + fisse</div>';
-  h+='<div class="chiusura-totale" style="margin-bottom:4px;">📅 Totale: <strong>'+eurInt(totAnnuale)+'</strong> cassa · <strong>'+eur(totRealeAnnuale)+'</strong> reale</div>';
-  h+='<div class="chiusura-totale" style="margin-bottom:12px;">📊 Media/mese: <strong>'+eurInt(mediaAnnuale)+'</strong> cassa · <strong>'+eur(mediaRealeAnnuale)+'</strong> reale</div>';
 
   // Accordion: anni che raggruppano i mesi (card ricche). Anno corrente aperto di default.
   var anniMap={};
@@ -1011,20 +1003,18 @@ function renderArchivioTab(){
     var totAnno=mesi.reduce(function(a,c){return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));},0);
     var totFisseAnno=mesi.reduce(function(a,c){var f=c.fisseSnapshot||[];return a+f.reduce(function(b,x){return b+(parseFloat(x.importo)||0);},0);},0);
     var totRealeAnno=totAnno+totFisseAnno;
-    var mediaAnno=mesi.length>0?Math.round(totAnno/mesi.length):0;
     var isOpen=(annoAperto===anno);
     h+='<div class="anno-card">';
     h+='<div class="anno-header" onclick="toggleAnno(\''+anno+'\')">';
     h+='<span class="anno-label">📅 '+anno+'</span>';
-    h+='<span class="anno-tot">'+eurInt(totAnno)+'</span>';
+    h+='<span class="anno-tot">'+eurInt(totRealeAnno)+'</span>';
     h+='<span class="anno-toggle'+(isOpen?" open":"")+'">▼</span>';
     h+='</div>';
-    h+='<div class="anno-stat-row">';
-    h+='<span>'+mesi.length+' mesi · media: <strong>'+eurInt(mediaAnno)+'</strong></span>';
-    if(totFisseAnno>0){
-      h+='<span style="color:var(--honey-d);">📌 Fisse: <strong>'+eurInt(totFisseAnno)+'</strong> · Totale reale: <strong>'+eurInt(totRealeAnno)+'</strong></span>';
-    }
-    h+='</div>';
+    var mediaRealeAnno=mesi.length>0?Math.round(totRealeAnno/mesi.length):0;
+    h+='<div style="background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:10px 14px;margin:2px 0 8px;font-family:\'Nunito\',sans-serif;font-weight:700;font-size:.875rem;color:var(--text2);display:flex;flex-direction:column;gap:4px;">'
+      +'<span>💰 Totale: <strong style="color:var(--text);">'+eur(totRealeAnno)+'</strong></span>'
+      +'<span>📊 Media/mese: <strong style="color:var(--text);">'+eurInt(mediaRealeAnno)+'</strong> <span style="color:var(--text3);font-weight:600;">(su '+mesi.length+' '+(mesi.length===1?'mese':'mesi')+')</span></span>'
+      +'</div>';
     h+='<div class="anno-mesi'+(isOpen?" open":"")+'">';
     mesi.forEach(function(c){
       var cls=saldoCls(c.saldo);
