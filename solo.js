@@ -43,7 +43,7 @@ function renderSoloGate(el){
   var primoAccesso = !soloProfili[soloChi];
   el.innerHTML=
     '<div class="solo-gate">'
-    +'<div class="solo-gate-icon" id="solo-gate-icon">'+(primoAccesso?'<img src="./bearface.svg" alt="">':"🔒")+'</div>'
+    +'<div class="solo-gate-icon" id="solo-gate-icon"><img src="./bear.svg" alt=""></div>'
     +'<h2 class="solo-gate-title">'+escapeHtml(soloChi)+'</h2>'
     +'<p class="solo-gate-sub" id="solo-gate-sub">'+(primoAccesso
         ? "Scegli un PIN di 4 cifre<br>per proteggere la tua area."
@@ -81,7 +81,7 @@ async function soloPinDigit(n){
   // (solo per chi ha già un PIN; al primo accesso resta l'orso guardiano).
   if(_soloPinBuffer.length===0 && soloProfili[soloChi]){
     var ic=document.getElementById("solo-gate-icon");
-    if(ic) ic.innerHTML="🔒";
+    if(ic) ic.innerHTML='<img src="./bear.svg" alt="">';
   }
   _soloPinBuffer+=n;
   soloRenderDots();
@@ -123,7 +123,7 @@ async function soloVerificaPin(pin){
       soloSbloccato=true;
       await caricaSolo();
       await soloAutoRegistraScadute();
-      renderSolo();
+      soloCheckPromemoria(); renderSolo();
     }catch(e){
       _soloPinNuovo=null;
       var subE=document.getElementById("solo-gate-sub");
@@ -136,7 +136,7 @@ async function soloVerificaPin(pin){
       soloSbloccato=true;
       await caricaSolo();
       await soloAutoRegistraScadute();
-      renderSolo();
+      soloCheckPromemoria(); renderSolo();
     } else {
       soloPinErrore("PIN errato.");
       vibra([60,40,60]);
@@ -185,6 +185,34 @@ function soloSaldo(){
   return Math.round(soloData.voci.reduce(function(a,v){ return v.tipo==="entrata" ? a+v.importo : a-v.importo; }, 0)*100)/100;
 }
 
+// Promemoria chiusura Solo: il registro vivo abbraccia >1 mese? → c'è un mese
+// vecchio da archiviare. Mirror del promemoria comune (qui valutato a sblocco,
+// perché il bridge può aver iniettato voci mentre l'orso non era in sessione).
+function soloCheckPromemoria(){
+  _soloPromemoriaMese=null;
+  if(_soloPromemoriaOff) return;            // rispetta il "Più tardi" di sessione
+  var voci=soloData.voci||[];
+  if(voci.length<2) return;
+  var minYM="9999-99", maxYM="";
+  voci.forEach(function(v){
+    var ym=(v.data||"").slice(0,7); if(!ym) return;
+    if(ym<minYM) minYM=ym;
+    if(ym>maxYM) maxYM=ym;
+  });
+  if(minYM!=="9999-99" && minYM<maxYM) _soloPromemoriaMese=minYM;
+}
+
+// "2026-06" → "Giugno 2026" (etichetta amichevole, language-aware)
+function soloMeseLabel(ym){
+  var p=(ym||"").split("-"); if(p.length<2) return ym||"";
+  var d=new Date(parseInt(p[0],10), parseInt(p[1],10)-1, 1);
+  var s=d.toLocaleDateString("it-IT",{month:"long",year:"numeric"});
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+
+function soloPromemoriaPiuTardi(){ _soloPromemoriaOff=true; _soloPromemoriaMese=null; renderSolo(); }
+function soloPromemoriaArchivia(){ _soloPromemoriaMese=null; openSoloChiudi(); }
+
 // ── APP sbloccata (I-1: placeholder; in I-2 diventa il registro) ──
 function renderSoloApp(el){
   var s=soloSaldo();
@@ -197,6 +225,11 @@ function renderSoloApp(el){
     +'<div class="solo-head-btns">'+soloCestinoBtnHtml()+'<button class="solo-lock-btn" onclick="soloCambiaPin()">🔑</button>'
     +'<button class="solo-lock-btn" onclick="soloLock()">🔒 Blocca</button></div>'
     +'</div>'
+    +(_soloPromemoriaMese
+      ? '<div class="promemoria-banner" style="display:flex;">🌙 Hai voci di '+soloMeseLabel(_soloPromemoriaMese)+' ancora da archiviare. Vuoi chiudere il mese?'
+        +'<button onclick="soloPromemoriaArchivia()" style="background:var(--honey-d);border:none;border-radius:var(--r-sm);color:#fff;font-family:\'Baloo 2\',cursive;font-weight:700;font-size:.8rem;padding:7px 12px;cursor:pointer;-webkit-appearance:none;">Archivia</button>'
+        +'<button onclick="soloPromemoriaPiuTardi()" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text2);font-family:\'Baloo 2\',cursive;font-weight:700;font-size:.8rem;padding:7px 12px;cursor:pointer;-webkit-appearance:none;">Più tardi</button></div>'
+      : '')
     +'<div class="solo-saldo-card">'
     +'<div class="solo-saldo-lbl">Saldo personale</div>'
     +'<div class="solo-saldo-val '+(s>=0?"pos":"neg")+'">'+eur(s)+' <span class="solo-saldo-icona">'+(s>0?"🥧":s<0?"🕸️":"🍯")+'</span></div>'
@@ -291,6 +324,7 @@ async function soloAddVoce(){
   var v={id:Date.now().toString(),proprietario:soloChi,tipo:soloTipoNuova,importo:imp,categoria:cat,nota:nota,data:new Date().toISOString(),origine:null};
   soloData.voci.unshift(v);
   vibra(30);
+  soloCheckPromemoria();
   renderSolo();
   dot("","Salvataggio...");
   try{
@@ -890,6 +924,7 @@ function soloLock(){
   soloChi=null;
   _soloPinBuffer="";
   soloData={voci:[], ricorrenti:[], chiusure:[], categorie:[]};
+  _soloPromemoriaOff=false; _soloPromemoriaMese=null;
   renderSolo();
 }
 
@@ -919,7 +954,8 @@ function openSoloChiusura(id){
   var c=(soloData.chiusure||[]).find(function(x){return x.id===id;});
   if(!c) return;
   var body=document.getElementById("solo-chiusura-body");
-  var h='<div class="riepilogo-mese">'
+  var h=renameChiusuraFieldHtml("solo",c.id,c.mese)
+    +'<div class="riepilogo-mese">'
     +'<div class="riepilogo-mese-row"><span>➕ Entrate</span><span>'+eur(c.totEntrate)+'</span></div>'
     +'<div class="riepilogo-mese-row"><span>➖ Uscite</span><span>'+eur(c.totUscite)+'</span></div>'
     +'<div class="riepilogo-mese-row tot"><span>💰 Saldo</span><span>'+eur(c.saldo)+'</span></div></div>';
@@ -958,8 +994,52 @@ function openSoloChiusura(id){
     _soloCatRerender=function(){ soloRenderCategorieDonutInto(vociC,"solo-chiusura-canvas-wrap","solo-chiusura-legenda","solo-chiusura-canvas"); };
     _soloCatRerender();
   }
+  var _btnRip=document.getElementById("btn-ripristina-solo");
+  if(_btnRip) _btnRip.onclick=function(){ closeSoloChiusura(); soloOpenRipristino(id); };
 }
 function closeSoloChiusura(){ document.getElementById("modal-solo-chiusura").classList.remove("open"); }
+
+function soloOpenRipristino(id){
+  var c=(soloData.chiusure||[]).find(function(x){return x.id===id;}); if(!c) return;
+  // solo l'ultimo mese archiviato (come il comune)
+  var latest=null;
+  (soloData.chiusure||[]).forEach(function(x){ if(!latest || (x.data||"")>(latest.data||"")) latest=x; });
+  if(!latest || latest.id!==id){
+    alert("Puoi ripristinare solo l'ultimo mese archiviato ("+(latest?latest.mese:"—")+").");
+    return;
+  }
+  // registro corrente vuoto (mai sovrascrivere)
+  if((soloData.voci||[]).length){
+    alert("Prima svuota o chiudi il mese corrente: il ripristino non sovrascrive le voci esistenti.");
+    return;
+  }
+  soloRipristinoTarget=c;
+  document.getElementById("solo-rip-txt").textContent='Vuoi ripristinare "'+c.mese+'"? Le voci torneranno nel mese corrente.';
+  document.getElementById("solo-rip-val").textContent=eur(c.saldo);
+  document.getElementById("modal-ripristino-solo").classList.add("open");
+}
+
+function closeSoloRipristino(){
+  document.getElementById("modal-ripristino-solo").classList.remove("open");
+  soloRipristinoTarget=null;
+}
+
+async function soloConfermaRipristino(){
+  var c=soloRipristinoTarget; if(!c) return;
+  vibra([25,40,25]);
+  closeSoloRipristino();
+  dot("","Ripristino...");
+  try{
+    await post({action:"ripristinaSolo", id:c.id});
+    await caricaSolo();     // ricarico stato canonico (voci + chiusure) dal DB
+    renderSolo();
+    dot("ok","Ripristinato 🔄");
+  }catch(e){
+    dot("err","Errore ripristino");
+    // stato non mutato prima del reload → niente da rollbackare; l'archivio
+    // resta invariato in UI. Un nuovo sblocco riconcilia comunque col DB.
+  }
+}
 
 // Disegna torta/ciambella su un canvas dato
 function soloDisegnaTorta(voci, tot, canvasId){
@@ -1348,8 +1428,10 @@ function soloArchiviHtml(){
       +'<span class="solo-anno-chev">'+(aperto?"▴":"▾")+'</span></button>';
     if(aperto){
       h+='<div class="solo-anno-body">';
-      h+='<button class="solo-anno-graf-btn" onclick="openSoloGraficiAnno(\''+anno+'\')">📊 Grafici '+anno+'</button>';
-      h+='<button class="solo-anno-graf-btn" onclick="openSoloCategorieAnno(\''+anno+'\')">🥧 Categorie '+anno+'</button>';
+      h+='<div style="display:flex;gap:8px;margin-bottom:8px;">'
+        +'<button class="solo-cat-manage" onclick="openSoloGraficiAnno(\''+anno+'\')" title="Grafici '+anno+'">📊</button>'
+        +'<button class="solo-cat-manage" onclick="openSoloCategorieAnno(\''+anno+'\')" title="Categorie '+anno+'">🥧</button>'
+        +'</div>';
       lista.forEach(function(c){
         h+='<div class="solo-mese-wrap">';
         h+=  '<button class="solo-mese-row" onclick="openSoloChiusura(\''+c.id+'\')">'

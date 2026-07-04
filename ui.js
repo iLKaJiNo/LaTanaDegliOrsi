@@ -559,12 +559,44 @@ function accordionToggle(boxId, btnId, key){
   try{ localStorage.setItem(key, apri?"1":"0"); }catch(e){}
 }
 
+// Campo rinomina dentro il dettaglio chiusura. tipo = "comune" | "solo".
+function renameChiusuraFieldHtml(tipo,id,mese){
+  return '<div style="margin-bottom:14px;">'
+    +'<div style="font-size:.72rem;color:var(--text3);font-family:\'Nunito\',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;padding-left:2px;">✏️ Nome del mese</div>'
+    +'<div style="display:flex;gap:8px;align-items:center;">'
+    +'<input class="inp" id="rinomina-chiusura-input" type="text" value="'+escapeHtml(mese||"")+'" placeholder="Es. Giugno 2026" style="flex:1;margin:0;" onkeydown="if(event.key===\'Enter\')salvaRinominaChiusura(\''+tipo+'\',\''+id+'\')">'
+    +'<button onclick="salvaRinominaChiusura(\''+tipo+'\',\''+id+'\')" style="flex:0 0 auto;background:var(--honey-d);border:none;border-radius:var(--r-sm);color:#fff;font-family:\'Baloo 2\',cursive;font-weight:700;font-size:.85rem;padding:9px 14px;cursor:pointer;-webkit-appearance:none;">Salva</button>'
+    +'</div></div>';
+}
+
+async function salvaRinominaChiusura(tipo,id){
+  var inp=document.getElementById("rinomina-chiusura-input");
+  if(!inp) return;
+  var nuovo=inp.value.trim();
+  if(!nuovo) return;
+  if(tipo==="comune"){
+    var c=S.chiusure.find(function(x){return x.id===id;}); if(!c || c.mese===nuovo) return;
+    var bk=c.mese; c.mese=nuovo;
+    var t=document.getElementById("modal-storico-titolo"); if(t) t.textContent="📦 "+nuovo;
+    render(); dot("","Salvataggio...");
+    try{ await post({action:"renameChiusura",id:id,mese:nuovo}); dot("ok","Rinominato 🐾"); }
+    catch(e){ c.mese=bk; if(t) t.textContent="📦 "+bk; render(); dot("err","Errore salvataggio"); }
+  } else {
+    var sc=(soloData.chiusure||[]).find(function(x){return x.id===id;}); if(!sc || sc.mese===nuovo) return;
+    var bk2=sc.mese; sc.mese=nuovo;
+    var t2=document.getElementById("solo-chiusura-titolo"); if(t2) t2.textContent=nuovo;
+    renderSolo(); dot("","Salvataggio...");
+    try{ await post({action:"renameSoloChiusura",id:id,mese:nuovo}); dot("ok","Rinominato 🐾"); }
+    catch(e){ sc.mese=bk2; if(t2) t2.textContent=bk2; renderSolo(); dot("err","Errore salvataggio"); }
+  }
+}
+
 function openStoricoMese(id){
   var c=S.chiusure.find(function(x){return x.id===id;});if(!c)return;
   document.getElementById("modal-storico-titolo").textContent="\uD83D\uDCE6 "+c.mese;
   document.getElementById("modal-storico-sub").textContent=c.txs.length+" voci \u00b7 chiuso il "+fmtLong(c.data);
-  var h="";
-  if(!c.txs.length && !(c.fisseSnapshot && c.fisseSnapshot.length)){h='<div style="text-align:center;color:var(--text3);padding:20px;font-size:14px;">'+fraseVuoto("mese")+'</div>';}
+  var h=renameChiusuraFieldHtml("comune",c.id,c.mese);
+  if(!c.txs.length && !(c.fisseSnapshot && c.fisseSnapshot.length)){h+='<div style="text-align:center;color:var(--text3);padding:20px;font-size:14px;">'+fraseVuoto("mese")+'</div>';}
   else{
     // Sezione transazioni: solo se il mese ha movimenti
     if(c.txs.length){
@@ -633,6 +665,10 @@ function openRipristino(id){
   // un mese vecchio sovrascriverebbe i successivi (Maggio che cancella Giugno).
   if(!S.chiusure[0] || S.chiusure[0].id!==id){
     alert("Puoi ripristinare solo l'ultimo mese archiviato ("+(S.chiusure[0]?S.chiusure[0].mese:"—")+").\nRipristina prima i mesi più recenti.");
+    return;
+  }
+  if(S.txs.length){
+    alert("Prima svuota o chiudi il mese corrente: il ripristino non sovrascrive le spese esistenti.");
     return;
   }
   ripristinoTarget=c;
@@ -951,15 +987,8 @@ function renderArchivioTab(){
   }
 
   // Riepilogo archivio + Grafico (in cima)
-  var totAnnuale=S.chiusure.reduce(function(a,c){return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));},0);
-  var mediaAnnuale=S.chiusure.length>0?Math.round(totAnnuale/S.chiusure.length):0;
-  var totFisseAnnuale=S.chiusure.reduce(function(a,c){var f=c.fisseSnapshot||[];return a+f.reduce(function(b,x){return b+(parseFloat(x.importo)||0);},0);},0);
-  var totRealeAnnuale=totAnnuale+totFisseAnnuale;
-  var mediaRealeAnnuale=S.chiusure.length>0?Math.round(totRealeAnnuale/S.chiusure.length):0;
   h+='<div class="chiusure-section">';
   h+='<div class="chiusure-head-row"><span class="chiusure-head">📦 '+S.chiusure.length+' mesi archiviati</span><button class="btn-grafico" onclick="openGrafico(\'barre\')">📊 Grafico</button><button class="btn-grafico" onclick="esportaPDFComplessivo()">📄 PDF completo</button></div>';
-  h+='<div class="chiusura-totale" style="margin-bottom:4px;">📅 Totale archivio: <strong>'+eurInt(totAnnuale)+'</strong> cassa · <strong>'+eur(totRealeAnnuale)+'</strong> reale</div>';
-  h+='<div class="chiusura-totale" style="margin-bottom:12px;">📊 Media mensile: <strong>'+eurInt(mediaAnnuale)+'</strong> cassa · <strong>'+eur(mediaRealeAnnuale)+'</strong> reale</div>';
 
   // Accordion: anni che raggruppano i mesi (card ricche). Anno corrente aperto di default.
   var anniMap={};
@@ -974,20 +1003,18 @@ function renderArchivioTab(){
     var totAnno=mesi.reduce(function(a,c){return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));},0);
     var totFisseAnno=mesi.reduce(function(a,c){var f=c.fisseSnapshot||[];return a+f.reduce(function(b,x){return b+(parseFloat(x.importo)||0);},0);},0);
     var totRealeAnno=totAnno+totFisseAnno;
-    var mediaAnno=mesi.length>0?Math.round(totAnno/mesi.length):0;
     var isOpen=(annoAperto===anno);
     h+='<div class="anno-card">';
     h+='<div class="anno-header" onclick="toggleAnno(\''+anno+'\')">';
     h+='<span class="anno-label">📅 '+anno+'</span>';
-    h+='<span class="anno-tot">'+eurInt(totAnno)+'</span>';
+    h+='<span class="anno-tot">'+eurInt(totRealeAnno)+'</span>';
     h+='<span class="anno-toggle'+(isOpen?" open":"")+'">▼</span>';
     h+='</div>';
-    h+='<div class="anno-stat-row">';
-    h+='<span>'+mesi.length+' mesi · media: <strong>'+eurInt(mediaAnno)+'</strong></span>';
-    if(totFisseAnno>0){
-      h+='<span style="color:var(--honey-d);">📌 Fisse: <strong>'+eurInt(totFisseAnno)+'</strong> · Totale reale: <strong>'+eurInt(totRealeAnno)+'</strong></span>';
-    }
-    h+='</div>';
+    var mediaRealeAnno=mesi.length>0?Math.round(totRealeAnno/mesi.length):0;
+    h+='<div style="background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:10px 14px;margin:2px 0 8px;font-family:\'Nunito\',sans-serif;font-weight:700;font-size:.875rem;color:var(--text2);display:flex;flex-direction:column;gap:4px;">'
+      +'<span>💰 Totale: <strong style="color:var(--text);">'+eur(totRealeAnno)+'</strong></span>'
+      +'<span>📊 Media/mese: <strong style="color:var(--text);">'+eurInt(mediaRealeAnno)+'</strong> <span style="color:var(--text3);font-weight:600;">(su '+mesi.length+' '+(mesi.length===1?'mese':'mesi')+')</span></span>'
+      +'</div>';
     h+='<div class="anno-mesi'+(isOpen?" open":"")+'">';
     mesi.forEach(function(c){
       var cls=saldoCls(c.saldo);
@@ -1143,6 +1170,7 @@ function renderLista(){
     var nn=document.getElementById("note-textarea");
     if(nn){nn.value=notaVal;nn.focus();}
   }
+  var _naf=document.getElementById("note-textarea"); if(_naf) notaAutoGrow(_naf);
 }
 
 // ── Lista Spesa — CRUD ───────────────────────────────────
@@ -1242,7 +1270,13 @@ async function svuotaLista(){
 }
 
 // ── Note Condivise ───────────────────────────────────────
+function notaAutoGrow(el){
+  if(!el) return;
+  el.style.height="auto";
+  el.style.height=el.scrollHeight+"px";
+}
 function onNotaInput(){
+  var _ta=document.getElementById("note-textarea"); if(_ta) notaAutoGrow(_ta);
   var statusEl=document.getElementById("note-status");
   if(statusEl)statusEl.textContent="✏️ modificando…";
   clearTimeout(_notaTimer);
