@@ -51,7 +51,9 @@ var delFissaConfirmId=null;
 var UNITA_LABEL={giorni:"giorni",settimane:"settimane",mesi:"mesi",anni:"anni"}; // etichette frequenza (condiviso Solo + comune)
 // ── PROMEMORIA CHIUSURA (Imp-B) ──
 var _chiusuraStash=null;     // voci del mese nuovo messe da parte durante "Archivia"
+var _chiusuraMese=null;      // "YYYY-MM" del mese in chiusura dal banner: confine dello stash
 var _chiusuraInCorso=false;  // true mentre chiudiMese() è in volo (blocca il ripristino in closeChiudi)
+var _promOff=false;          // true se si è scelto "Più tardi" in questa sessione (mirror di _soloPromemoriaOff)
 // ── ORSO SOLO (contabilità personale) ──
 var soloChi=null;          // "Luca"/"Ale": chi è sbloccato in questa sessione (null = bloccato)
 var soloSbloccato=false;   // true dopo PIN corretto; si azzera a ogni riapertura app
@@ -69,6 +71,7 @@ var soloCatDelId=null;       // id categoria in attesa conferma elim.
 var soloDelArchivioId=null;  // id chiusura archiviata in attesa conferma elim.
 var _soloPromemoriaMese=null;  // "YYYY-MM" del mese vecchio da chiudere (null = nessuno)
 var _soloPromemoriaOff=false;  // true se l'orso ha scelto "Più tardi" in questa sessione
+var _soloChiusuraStash=null;   // voci dei mesi più recenti messe da parte durante "Archivia" del Solo
 var soloRipristinoTarget=null; // chiusura Solo in attesa di conferma ripristino
 
 // ── AUTH / SESSIONE ────────────────────────────────────
@@ -112,7 +115,7 @@ for(var i=0;i<TANA_EMAILS.length;i++){
   document.getElementById("login-screen").classList.remove("active");
   appStart();
 }
-function logout(){sb.auth.signOut().then(function(){location.reload();});}
+function logout(){_promOff=false;sb.auth.signOut().then(function(){location.reload();});}
 async function authInit(){
   var res=await sb.auth.getSession();
   if(res.data&&res.data.session){appStart();}

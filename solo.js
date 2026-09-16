@@ -210,8 +210,28 @@ function soloMeseLabel(ym){
   return s.charAt(0).toUpperCase()+s.slice(1);
 }
 
+// Etichetta proposta per la chiusura Solo: dedotta dalle voci, non da oggi
+// (mese MASSIMO, stessa logica di meseDaChiudere della comune).
+function soloMeseDaChiudere(){
+  var max="";
+  (soloData.voci||[]).forEach(function(v){ var ym=(v.data||"").slice(0,7); if(ym>max) max=ym; });
+  return soloMeseLabel(max||new Date().toISOString().slice(0,7));
+}
+
 function soloPromemoriaPiuTardi(){ _soloPromemoriaOff=true; _soloPromemoriaMese=null; renderSolo(); }
-function soloPromemoriaArchivia(){ _soloPromemoriaMese=null; openSoloChiudi(); }
+// Archivia dal banner: chiudo SOLO il mese vecchio. I mesi più recenti vanno
+// in _soloChiusuraStash e tornano nel registro a chiusura fatta (o annullata).
+// Niente re-post: soloConfermaChiudi cancella a DB solo le voci archiviate.
+function soloPromemoriaArchivia(){
+  var meseVecchio=_soloPromemoriaMese;
+  _soloPromemoriaMese=null;
+  if(meseVecchio){
+    _soloChiusuraStash=soloData.voci.filter(function(v){ return (v.data||"").slice(0,7)>meseVecchio; });
+    soloData.voci=soloData.voci.filter(function(v){ return (v.data||"").slice(0,7)<=meseVecchio; });
+  }
+  openSoloChiudi();
+  if(meseVecchio) document.getElementById("solo-chiudi-mese").value=soloMeseLabel(meseVecchio);
+}
 
 // ── APP sbloccata (I-1: placeholder; in I-2 diventa il registro) ──
 function renderSoloApp(el){
@@ -232,7 +252,7 @@ function renderSoloApp(el){
       : '')
     +'<div class="solo-saldo-card">'
     +'<div class="solo-saldo-lbl">Saldo personale</div>'
-    +'<div class="solo-saldo-val '+(s>=0?"pos":"neg")+'">'+eur(s)+' <span class="solo-saldo-icona" onclick="openSoloCategorieMese()" style="cursor:pointer;" title="Spese per categoria">'+(s>0?"🥧":s<0?"🕸️":"🍯")+'</span></div>'
+    +'<div class="solo-saldo-val '+(s>=0?"pos":"neg")+'">'+eur(s)+' <span class="solo-saldo-icona">'+(s>0?"🥧":s<0?"🕸️":"🍯")+'</span></div>'
     +'</div>'
     // Segmento a 3: Registro / Ricorrenti / Archivi
     +'<div class="solo-seg solo-seg-3">'
@@ -264,6 +284,7 @@ function soloRegistroHtml(catOpts){
     +'<div class="solo-storico-head"><span>Movimenti</span></div>'
     +soloStoricoHtml()
     +'</div>'
+    +(soloData.voci.some(function(v){return v.tipo==="uscita";}) ? '<button class="solo-anno-graf-btn" onclick="openSoloCategorieMese()">🥧 Spese per categoria (mese corrente)</button>' : '')
     +(soloData.voci.length ? '<button class="solo-chiudi-mese-btn" onclick="openSoloChiudi()">🌙 Chiudi e archivia il mese</button>' : '');
 }
 
@@ -923,7 +944,7 @@ function soloLock(){
   soloChi=null;
   _soloPinBuffer="";
   soloData={voci:[], ricorrenti:[], chiusure:[], categorie:[]};
-  _soloPromemoriaOff=false; _soloPromemoriaMese=null;
+  _soloPromemoriaOff=false; _soloPromemoriaMese=null; _soloChiusuraStash=null;
   renderSolo();
 }
 
@@ -1354,14 +1375,21 @@ function openSoloChiudi(){
     '<div class="riepilogo-mese"><div class="riepilogo-mese-row"><span>➕ Entrate</span><span>'+eur(ent)+'</span></div>'
     +'<div class="riepilogo-mese-row"><span>➖ Uscite</span><span>'+eur(usc)+'</span></div>'
     +'<div class="riepilogo-mese-row tot"><span>💰 Saldo</span><span>'+eur(sal)+'</span></div></div>';
-  document.getElementById("solo-chiudi-mese").value=new Date().toLocaleDateString("it-IT",{month:"long",year:"numeric"});
+  document.getElementById("solo-chiudi-mese").value=soloMeseDaChiudere();
   document.getElementById("modal-solo-chiudi").classList.add("open");
 }
-function closeSoloChiudi(){ document.getElementById("modal-solo-chiudi").classList.remove("open"); }
+function closeSoloChiudi(){
+  document.getElementById("modal-solo-chiudi").classList.remove("open");
+  // Chiusura annullata dal banner: rimetto nel registro i mesi messi da parte
+  // (soloConfermaChiudi azzera lo stash prima di chiamarmi).
+  if(_soloChiusuraStash){ soloData.voci=soloData.voci.concat(_soloChiusuraStash); _soloChiusuraStash=null; renderSolo(); }
+}
 
 async function soloConfermaChiudi(){
-  var mese=document.getElementById("solo-chiudi-mese").value.trim()||new Date().toLocaleDateString("it-IT",{month:"long",year:"numeric"});
+  var mese=document.getElementById("solo-chiudi-mese").value.trim()||soloMeseDaChiudere();
   if(!soloData.voci.length){ closeSoloChiudi(); return; }
+  var stash=_soloChiusuraStash||[];
+  _soloChiusuraStash=null;
   var ent=0, usc=0;
   soloData.voci.forEach(function(v){ if(v.tipo==="entrata") ent+=v.importo; else usc+=v.importo; });
   ent=Math.round(ent*100)/100; usc=Math.round(usc*100)/100;
@@ -1388,10 +1416,12 @@ async function soloConfermaChiudi(){
     for(var i=0;i<vociArchiviate.length;i++){
       try{ await post({action:"deleteSoloVoce",id:vociArchiviate[i].id}); }catch(e){}
     }
+    // i mesi più recenti non sono stati toccati a DB: basta ripristinarli in memoria
+    if(stash.length){ soloData.voci=soloData.voci.concat(stash); renderSolo(); }
     dot("ok","Mese chiuso 🌙");
   }catch(e){
     soloData.chiusure=soloData.chiusure.filter(function(x){return x.id!==ch.id;});
-    soloData.voci=backupVoci;
+    soloData.voci=backupVoci.concat(stash);
     renderSolo();
     dot("err","Errore archiviazione");
   }
@@ -1401,7 +1431,7 @@ async function soloConfermaChiudi(){
 //  ORSO SOLO — Archivi (L-3a)
 //  Le chiusure raggruppate per anno (automatico, per data).
 // ════════════════════════════════════════════════════════
-var soloAnnoAperto=String(new Date().getFullYear());
+var soloAnnoAperto=null;
 
 function soloArchiviHtml(){
   var chiusure=soloData.chiusure||[];
@@ -1419,21 +1449,14 @@ function soloArchiviHtml(){
   anni.forEach(function(anno){
     var lista=perAnno[anno];
     var totU=lista.reduce(function(a,c){return a+c.totUscite;},0);
-    var totE=lista.reduce(function(a,c){return a+(c.totEntrate||0);},0);
-    var n=lista.length;
-    var mU=n>0?Math.round(totU/n):0, mE=n>0?Math.round(totE/n):0;
     var aperto=(soloAnnoAperto==String(anno));
     h+='<div class="solo-anno-group">';
     h+='<button class="solo-anno-head'+(aperto?" aperto":"")+'" onclick="soloToggleAnno(\''+anno+'\')">'
       +'<span class="solo-anno-titolo">📅 '+anno+'</span>'
-      +'<span class="solo-anno-meta">'+n+' '+(n===1?'mese':'mesi')+'</span>'
+      +'<span class="solo-anno-meta">'+lista.length+' mesi · '+eur(totU)+' spesi</span>'
       +'<span class="solo-anno-chev">'+(aperto?"▴":"▾")+'</span></button>';
     if(aperto){
       h+='<div class="solo-anno-body">';
-      h+='<div style="background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:10px 14px;margin-bottom:8px;font-family:\'Nunito\',sans-serif;font-weight:700;font-size:.875rem;color:var(--text2);display:flex;flex-direction:column;gap:4px;">'
-        +'<span>➖ Uscite: <strong style="color:var(--berry);">'+eur(totU)+'</strong> · media <strong>'+eurInt(mU)+'</strong>/mese</span>'
-        +'<span>➕ Entrate: <strong style="color:var(--moss);">'+eur(totE)+'</strong> · media <strong>'+eurInt(mE)+'</strong>/mese</span>'
-        +'</div>';
       h+='<div style="display:flex;gap:8px;margin-bottom:8px;">'
         +'<button class="solo-cat-manage" onclick="openSoloGraficiAnno(\''+anno+'\')" title="Grafici '+anno+'">📊</button>'
         +'<button class="solo-cat-manage" onclick="openSoloCategorieAnno(\''+anno+'\')" title="Categorie '+anno+'">🥧</button>'
