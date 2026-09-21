@@ -460,6 +460,9 @@ S.chiusure.unshift(chiusura);sortChiusure();S.saldoIniziale=nuovoSaldo;S.txs=[];
   // ogni voce dello stash. Se l'app si chiude tra la delete e il re-post, al
   // prossimo avvio flushCoda le reinserisce. Se invece le righe sono ancora a
   // DB, l'insert fallisce per id duplicato (PK) e flushCoda la scarta: innocuo.
+  // Limite noto: se un flushCoda gira in parallelo e invia un write-ahead PRIMA
+  // della delete, l'insert è rifiutato per PK e la voce viene scartata: per quella
+  // spesa si perde la protezione da crash (il re-post qui sotto parte comunque).
   var stash=_chiusuraStash||[];
   if(stash.length) setCoda(getCoda().concat(stash.map(function(t){return payloadStash(t,chiusura.id);})));
 
@@ -498,14 +501,16 @@ S.chiusure.unshift(chiusura);sortChiusure();S.saldoIniziale=nuovoSaldo;S.txs=[];
     _chiusuraInCorso=false;
     render();
   } catch(e){
-    dot("err","Errore chiusura");
+    dot("err",errDiRete(e)?"Serve la rete per chiudere il mese 📴":"Errore chiusura");
     S.chiusure=S.chiusure.filter(function(x){return x.id!==chiusura.id;}); S.txs = backupTxs; S.saldoIniziale = backupSaldo;
     // Imp-B: su errore torna mese-vecchio+nuovo = stato originale (nessun re-post)
     rimettiStash();
-    // Fix R2: chiusura non avvenuta, le righe sono ancora a DB → via il write-ahead.
-    // Eccezione: su errore di rete post() ha accodato chiudiMese stessa, che
-    // flushCoda rigiocherà: i re-post devono stare DOPO di lei nella coda.
-    if(stash.length){ if(errDiRete(e)) spostaWalInFondo(chiusura.id); else togliWal(chiusura.id); }
+    // Fix R2/R3b: errore VERO del server → la RPC è stata rifiutata, le righe sono
+    // ancora a DB: via il write-ahead. Errore di RETE → il write-ahead RESTA: non
+    // sappiamo se la RPC è arrivata. Se no, al flush gli insert sono scartati per
+    // PK (zero danno); se sì e si è persa solo la risposta, è l'unica copia rimasta
+    // delle spese del mese nuovo. chiudiMese non va in coda (NON_ACCODABILI, api.js).
+    if(stash.length && !errDiRete(e)) togliWal(chiusura.id);
     _chiusuraInCorso=false;
     render();
   }
@@ -522,10 +527,9 @@ function payloadStash(t,wal){
 function togliWal(wal,id){
   setCoda(getCoda().filter(function(p){return !(p._wal===wal&&(!id||p.id===id));}));
 }
-function spostaWalInFondo(wal){
-  var coda=getCoda();
-  var mie=coda.filter(function(p){return p._wal===wal;});
-  setCoda(coda.filter(function(p){return p._wal!==wal;}).concat(mie));
+// Insert rifiutato per id già presente in transazioni (23505 su transazioni_pkey)
+function eDuplicatoTx(e){
+  return !!e && e.code==="23505" && ((e.message||"")+(e.details||"")).indexOf("transazioni_pkey")>-1;
 }
 
 // Fix D: ri-scrive a DB le voci del mese nuovo cancellate da chiudi_mese.
@@ -537,6 +541,9 @@ async function ripostaStashChiusura(stash,wal){
     var t=stash[i];
     try{ await post(payloadStash(t)); togliWal(wal,t.id); }
     catch(e){
+      // 4.3b: un flushCoda parallelo l'ha già reinserita dal write-ahead. Stesso
+      // id = stessa spesa, già a DB: è un successo. Solo il 23505, nient'altro.
+      if(eDuplicatoTx(e)){ togliWal(wal,t.id); continue; }
       falliti++;
       // offline: post() ha già accodato la sua copia → tolgo il write-ahead, ne basta una.
       // errore server: resta il write-ahead, ci riprova flushCoda al prossimo avvio.
@@ -831,7 +838,7 @@ async function confermaRipristino(){
     }
     dot("ok","Ripristinato \uD83D\uDD04");
   } catch(e){
-    dot("err","Errore ripristino");
+    dot("err",errDiRete(e)?"Serve la rete per ripristinare il mese 📴":"Errore ripristino");
     S.saldoIniziale = backupSaldo; S.txs = backupTxs; S.chiusure = backupChiusure; S.ricorrenti = backupRicorrenti;
     render();
   }
@@ -1091,16 +1098,8 @@ function renderArchivioTab(){
   }
 
   // Riepilogo archivio + Grafico (in cima)
-  var totAnnuale=S.chiusure.reduce(function(a,c){return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));},0);
-  var mediaAnnuale=S.chiusure.length>0?Math.round(totAnnuale/S.chiusure.length):0;
-  var totFisseAnnuale=S.chiusure.reduce(function(a,c){var f=c.fisseSnapshot||[];return a+f.reduce(function(b,x){return b+(parseFloat(x.importo)||0);},0);},0);
-  var totRealeAnnuale=totAnnuale+totFisseAnnuale;
-  var mediaRealeAnnuale=S.chiusure.length>0?Math.round(totRealeAnnuale/S.chiusure.length):0;
   h+='<div class="chiusure-section">';
   h+='<div class="chiusure-head-row"><span class="chiusure-head">📦 '+S.chiusure.length+' mesi archiviati</span><button class="btn-grafico" onclick="openGrafico(\'barre\')">📊 Grafico</button><button class="btn-grafico" onclick="esportaPDFComplessivo()">📄 PDF completo</button></div>';
-  h+='<div style="font-size:.72rem;color:var(--text3);font-family:\'Nunito\',sans-serif;font-weight:700;margin-bottom:6px;">💰 Cassa = spese condivise · 📌 Reale = cassa + fisse</div>';
-  h+='<div class="chiusura-totale" style="margin-bottom:4px;">📅 Totale: <strong>'+eurInt(totAnnuale)+'</strong> cassa · <strong>'+eur(totRealeAnnuale)+'</strong> reale</div>';
-  h+='<div class="chiusura-totale" style="margin-bottom:12px;">📊 Media/mese: <strong>'+eurInt(mediaAnnuale)+'</strong> cassa · <strong>'+eur(mediaRealeAnnuale)+'</strong> reale</div>';
 
   // Accordion: anni che raggruppano i mesi (card ricche). Anno corrente aperto di default.
   var anniMap={};
@@ -1115,20 +1114,18 @@ function renderArchivioTab(){
     var totAnno=mesi.reduce(function(a,c){return a+(c.totale||c.txs.reduce(function(b,t){return b+(parseFloat(t.importo)||0);},0));},0);
     var totFisseAnno=mesi.reduce(function(a,c){var f=c.fisseSnapshot||[];return a+f.reduce(function(b,x){return b+(parseFloat(x.importo)||0);},0);},0);
     var totRealeAnno=totAnno+totFisseAnno;
-    var mediaAnno=mesi.length>0?Math.round(totAnno/mesi.length):0;
     var isOpen=(annoAperto===anno);
     h+='<div class="anno-card">';
     h+='<div class="anno-header" onclick="toggleAnno(\''+anno+'\')">';
     h+='<span class="anno-label">📅 '+anno+'</span>';
-    h+='<span class="anno-tot">'+eurInt(totAnno)+'</span>';
+    h+='<span class="anno-tot">'+eurInt(totRealeAnno)+'</span>';
     h+='<span class="anno-toggle'+(isOpen?" open":"")+'">▼</span>';
     h+='</div>';
-    h+='<div class="anno-stat-row">';
-    h+='<span>'+mesi.length+' mesi · media: <strong>'+eurInt(mediaAnno)+'</strong></span>';
-    if(totFisseAnno>0){
-      h+='<span style="color:var(--honey-d);">📌 Fisse: <strong>'+eurInt(totFisseAnno)+'</strong> · Totale reale: <strong>'+eurInt(totRealeAnno)+'</strong></span>';
-    }
-    h+='</div>';
+    var mediaRealeAnno=mesi.length>0?Math.round(totRealeAnno/mesi.length):0;
+    h+='<div style="background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r-md);padding:10px 14px;margin:2px 0 8px;font-family:\'Nunito\',sans-serif;font-weight:700;font-size:.875rem;color:var(--text2);display:flex;flex-direction:column;gap:4px;">'
+      +'<span>💰 Totale: <strong style="color:var(--text);">'+eur(totRealeAnno)+'</strong></span>'
+      +'<span>📊 Media/mese: <strong style="color:var(--text);">'+eurInt(mediaRealeAnno)+'</strong> <span style="color:var(--text3);font-weight:600;">(su '+mesi.length+' '+(mesi.length===1?'mese':'mesi')+')</span></span>'
+      +'</div>';
     h+='<div class="anno-mesi'+(isOpen?" open":"")+'">';
     mesi.forEach(function(c){
       var cls=saldoCls(c.saldo);

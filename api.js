@@ -303,6 +303,12 @@ async function post(payload){
     return await runAction(payload);
   }catch(e){
     if(errDiRete(e)){
+      // R3a: le operazioni composite (insert+delete+update in un colpo) non
+      // si rigiocano più tardi alla cieca: niente coda, la UI fa già rollback.
+      if(NON_ACCODABILI[payload.action]){
+        dot("err","Serve la rete per questa operazione \uD83D\uDCF4");
+        throw e;
+      }
       // Rete assente: salvo in coda e reinvierò
       accodaOperazione(payload);
       dot("err","Offline — salvato in attesa \uD83D\uDCE5");
@@ -318,6 +324,10 @@ async function post(payload){
 
 // ── CODA OFFLINE ──
 var CODA_KEY = "tana_coda_offline";
+var _flushInCorso = false;   // flushCoda parte da "online" e da appStart: niente sovrapposizioni
+// Azioni che post() NON accoda offline (vedi R3a). eliminaChiusura,
+// restoreChiusura e addSoloChiusura restano accodabili: rigiocarle è innocuo.
+var NON_ACCODABILI = {chiudiMese:1, ripristina:1, ripristinaSolo:1};
 
 function getCoda(){
   try{ return JSON.parse(localStorage.getItem(CODA_KEY)||"[]"); }
@@ -341,26 +351,36 @@ function aggiornaBadgeCoda(){
   }
 }
 // Reinvia le operazioni in coda, in ordine. Si ferma al primo errore di rete.
+// R3c: la coda si rilegge da localStorage a ogni giro (mai una copia in
+// memoria), così non si perde ciò che viene accodato mentre il flush gira.
 async function flushCoda(){
-  var coda=getCoda();
-  if(!coda.length) return;
+  if(_flushInCorso) return;
+  if(!getCoda().length) return;
+  _flushInCorso=true;
   dot("","Invio operazioni in attesa...");
-  while(coda.length){
-    var op=coda[0];
-    try{
-      await runAction(op);
-      coda.shift();
-      setCoda(coda);
-    }catch(e){
-      if(errDiRete(e)){ aggiornaBadgeCoda(); return; } // ancora offline: riproverò
-      // Errore "vero" (es. duplicato già inviato): scarto e proseguo
-      console.error("Operazione in coda scartata:",op.action,e);
-      coda.shift();
-      setCoda(coda);
+  try{
+    var giri=0;
+    while(getCoda().length && giri++<300){   // 300: cintura contro ri-accodamenti infiniti
+      var op=getCoda()[0];
+      try{ await runAction(op); }
+      catch(e){
+        if(errDiRete(e)){ aggiornaBadgeCoda(); return; } // ancora offline: riproverò
+        // Errore "vero" (es. duplicato già inviato): scarto e proseguo
+        console.error("Operazione in coda scartata:",op.action,e);
+      }
+      togliDaCoda(op);
     }
+    load();
+  } finally { _flushInCorso=false; }
+}
+// Toglie 'op' dalla coda per identità, non per posizione: mentre runAction
+// era in volo, togliWal() (ui.js) può aver già rimosso proprio la testa, e
+// uno shift() cieco cancellerebbe l'operazione successiva.
+function togliDaCoda(op){
+  var s=JSON.stringify(op), c=getCoda();
+  for(var i=0;i<c.length;i++){
+    if(JSON.stringify(c[i])===s){ c.splice(i,1); setCoda(c); return; }
   }
-  setCoda([]);
-  load();
 }
 
 // Quando la connessione torna, svuoto la coda
