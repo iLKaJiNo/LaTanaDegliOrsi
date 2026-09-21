@@ -429,6 +429,8 @@ function closeChiudi(){
   if(_chiusuraStash&&!_chiusuraInCorso){rimettiStash();render();}
 }
 
+// chiudi_mese cancella solo gli id archiviati (R-root, 21/09/2026):
+// lo stash resta a DB, basta rimetterlo in memoria.
 async function chiudiMese(){
   _chiusuraInCorso=true; // Imp-B: blocca il ripristino stash nella closeChiudi() interna
   riallineaStash();      // Fix R1: prima di calcolare saldo, totale e snapshot
@@ -456,22 +458,8 @@ S.chiusure.unshift(chiusura);sortChiusure();S.saldoIniziale=nuovoSaldo;S.txs=[];
   render();
   dot("","Chiusura in corso...");
 
-  // Fix R2 (write-ahead): PRIMA della RPC metto in coda offline il re-post di
-  // ogni voce dello stash. Se l'app si chiude tra la delete e il re-post, al
-  // prossimo avvio flushCoda le reinserisce. Se invece le righe sono ancora a
-  // DB, l'insert fallisce per id duplicato (PK) e flushCoda la scarta: innocuo.
-  // Limite noto: se un flushCoda gira in parallelo e invia un write-ahead PRIMA
-  // della delete, l'insert è rifiutato per PK e la voce viene scartata: per quella
-  // spesa si perde la protezione da crash (il re-post qui sotto parte comunque).
-  var stash=_chiusuraStash||[];
-  if(stash.length) setCoda(getCoda().concat(stash.map(function(t){return payloadStash(t,chiusura.id);})));
-
   try{
     await post({action:"chiudiMese",chiusura:chiusura,nuovoSaldo:nuovoSaldo});
-    // Fix D: chiudi_mese svuota TUTTA la tabella transazioni, comprese le voci
-    // del mese nuovo messe da parte in _chiusuraStash (già scritte a DB quando
-    // sono state inserite). Le ri-scrivo subito, con gli id originali.
-    var stashFalliti=stash.length?await ripostaStashChiusura(stash,chiusura.id):0;
     // Le ricorrenti pagate col bancomat sono confluite nello snapshot:
     // le rimuovo dalla lista ricorrenti (foglio + locale).
     if(ricorrentiBancomat.length){
@@ -496,62 +484,17 @@ S.chiusure.unshift(chiusura);sortChiusure();S.saldoIniziale=nuovoSaldo;S.txs=[];
     }
     // Imp-B: su successo S.txs (vuoto) accoglie il mese nuovo messo da parte
     rimettiStash();
-    if(stashFalliti){ dot("err",(stashFalliti===1?"1 spesa":stashFalliti+" spese")+" del mese nuovo in attesa 📥"); aggiornaBadgeCoda(); }
     _promOff=false;  // mese chiuso: il promemoria riparte da zero
     _chiusuraInCorso=false;
     render();
   } catch(e){
     dot("err",errDiRete(e)?"Serve la rete per chiudere il mese 📴":"Errore chiusura");
     S.chiusure=S.chiusure.filter(function(x){return x.id!==chiusura.id;}); S.txs = backupTxs; S.saldoIniziale = backupSaldo;
-    // Imp-B: su errore torna mese-vecchio+nuovo = stato originale (nessun re-post)
+    // Imp-B: su errore torna mese-vecchio+nuovo = stato originale
     rimettiStash();
-    // Fix R2/R3b: errore VERO del server → la RPC è stata rifiutata, le righe sono
-    // ancora a DB: via il write-ahead. Errore di RETE → il write-ahead RESTA: non
-    // sappiamo se la RPC è arrivata. Se no, al flush gli insert sono scartati per
-    // PK (zero danno); se sì e si è persa solo la risposta, è l'unica copia rimasta
-    // delle spese del mese nuovo. chiudiMese non va in coda (NON_ACCODABILI, api.js).
-    if(stash.length && !errDiRete(e)) togliWal(chiusura.id);
     _chiusuraInCorso=false;
     render();
   }
-}
-
-// Payload di re-post di una voce dello stash. Con 'wal' è la copia
-// write-ahead in coda (il campo _wal non arriva a DB: runAction lo ignora).
-function payloadStash(t,wal){
-  var p={action:"addTransaction",id:t.id,chi:t.chi,importo:t.importo,nota:t.nota,data:t.data,origine:t.origine||null};
-  if(wal) p._wal=wal;
-  return p;
-}
-// Toglie dalla coda le copie write-ahead di una chiusura (di una sola voce se c'è id)
-function togliWal(wal,id){
-  setCoda(getCoda().filter(function(p){return !(p._wal===wal&&(!id||p.id===id));}));
-}
-// Insert rifiutato per id già presente in transazioni (23505 su transazioni_pkey)
-function eDuplicatoTx(e){
-  return !!e && e.code==="23505" && ((e.message||"")+(e.details||"")).indexOf("transazioni_pkey")>-1;
-}
-
-// Fix D: ri-scrive a DB le voci del mese nuovo cancellate da chiudi_mese.
-// Non lancia mai (è dentro il ramo di successo di chiudiMese): restituisce
-// quante non sono passate. Quelle restano nella coda offline (write-ahead R2).
-async function ripostaStashChiusura(stash,wal){
-  var falliti=0;
-  for(var i=0;i<stash.length;i++){
-    var t=stash[i];
-    try{ await post(payloadStash(t)); togliWal(wal,t.id); }
-    catch(e){
-      // 4.3b: un flushCoda parallelo l'ha già reinserita dal write-ahead. Stesso
-      // id = stessa spesa, già a DB: è un successo. Solo il 23505, nient'altro.
-      if(eDuplicatoTx(e)){ togliWal(wal,t.id); continue; }
-      falliti++;
-      // offline: post() ha già accodato la sua copia → tolgo il write-ahead, ne basta una.
-      // errore server: resta il write-ahead, ci riprova flushCoda al prossimo avvio.
-      if(errDiRete(e)) togliWal(wal,t.id);
-      console.error("Re-post stash fallito:",t.id,e);
-    }
-  }
-  return falliti;
 }
 
 // Ponte: deposita nel Solo di ogni orso il totale speso in cassa comune

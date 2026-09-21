@@ -373,9 +373,9 @@ async function flushCoda(){
     load();
   } finally { _flushInCorso=false; }
 }
-// Toglie 'op' dalla coda per identità, non per posizione: mentre runAction
-// era in volo, togliWal() (ui.js) può aver già rimosso proprio la testa, e
-// uno shift() cieco cancellerebbe l'operazione successiva.
+// Toglie 'op' dalla coda per identità, non per posizione: se mentre runAction
+// era in volo qualcuno ha già rimosso proprio la testa, uno shift() cieco
+// cancellerebbe l'operazione successiva senza averla mai inviata.
 function togliDaCoda(op){
   var s=JSON.stringify(op), c=getCoda();
   for(var i=0;i<c.length;i++){
