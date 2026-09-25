@@ -1490,6 +1490,10 @@ var CHIUSURE_MODALI = {
 var _navigando = false;      // alzata mentre la cronologia chiude modali: passoChiuso tace
 var _backInSospeso = null;   // timer del back rimandato da passoChiuso
 var _popDaCodice = false;    // il prossimo popstate è il back di passoChiuso, non dell'utente
+// Salti consecutivi di passi a vuoto (max 2): meglio un indietro che non cambia
+// niente che un'app che arretra da sola fino a chiudersi. Si azzera a ogni
+// popstate che cambia qualcosa di visibile.
+var _saltiVuoti = 0;
 
 function _modaliAperti(){
   var ids = [];
@@ -1579,7 +1583,7 @@ function onPopState(e){
   var st = e.state || { scheda: "tana" };
   if(_popDaCodice){
     _popDaCodice = false;
-    if(st.scheda && st.scheda !== currentTab) _dipingi(st.scheda);
+    if(st.scheda && st.scheda !== currentTab){ _dipingi(st.scheda); _saltiVuoti = 0; }
     return;
   }
   _annullaBack();
@@ -1593,7 +1597,10 @@ function onPopState(e){
   if(!st.sopra && aperti.length){ _chiudiModali(aperti); cambiato = true; }
   if(st.scheda && st.scheda !== currentTab){ _dipingi(st.scheda); cambiato = true; }
   // Passo a vuoto (stessa scheda, niente da chiudere): lo salto.
-  if(!cambiato) history.back();
+  if(cambiato){ _saltiVuoti = 0; return; }
+  if(_saltiVuoti >= 2) return;   // terzo di fila: resto qui, non salto
+  _saltiVuoti++;
+  history.back();
 }
 
 // ── IMPOSTAZIONI (schermata da header 🍪) ──
