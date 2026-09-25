@@ -989,3 +989,14 @@ body.dark .solo-anno-head,body.dark .solo-mese-row{background:rgba(255,255,255,.
 .storico-split-legenda .ss-dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle;}
 .storico-split-legenda .ss-dot.l{background:var(--berry);}
 .storico-split-legenda .ss-dot.a{background:var(--moss);}
+
+/* ── VELO SULLE CARD (26/09/2026) ──
+   Card e righe delle schede leggermente trasparenti: lasciano passare il
+   crema del fondo (e le orme, se attive) invece di un bianco pieno.
+   Solo trasparenza, niente backdrop-filter: dietro c'è un fondo quasi
+   uniforme, il blur non si vedrebbe e peserebbe nello scorrimento.
+   I modali restano pieni (.modal non è in elenco). */
+:root{--card-velo:rgba(255,253,248,.78);}            /* = --card al 78% */
+body.dark{--card-velo:rgba(30,18,8,.82);}             /* = --card scuro all'82% */
+.form-card,.debiti-card,.fisse-card,.ricorrenti-card,.anno-card,.chiudi-card,
+.tx,.chiusura-row,.solo-form-card,.solo-gate,.solo-voce,.solo-anno-head{background:var(--card-velo);}
