@@ -9,6 +9,36 @@
 <meta name="apple-mobile-web-app-title" content="La Tana">
 <meta name="theme-color" content="#6B3F1F">
 <title>La Tana degli Orsi</title>
+<script>
+// ── AGGIORNAMENTO ALL'APERTURA ──
+// Deve stare qui, prima di ogni altro script: controllerchange può scattare
+// prima che gli script in fondo al body siano eseguiti.
+// Nessun registration.update(), visibilitychange o intervallo, di proposito:
+// il browser riscarica sw.js a ogni navigazione, e così il ricaricamento
+// resta dentro i primi secondi, quando nessuno ha ancora scritto niente.
+(function(){
+  if(!("serviceWorker" in navigator)) return;
+  // ② controller letto ALL'APERTURA: se non c'era, è la prima installazione → niente reload.
+  //    Dentro il gestore non serve: lì è già cambiato.
+  var avevaController = !!navigator.serviceWorker.controller;
+  // ① un solo reload per caricamento
+  var ricaricato = false;
+  navigator.serviceWorker.addEventListener("controllerchange", function(){
+    if(ricaricato || !avevaController) return;
+    var ora = Date.now();
+    // ③ segno in sessionStorage, 20 s: niente anello fra un caricamento e l'altro
+    try{
+      var prima = +sessionStorage.getItem("tana_autoreload_segno") || 0;
+      if(ora - prima < 20000) return;
+      sessionStorage.setItem("tana_autoreload_segno", String(ora));
+    }catch(e){}
+    ricaricato = true;
+    // Per la riga in Impostazioni: dopo quanti ms dall'apertura, e quando.
+    try{ localStorage.setItem("tana_autoreload", JSON.stringify({ ms: Math.round(performance.now()), ts: ora })); }catch(e){}
+    location.reload();
+  });
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;700&display=swap" rel="stylesheet">
@@ -289,6 +319,9 @@ if("serviceWorker" in navigator){
         <button class="imp-btn" onclick="esportaTxtCSV()">&#x1F4C4; Esporta spese (CSV)</button>
         <div class="imp-note">Backup della cassa comune. L'area Orso Solo non &egrave; inclusa.</div>
       </div>
+
+      <!-- Versione (diagnosi aggiornamento, compilata da aggiornaRigaVersione in ui.js) -->
+      <div class="imp-note" id="imp-versione" style="text-align:center;white-space:pre-line;">La Tana degli Orsi</div>
 
     </div>
   </main>

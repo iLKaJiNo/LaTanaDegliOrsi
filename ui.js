@@ -1445,7 +1445,90 @@ function switchTab(tab) {
 
 // ── IMPOSTAZIONI (schermata da header 🍪) ──
 // Tab senza bottone in tab-bar: vi si accede solo da qui.
-function openImpostazioni(){ switchTab("impostazioni"); }
+function openImpostazioni(){ switchTab("impostazioni"); aggiornaRigaVersione(); }
+
+// ── RIGA VERSIONE (in fondo a Impostazioni) ──
+// Legge il VERDETTO scritto dal service worker a fine installazione ('./__stato'),
+// non solo caches.keys(): il nome di una cache vuota sembra una versione.
+function aggiornaRigaVersione(){
+  var el = document.getElementById("imp-versione");
+  if(!el) return;
+  if(!("caches" in window) || !("serviceWorker" in navigator)){ el.textContent = "La Tana degli Orsi"; return; }
+  var urlStato = new URL("./__stato", document.baseURI).href;
+  caches.keys().then(function(nomi){
+    return Promise.all(nomi.filter(function(n){ return /^tana-/.test(n); }).map(function(n){
+      return caches.open(n).then(function(c){
+        return Promise.all([
+          c.keys(),
+          c.match(urlStato).then(function(r){ return r ? r.json().catch(function(){ return null; }) : null; })
+        ]).then(function(x){
+          return { nome: n, voci: x[0].length - (x[1] ? 1 : 0), stato: x[1] };
+        });
+      });
+    }));
+  }).then(function(cache){
+    return navigator.serviceWorker.getRegistration().then(function(reg){
+      el.textContent = testoVersione(cache, reg);
+    });
+  }).catch(function(){
+    el.textContent = "La Tana degli Orsi · versione non leggibile";
+  });
+}
+
+function _numVer(nome){ var m = /v(\d+)$/.exec(nome || ""); return m ? +m[1] : 0; }
+function _etiVer(nome){ var m = /v(\d+)$/.exec(nome || ""); return m ? "v" + m[1] : nome; }
+function _nomeFile(u){
+  if(u === "./") return "pagina iniziale";
+  if(u.indexOf("supabase") >= 0) return "libreria Supabase";
+  if(u.indexOf("fonts.googleapis") >= 0) return "caratteri Google";
+  return u.replace(/^\.\//, "");
+}
+
+function testoVersione(cache, reg){
+  cache.sort(function(a, b){ return _numVer(b.nome) - _numVer(a.nome); });
+  var buone = cache.filter(function(c){ return c.stato && c.voci > 0; });
+  var attiva = buone[0];
+  var nuova = cache[0];
+  var inArrivo = !!(reg && (reg.installing || reg.waiting ||
+                  (reg.active && !navigator.serviceWorker.controller)));
+  var motivi = [];
+
+  if(!cache.length){
+    motivi.push("installazione fallita: nessuna cache");
+  } else if(!(nuova.stato && nuova.voci > 0) && !(reg && reg.installing)){
+    motivi.push("installazione di " + _etiVer(nuova.nome) + " fallita (" +
+                (nuova.voci ? "verdetto assente" : "cache vuota") + ")");
+  }
+  if(attiva && attiva.stato.mancanti && attiva.stato.mancanti.length){
+    motivi.push("arrivata a metà, mancano: " + attiva.stato.mancanti.map(_nomeFile).join(", "));
+  }
+  if(inArrivo) motivi.push("cache nuova non ancora al comando: lo sarà al prossimo avvio");
+  if(cache.length > 1){
+    motivi.push((cache.length === 2 ? "due" : cache.length) + " cache presenti: " +
+      cache.map(function(c){ return _etiVer(c.nome) + " (" + c.voci + " voci)"; }).join(", "));
+  }
+
+  var riga = "La Tana degli Orsi" + (attiva ? " · " + _etiVer(attiva.nome) : "");
+  if(motivi.length) riga += "\n" + motivi.join("\n");
+
+  // Ricaricamento automatico: due numeri separati, mai uno solo da cui dedurre l'altro.
+  var ar = null;
+  try{ ar = JSON.parse(localStorage.getItem("tana_autoreload") || "null"); }catch(e){}
+  if(ar && ar.ts){
+    var sec = (ar.ms / 1000).toFixed(1).replace(".", ",");
+    riga += "\naggiornata da sola dopo " + sec + " s dall'apertura (" + _tempoFa(ar.ts) + ")";
+  }
+  return riga;
+}
+
+function _tempoFa(ts){
+  var min = Math.floor((Date.now() - ts) / 60000);
+  if(min < 1) return "poco fa";
+  if(min < 60) return min === 1 ? "1 minuto fa" : min + " minuti fa";
+  var ore = Math.floor(min / 60);
+  if(ore < 48) return ore === 1 ? "1 ora fa" : ore + " ore fa";
+  return Math.floor(ore / 24) + " giorni fa";
+}
 
 // ── VISIBILITÀ ORSO SOLO ──
 // Flag in localStorage (default ON): nasconde SOLO il bottone .tab-solo.
