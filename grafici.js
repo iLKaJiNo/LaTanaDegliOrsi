@@ -37,10 +37,10 @@ function openGrafico(vista){
       ?'<span>💰 Totale: <strong>'+eur(totRealeAnnuale)+'</strong></span><br><span>📊 Media/mese: <strong>'+eurInt(mediaRealeAnnuale)+'</strong> <span style="color:var(--text3);">(su '+n+' '+(n===1?'mese':'mesi')+')</span></span>'
       :'';
   }
-  document.getElementById("modal-grafico").classList.add("open");
+  apriSopra("modal-grafico");
   setTimeout(function(){renderGraficoVista();},50);
 }
-function closeGrafico(){document.getElementById("modal-grafico").classList.remove("open");}
+function closeGrafico(){document.getElementById("modal-grafico").classList.remove("open"); passoChiuso("modal-grafico"); }
 
 // Cambia il periodo della vista barre (mesi/anni), sincronizza toggle e titolo, ridisegna.
 function setGraficoPeriodo(p){

@@ -13,10 +13,10 @@ function openNuovoDebito(){
   document.getElementById("debito-prestatore").value="Luca";
   document.getElementById("debito-importo").value="";
   document.getElementById("debito-nota").value="";
-  document.getElementById("modal-debito").classList.add("open");
+  apriSopra("modal-debito");
   setTimeout(function(){document.getElementById("debito-importo").focus();},100);
 }
-function closeNuovoDebito(){document.getElementById("modal-debito").classList.remove("open");}
+function closeNuovoDebito(){document.getElementById("modal-debito").classList.remove("open"); passoChiuso("modal-debito"); }
 
 // ── MODIFICA DEBITO ──
 function openEditDebito(id){
@@ -28,10 +28,10 @@ function openEditDebito(id){
   document.getElementById("ed-nota").value=d.nota||"";
   var dt=d.data?new Date(d.data):new Date();
   document.getElementById("ed-data").value=isNaN(dt)?"":dt.toISOString().slice(0,10);
-  document.getElementById("modal-edit-debito").classList.add("open");
+  apriSopra("modal-edit-debito");
   setTimeout(function(){document.getElementById("ed-importo").focus();},80);
 }
-function closeEditDebito(){document.getElementById("modal-edit-debito").classList.remove("open");editDebitoId=null;}
+function closeEditDebito(){document.getElementById("modal-edit-debito").classList.remove("open");editDebitoId=null; passoChiuso("modal-edit-debito"); }
 async function saveEditDebito(){
   if(!editDebitoId)return;
   var did=editDebitoId;
@@ -146,7 +146,7 @@ function openStoricoRimborsi(id){
   var d=S.debiti.find(function(x){return x.id===id;});if(!d)return;
   var body=document.getElementById("modal-rimborsi-body");
   renderListaRimborsi(id);
-  document.getElementById("modal-storico-rimborsi").classList.add("open");
+  apriSopra("modal-storico-rimborsi");
 }
 
 function renderListaRimborsi(id){
@@ -192,6 +192,7 @@ async function eliminaRimborso(debitoId, index){
   
 function closeStoricoRimborsi(){
   document.getElementById("modal-storico-rimborsi").classList.remove("open");
+  passoChiuso("modal-storico-rimborsi");
 }
 
 // ── RENDER DELLA LISTA DEBITI ──

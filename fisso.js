@@ -56,10 +56,10 @@ function openNuovaFissa(id){
   document.getElementById("fissa-imp").value=f?f.importo:"";
   fissaIconaSel = f ? f.icona : "🏠";
   document.getElementById("fissa-icona-btn").textContent = fissaIconaSel;
-  document.getElementById("modal-fissa").classList.add("open");
+  apriSopra("modal-fissa");
   setTimeout(function(){document.getElementById("fissa-nome").focus();},80);
 }
-function closeNuovaFissa(){document.getElementById("modal-fissa").classList.remove("open");editFissaId=null;}
+function closeNuovaFissa(){document.getElementById("modal-fissa").classList.remove("open");editFissaId=null; passoChiuso("modal-fissa"); }
 
 async function salvaFissa(){
   var nome=document.getElementById("fissa-nome").value.trim();
@@ -312,10 +312,10 @@ function openNuovaRicorrente(id){
   document.getElementById("ricorrente-fine-data").value = (p && p.fineData) ? isoDateInput(p.fineData) : "";
   document.getElementById("ricorrente-fine-volte").value = (p && p.volteRimaste!=null) ? p.volteRimaste : 12;
   ricorrenteToggleRic();
-  document.getElementById("modal-ricorrente").classList.add("open");
+  apriSopra("modal-ricorrente");
   setTimeout(function(){document.getElementById("ricorrente-nome").focus();},80);
 }
-function closeNuovaRicorrente(){document.getElementById("modal-ricorrente").classList.remove("open");editRicorrenteId=null;}
+function closeNuovaRicorrente(){document.getElementById("modal-ricorrente").classList.remove("open");editRicorrenteId=null; passoChiuso("modal-ricorrente"); }
 
 async function salvaRicorrente(){
   var nome=document.getElementById("ricorrente-nome").value.trim();
@@ -402,9 +402,9 @@ function openPagaRicorrente(id){
   var p=S.ricorrenti.find(function(x){return x.id===id;});
   var desc=document.getElementById("paga-ricorrente-desc");
   if(p&&desc) desc.textContent='"'+p.nome+'" — '+eur(p.importo)+". Chi l'ha pagata?";
-  document.getElementById("modal-paga-ricorrente").classList.add("open");
+  apriSopra("modal-paga-ricorrente");
 }
-function closePagaRicorrente(){document.getElementById("modal-paga-ricorrente").classList.remove("open");pagaRicorrenteId=null;}
+function closePagaRicorrente(){document.getElementById("modal-paga-ricorrente").classList.remove("open");pagaRicorrenteId=null; passoChiuso("modal-paga-ricorrente"); }
 
 // Avanza una ricorrente dopo un pagamento (mirror Solo): nuova scadenza,
 // decrementa volteRimaste, conclude (attiva=false) a fine corsa o oltre fineData.

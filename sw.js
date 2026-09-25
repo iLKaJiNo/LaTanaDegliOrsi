@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tana-v95';
+const CACHE_NAME = 'tana-v96';
 
 // ESSENZIALI: se ne manca uno l'installazione DEVE fallire (addAll è tutto-o-niente).
 const ESSENZIALI = [
@@ -75,7 +75,15 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     caches.open(CACHE_NAME).then(c => {
       return c.match(e.request).then(r => {
-        var n = fetch(e.request).then(s => {
+        // Rivalidazione con cache:"reload": senza, la cache HTTP del browser
+        // (GitHub Pages manda max-age) può rimettere una copia vecchia qui dentro,
+        // sopra il file fresco appena installato.
+        // Una richiesta di navigazione non si può ricostruire con opzioni
+        // (TypeError): per quella si riparte dall'indirizzo.
+        var fresca = e.request.mode === 'navigate'
+          ? new Request(e.request.url, { cache: 'reload' })
+          : new Request(e.request, { cache: 'reload' });
+        var n = fetch(fresca).then(s => {
           if(s.status === 200) c.put(e.request, s.clone());
           return s;
         }).catch(() => r);

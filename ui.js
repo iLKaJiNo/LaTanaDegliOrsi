@@ -136,9 +136,9 @@ function openCestino(){
     });
     el.innerHTML=h;
   }
-  document.getElementById("modal-cestino").classList.add("open");
+  apriSopra("modal-cestino");
 }
-function closeCestino(){document.getElementById("modal-cestino").classList.remove("open");}
+function closeCestino(){document.getElementById("modal-cestino").classList.remove("open"); passoChiuso("modal-cestino"); }
 function svuotaCestino(){
   if(!confirm("Svuotare il cestino? Le voci verranno eliminate definitivamente."))return;
   vibra([25,40,25]);
@@ -200,10 +200,10 @@ function openEditTx(id){
   document.getElementById("edit-nota").value=t.nota||"";
   var d=t.data?new Date(t.data):new Date();
   document.getElementById("edit-data").value=isNaN(d)?"":d.toISOString().slice(0,10);
-  document.getElementById("modal-edit-tx").classList.add("open");
+  apriSopra("modal-edit-tx");
   setTimeout(function(){document.getElementById("edit-imp").focus();},80);
 }
-function closeEditTx(){document.getElementById("modal-edit-tx").classList.remove("open");editTxId=null;}
+function closeEditTx(){document.getElementById("modal-edit-tx").classList.remove("open");editTxId=null; passoChiuso("modal-edit-tx"); }
 async function saveEditTx(){
   if(!editTxId)return;
   var txId=editTxId;
@@ -234,10 +234,10 @@ function openCambioPassword(){
   document.getElementById("cp-nuova").value="";
   document.getElementById("cp-conferma").value="";
   document.getElementById("cp-errore").textContent="";
-  document.getElementById("modal-cambio-pw").classList.add("open");
+  apriSopra("modal-cambio-pw");
   setTimeout(function(){document.getElementById("cp-attuale").focus();},80);
 }
-function closeCambioPassword(){document.getElementById("modal-cambio-pw").classList.remove("open");}
+function closeCambioPassword(){document.getElementById("modal-cambio-pw").classList.remove("open"); passoChiuso("modal-cambio-pw"); }
 
 async function confermaCambioPassword(){
   var attuale=document.getElementById("cp-attuale").value;
@@ -419,7 +419,7 @@ function openChiudi(){
       el.innerHTML="";
     }
   }
-  document.getElementById("modal-chiudi").classList.add("open");
+  apriSopra("modal-chiudi");
   setTimeout(function(){document.getElementById("modal-mese").select();},100);
 }
 function closeChiudi(){
@@ -427,6 +427,7 @@ function closeChiudi(){
   // Imp-B: se la chiusura è stata annullata dall'utente (stash presente
   // ma nessuna chiusura in volo), rimetto a posto il mese nuovo.
   if(_chiusuraStash&&!_chiusuraInCorso){rimettiStash();render();}
+  passoChiuso("modal-chiudi");
 }
 
 // chiudi_mese cancella solo gli id archiviati (R-root, 21/09/2026):
@@ -708,9 +709,9 @@ function openStoricoMese(id){
   document.getElementById("modal-storico-body").innerHTML=h;
   document.getElementById("btn-ripristina-da-storico").onclick=function(){closeStoricoMese();openRipristino(id);};
   document.getElementById("btn-pdf-mese").onclick=function(){esportaPDF(id);};
-  document.getElementById("modal-storico-mese").classList.add("open");
+  apriSopra("modal-storico-mese");
 }
-function closeStoricoMese(){document.getElementById("modal-storico-mese").classList.remove("open");}
+function closeStoricoMese(){document.getElementById("modal-storico-mese").classList.remove("open"); passoChiuso("modal-storico-mese"); }
 
 function openRipristino(id){
   var c=S.chiusure.find(function(x){return x.id===id;});if(!c)return;
@@ -729,9 +730,9 @@ function openRipristino(id){
   document.getElementById("modal-rip-val").textContent=eurInt(c.saldo);
   document.getElementById("modal-rip-val").className="mval "+saldoCls(c.saldo);
   document.getElementById("modal-rip-sub").textContent=saldoDesc(c.saldo);
-  document.getElementById("modal-ripristino").classList.add("open");
+  apriSopra("modal-ripristino");
 }
-function closeRipristino(){document.getElementById("modal-ripristino").classList.remove("open");ripristinoTarget=null;}
+function closeRipristino(){document.getElementById("modal-ripristino").classList.remove("open");ripristinoTarget=null; passoChiuso("modal-ripristino"); }
 
 async function confermaRipristino(){
   if(!ripristinoTarget)return;
@@ -819,9 +820,9 @@ function openArchiviCestino(){
     });
     el.innerHTML=h;
   }
-  document.getElementById("modal-archivi-cestino").classList.add("open");
+  apriSopra("modal-archivi-cestino");
 }
-function closeArchiviCestino(){document.getElementById("modal-archivi-cestino").classList.remove("open");}
+function closeArchiviCestino(){document.getElementById("modal-archivi-cestino").classList.remove("open"); passoChiuso("modal-archivi-cestino"); }
 function svuotaArchiviCestino(){
   if(!confirm("Svuotare il cestino archivi? I mesi verranno eliminati definitivamente."))return;
   vibra([25,40,25]);
@@ -1422,7 +1423,9 @@ function initTabSwipe(){
 // ── TAB BAR ──
 var currentTab = "tana";
 
-function switchTab(tab) {
+// mostraTab = pura pittura della scheda, nessuna cronologia.
+// La navigazione (tasto indietro) passa da switchTab, più sotto.
+function mostraTab(tab) {
   currentTab = tab;
   document.querySelectorAll(".tab-page").forEach(function(p) {
     p.classList.toggle("active", p.dataset.tab === tab);
@@ -1443,9 +1446,159 @@ function switchTab(tab) {
   }
 }
 
+// ═══════════════════════════════════════════════════════════
+// ── CRONOLOGIA (tasto indietro) ──
+// Regola che decide tutto: premere indietro deve SEMPRE cambiare
+// qualcosa che si vede. Mai un passo a vuoto.
+// Stati: {scheda} per una scheda, {scheda, sopra: id} per un modale aperto.
+// Login e PIN dell'Orso Solo NON entrano nella cronologia.
+// ═══════════════════════════════════════════════════════════
+
+// Registro id modale → SUA funzione di chiusura. Il tasto indietro chiude
+// sempre passando da qui, mai togliendo la classe a mano: molte chiusure
+// fanno altro (stash della chiusura mese, id in modifica...).
+var CHIUSURE_MODALI = {
+  "modal-cestino":             function(){ closeCestino(); },
+  "modal-edit-tx":             function(){ closeEditTx(); },
+  "modal-cambio-pw":           function(){ closeCambioPassword(); },
+  "modal-chiudi":              function(){ closeChiudi(); },
+  "modal-storico-mese":        function(){ closeStoricoMese(); },
+  "modal-ripristino":          function(){ closeRipristino(); },
+  "modal-archivi-cestino":     function(){ closeArchiviCestino(); },
+  "modal-guida":               function(){ closeGuida(); },
+  "modal-benvenuto":           function(){ chiudiBenvenuto(); },
+  "modal-calc":                function(){ closeCalc(); },
+  "modal-grafico":             function(){ closeGrafico(); },
+  "modal-debito":              function(){ closeNuovoDebito(); },
+  "modal-edit-debito":         function(){ closeEditDebito(); },
+  "modal-storico-rimborsi":    function(){ closeStoricoRimborsi(); },
+  "modal-fissa":               function(){ closeNuovaFissa(); },
+  "modal-ricorrente":          function(){ closeNuovaRicorrente(); },
+  "modal-paga-ricorrente":     function(){ closePagaRicorrente(); },
+  "modal-solo-edit-voce":      function(){ closeSoloEditVoce(); },
+  "modal-solo-edit-ric":       function(){ closeSoloEditRic(); },
+  "modal-solo-cestino":        function(){ closeSoloCestino(); },
+  "modal-solo-cat":            function(){ closeSoloCategorie(); },
+  "modal-solo-chiusura":       function(){ closeSoloChiusura(); },
+  "modal-ripristino-solo":     function(){ closeSoloRipristino(); },
+  "modal-solo-grafanno":       function(){ closeSoloGrafanno(); },
+  "modal-solo-categorie":      function(){ closeSoloCategorieAnno(); },
+  "modal-solo-categorie-anni": function(){ closeSoloCategorieAnni(); },
+  "modal-solo-chiudi":         function(){ closeSoloChiudi(); }
+};
+
+var _navigando = false;      // alzata mentre la cronologia chiude modali: passoChiuso tace
+var _backInSospeso = null;   // timer del back rimandato da passoChiuso
+var _popDaCodice = false;    // il prossimo popstate è il back di passoChiuso, non dell'utente
+
+function _modaliAperti(){
+  var ids = [];
+  document.querySelectorAll(".modal-overlay.open").forEach(function(m){ ids.push(m.id); });
+  return ids;
+}
+// Chiude i modali aperti con la loro funzione, senza che tocchino la cronologia.
+function _chiudiModali(ids){
+  _navigando = true;
+  try{
+    ids.forEach(function(id){
+      var f = CHIUSURE_MODALI[id];
+      if(f) f();
+      else { console.warn("Modale senza chiusura registrata:", id); document.getElementById(id).classList.remove("open"); }
+    });
+  } finally { _navigando = false; }
+}
+function _annullaBack(){
+  if(_backInSospeso){ clearTimeout(_backInSospeso); _backInSospeso = null; }
+}
+function _dipingi(tab){
+  mostraTab(tab);
+  if(tab === "impostazioni") aggiornaRigaVersione();
+}
+
+// Avvio (da appStart, dopo il login): la scheda si decide PRIMA del replaceState,
+// così un ricaricamento (anche quello automatico del service worker) resta dov'era.
+function initCronologia(){
+  var st = history.state;
+  var scheda = (st && st.scheda) || "tana";
+  history.replaceState({ scheda: scheda }, "");
+  if(scheda !== currentTab) _dipingi(scheda);
+  window.addEventListener("popstate", onPopState);
+}
+
+function switchTab(tab){
+  var aperti = _modaliAperti();
+  var sopra = aperti.length > 0 || !!_backInSospeso;
+  if(tab === currentTab){
+    // Stessa scheda: se c'è un modale lo chiudo (il suo passo se ne va con lui),
+    // altrimenti niente, nemmeno un passo.
+    aperti.forEach(function(id){ var f = CHIUSURE_MODALI[id]; if(f) f(); });
+    return;
+  }
+  if(sopra){
+    // La scheda prende il posto del passo del modale.
+    _annullaBack();
+    _chiudiModali(aperti);
+    history.replaceState({ scheda: tab }, "");
+  } else {
+    history.pushState({ scheda: tab }, "");
+  }
+  _dipingi(tab);
+}
+
+// Al posto di ogni classList.add("open") sui modali.
+function apriSopra(id){
+  var st = history.state || {};
+  var giaSopra = _modaliAperti().length > 0 || !!_backInSospeso;
+  _annullaBack();
+  if(giaSopra) history.replaceState({ scheda: currentTab, sopra: id }, "");       // modale da modale
+  else if(st.sopra !== id) history.pushState({ scheda: currentTab, sopra: id }, "");
+  document.getElementById(id).classList.add("open");
+}
+
+// Una riga in fondo a ogni funzione di chiusura: se il modale si chiude con la
+// crocetta, toccando fuori o dal codice, il suo passo non deve restare appeso.
+// Il back è rimandato di un giro: se subito dopo si apre un altro modale
+// (chiudi-poi-apri) o si cambia scheda, il passo viene riusato invece.
+function passoChiuso(id){
+  if(_navigando) return;
+  var st = history.state;
+  if(!st || st.sopra !== id) return;
+  var altri = _modaliAperti();
+  if(altri.length){ history.replaceState({ scheda: st.scheda, sopra: altri[altri.length-1] }, ""); return; }
+  if(_backInSospeso) return;
+  _backInSospeso = setTimeout(function(){
+    _backInSospeso = null;
+    var s = history.state;
+    if(!s || !s.sopra || _modaliAperti().length) return;
+    _popDaCodice = true;
+    history.back();
+  }, 0);
+}
+
+function onPopState(e){
+  var st = e.state || { scheda: "tana" };
+  if(_popDaCodice){
+    _popDaCodice = false;
+    if(st.scheda && st.scheda !== currentTab) _dipingi(st.scheda);
+    return;
+  }
+  _annullaBack();
+  var aperti = _modaliAperti();
+  var cambiato = false;
+  // Passo di un modale che non è più aperto (es. dopo un ricaricamento): vale come scheda.
+  if(st.sopra && aperti.indexOf(st.sopra) < 0){
+    st = { scheda: st.scheda };
+    history.replaceState(st, "");
+  }
+  if(!st.sopra && aperti.length){ _chiudiModali(aperti); cambiato = true; }
+  if(st.scheda && st.scheda !== currentTab){ _dipingi(st.scheda); cambiato = true; }
+  // Passo a vuoto (stessa scheda, niente da chiudere): lo salto.
+  if(!cambiato) history.back();
+}
+
 // ── IMPOSTAZIONI (schermata da header 🍪) ──
 // Tab senza bottone in tab-bar: vi si accede solo da qui.
-function openImpostazioni(){ switchTab("impostazioni"); aggiornaRigaVersione(); }
+function openImpostazioni(){ switchTab("impostazioni"); }
 
 // ── RIGA VERSIONE (in fondo a Impostazioni) ──
 // Legge il VERDETTO scritto dal service worker a fine installazione ('./__stato'),
@@ -1554,7 +1707,7 @@ function toggleSoloVis(){
 // openGuida() apre la guida; openGuida("cassa") apre direttamente quella sezione.
 function openGuida(sezione){
   var m=document.getElementById("modal-guida");
-  m.classList.add("open");
+  apriSopra("modal-guida");
   // Chiudo tutte le sezioni, poi apro quella richiesta
   m.querySelectorAll("details.guida-sez").forEach(function(d){d.open=false;});
   if(sezione){
@@ -1565,7 +1718,7 @@ function openGuida(sezione){
     }
   }
 }
-function closeGuida(){document.getElementById("modal-guida").classList.remove("open");}
+function closeGuida(){document.getElementById("modal-guida").classList.remove("open"); passoChiuso("modal-guida"); }
 
 // ── BENVENUTO (slide al primo accesso) ──
 var BENVENUTO_KEY="tana_benvenuto_visto";
@@ -1580,7 +1733,7 @@ var _bvIdx=0;
 function avviaBenvenuto(){
   _bvIdx=0;
   bvMostra();
-  document.getElementById("modal-benvenuto").classList.add("open");
+  apriSopra("modal-benvenuto");
 }
 function bvMostra(){
   var s=_bvSlides[_bvIdx];
@@ -1607,6 +1760,7 @@ function benvenutoAvanti(){
 function chiudiBenvenuto(){
   document.getElementById("modal-benvenuto").classList.remove("open");
   try{localStorage.setItem(BENVENUTO_KEY,"1");}catch(e){}
+  passoChiuso("modal-benvenuto");
 }
 // Chiamata all'avvio: mostra il benvenuto solo se mai visto su questo dispositivo
 function maybeBenvenuto(){
@@ -1632,9 +1786,9 @@ function openCalc(targetId){
   _calcCur=(v && !isNaN(parseFloat(v))) ? String(parseFloat(v)) : "0";
   _calcFresh=true;
   calcRender();
-  document.getElementById("modal-calc").classList.add("open");
+  apriSopra("modal-calc");
 }
-function closeCalc(){document.getElementById("modal-calc").classList.remove("open");}
+function closeCalc(){document.getElementById("modal-calc").classList.remove("open"); passoChiuso("modal-calc"); }
 
 function calcDigit(d){
   if(_calcFresh){ _calcCur=(d==="."?"0.":d); _calcFresh=false; }

@@ -17,6 +17,7 @@ function appStart(){
   initPawBg();
   applySoloVis();
   initTabSwipe();
+  initCronologia();   // scheda di partenza + tasto indietro: prima di ogni modale (benvenuto)
   maybeBenvenuto();
   caricaSoloProfili();
   // Ripristino l'ultimo stato salvato per mostrare subito qualcosa
