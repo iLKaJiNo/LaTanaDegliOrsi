@@ -211,17 +211,30 @@ async function sha256(str){
 }
 
 // ── BACKUP / EXPORT (data-ownership, tutto lato client) ──
-// Esporta un backup MANUALE e COMPLETO della cassa comune in un file
-// JSON scaricabile. Nessuna scrittura su DB, nessuna chiamata di rete:
-// serializza lo stato globale S già caricato. Funziona anche da file://.
-// L'area Orso Solo (PIN-gated) NON è inclusa: va gestita a parte.
+// Esporta un backup MANUALE della cassa comune in un file JSON scaricabile.
+// Nessuna scrittura su DB, nessuna chiamata di rete: serializza lo stato
+// globale S già caricato. Funziona anche da file://.
+// Area Orso Solo: inclusa SOLO se sbloccata in questa sessione, e solo quella
+// dell'orso sbloccato (soloData). L'altro orso non è in memoria e non va nel
+// file. Mai pin_hash né soloProfili: un PIN si rimposta in dieci secondi.
+function _backupConSolo(){ return !!(soloSbloccato && soloChi); }
 function esportaBackupJSON(){
+  var conSolo=_backupConSolo();
   var obj={
-    _schema:"tana-backup-v1",
+    _schema:"tana-backup-v2",
     _exportedAt:new Date().toISOString(),
     app:"La Tana degli Orsi",
-    _note:"Backup della sola cassa comune. L'area Orso Solo non è inclusa.",
+    _note:conSolo
+      ? "Cassa comune + area Orso Solo di "+soloChi+". L'area dell'altro orso non è inclusa."
+      : "Backup della sola cassa comune. Per includere anche l'area Orso Solo, sbloccala prima di esportare.",
     dati:S
+  };
+  if(conSolo) obj.solo={
+    proprietario:soloChi,
+    voci:soloData.voci,
+    ricorrenti:soloData.ricorrenti,
+    chiusure:soloData.chiusure,
+    categorie:soloData.categorie
   };
   var blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"});
   var d=new Date();
@@ -229,12 +242,22 @@ function esportaBackupJSON(){
   var url=URL.createObjectURL(blob);
   var a=document.createElement("a");
   a.href=url;
-  a.download="tana-backup-"+ymd+".json";
+  a.download="tana-backup-"+(conSolo?soloChi+"-":"")+ymd+".json";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   dot("ok","Backup esportato 🐾");
+}
+
+// Nota sotto il bottone di backup in Impostazioni: dice cosa finirà nel file
+// ADESSO. Aggiornata a ogni arrivo su Impostazioni (_dipingi in ui.js).
+function aggiornaNotaBackup(){
+  var el=document.getElementById("imp-nota-backup");
+  if(!el) return;
+  el.textContent=_backupConSolo()
+    ? "Include la cassa comune e l'area Orso Solo di "+soloChi+", sbloccata ora. L'area dell'altro orso non è inclusa; è comunque nel backup automatico notturno."
+    : "Include la cassa comune. L'area Orso Solo è inclusa solo se la sblocchi prima di esportare (quella dell'orso sbloccato); è comunque nel backup automatico notturno.";
 }
 
 // ── EXPORT CSV (storico spese mese corrente, human-readable) ──

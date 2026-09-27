@@ -1516,7 +1516,7 @@ function _annullaBack(){
 }
 function _dipingi(tab){
   mostraTab(tab);
-  if(tab === "impostazioni") aggiornaRigaVersione();
+  if(tab === "impostazioni"){ aggiornaRigaVersione(); aggiornaNotaBackup(); }
 }
 
 // Avvio (da appStart, dopo il login): la scheda si decide PRIMA del replaceState,
