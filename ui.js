@@ -1543,6 +1543,9 @@ function switchTab(tab){
     _annullaBack();
     _chiudiModali(aperti);
     history.replaceState({ scheda: tab }, "");
+  } else if(navigator.userActivation && !navigator.userActivation.isActive){
+    // Rete: senza gesto utente Chrome salterebbe la voce all'indietro, quindi non la lascio.
+    history.replaceState({ scheda: tab }, "");
   } else {
     history.pushState({ scheda: tab }, "");
   }

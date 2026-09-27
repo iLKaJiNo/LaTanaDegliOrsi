@@ -57,6 +57,8 @@
 
 /* ── MAIN ── */
 .main{padding:20px 16px 80px;max-width:1000px;margin:0 auto;width:100%;min-height:100%;}
+/* Swipe fra schede: senza pan-y Chrome si prende il gesto orizzontale, non lo conta come gesto utente e l'indietro salta le voci di cronologia. Non togliere. */
+.main{touch-action:pan-y pinch-zoom;}
 @media(min-width:700px) and (min-height:600px){
   .main{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto auto auto 1fr;column-gap:20px;padding:28px 24px 60px;}
   .saldo-card{grid-column:1/-1;grid-row:1;}
