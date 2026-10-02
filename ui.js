@@ -1496,9 +1496,12 @@ var CHIUSURE_MODALI = {
   "modal-solo-chiudi":         function(){ closeSoloChiudi(); }
 };
 
-// _navigando: false | true mentre la cronologia chiude modali (passoChiuso tace)
-// | {livello, scheda} mentre un history.go di switchTab è in volo: il popstate
-// che ne consegue dipinge la scheda e riscrive il passo (history.go è asincrono).
+// _navigando NON è solo booleana, ha tre valori:
+//   false              → riposo: passoChiuso e popstate lavorano normalmente
+//   true               → _chiudiModali sta chiudendo modali: passoChiuso tace
+//   {livello, scheda}  → un history.go di switchTab è in volo (è asincrono):
+//                        passoChiuso tace, e il popstate che arriva riscrive
+//                        il passo e dipinge la scheda, poi la rimette a false
 var _navigando = false;
 var _backInSospeso = null;   // timer del back rimandato da passoChiuso
 var _popDaCodice = false;    // il prossimo popstate è il back di passoChiuso, non dell'utente
@@ -1530,6 +1533,9 @@ function _annullaBack(){
   if(_backInSospeso){ clearTimeout(_backInSospeso); _backInSospeso = null; }
 }
 function _dipingi(tab){
+  // Un passo verso il Solo scritto prima che l'orso lo nascondesse: al suo posto
+  // la partenza. I passi già scritti non si riscrivono, si corregge il disegno.
+  if(tab === "solo" && !soloVisibile()) tab = _partenza !== "solo" ? _partenza : "tana";
   mostraTab(tab);
   if(tab === "impostazioni"){ aggiornaRigaVersione(); aggiornaNotaBackup(); }
 }
@@ -1539,6 +1545,15 @@ function _livello(st){
   if(!st) return 0;
   if(typeof st.livello === "number") return st.livello;
   return (st.scheda && st.scheda !== _partenza ? 1 : 0) + (st.sopra ? 1 : 0);
+}
+
+// Quanti passi ci sono davvero sotto quello corrente (Navigation API dove c'è,
+// altrimenti solo "nessuno" se la cronologia ha una voce sola). Un livello più
+// alto di così è una stima sbagliata: un history.go oltre l'inizio non arriva
+// mai al popstate e lascerebbe _navigando appesa.
+function _passiSotto(){
+  if(window.navigation && navigation.currentEntry) return navigation.currentEntry.index;
+  return history.length > 1 ? Infinity : 0;
 }
 
 // Avvio (da appStart, dopo il login): la scheda si decide PRIMA del replaceState,
@@ -1551,7 +1566,7 @@ function initCronologia(){
   if(st && st.scheda){ try{ partenza = sessionStorage.getItem(PARTENZA_KEY); }catch(e){} }
   _partenza = partenza || (SCHEDE_BARRA.indexOf(scheda) >= 0 ? scheda : "tana");
   try{ sessionStorage.setItem(PARTENZA_KEY, _partenza); }catch(e){}
-  var livello = st && st.scheda ? _livello(st) : 0;
+  var livello = st && st.scheda ? Math.min(_livello(st), _passiSotto()) : 0;
   // All'avvio nessun modale è aperto: un "sopra" rimasto nello stato si riscrive
   // senza. Quel passo però copia la scheda del passo sotto (un modale si apre
   // sempre sopra la sua scheda): lo tolgo subito, così il passo a vuoto non nasce.
@@ -1559,7 +1574,9 @@ function initCronologia(){
   history.replaceState({ livello: livello, scheda: scheda }, "");
   if(scheda !== currentTab) _dipingi(scheda);
   window.addEventListener("popstate", onPopState);
-  if(sopraVecchio && livello > 0){ _popDaCodice = true; history.back(); }
+  // Solo se sotto c'è un passo: con una voce sola quel back chiuderebbe l'app
+  // all'avvio. Meglio un primo indietro che non cambia niente.
+  if(sopraVecchio && livello > 0 && history.length > 1){ _popDaCodice = true; history.back(); }
 }
 
 // Unico punto da cui si cambia scheda.
@@ -1593,6 +1610,7 @@ function switchTab(tab, modo){
     else history.pushState({ livello: livello + 1, scheda: tab }, "");
   } else {
     var dest = tab === _partenza ? 0 : 1;
+    if(livello > _passiSotto()) livello = Math.max(dest, _passiSotto());   // stima sbagliata: niente go a vuoto
     if(livello > dest){
       // Torno indietro fino al livello giusto: i passi sopra devono SPARIRE,
       // o l'indietro successivo non esce. Dipinge il popstate che ne consegue.
@@ -1678,6 +1696,12 @@ function onPopState(e){
 // Tab senza bottone in tab-bar: vi si accede solo da qui. È un salto dal
 // contenuto (livello + 1): indietro riporta alla scheda da cui si è arrivati.
 function openImpostazioni(){ switchTab("impostazioni", "salto"); }
+// "← Torna" fa quello che fa l'indietro: dal salto si torna da dove si è venuti.
+// A livello 0 (Impostazioni dopo un ricaricamento, livello stimato) va alla partenza.
+function tornaDaImpostazioni(){
+  if(_livello(history.state) > 0) history.back();
+  else switchTab(_partenza);
+}
 
 // ── RIGA VERSIONE (in fondo a Impostazioni) ──
 // Legge il VERDETTO scritto dal service worker a fine installazione ('./__stato'),
