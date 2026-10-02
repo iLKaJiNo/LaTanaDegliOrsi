@@ -1450,13 +1450,22 @@ function mostraTab(tab) {
 // ── CRONOLOGIA (tasto indietro) ──
 // Regola che decide tutto: premere indietro deve SEMPRE cambiare
 // qualcosa che si vede. Mai un passo a vuoto.
-// Stati: {scheda} per una scheda, {scheda, sopra: id} per un modale aperto.
+// Indietro CHIUDE quello che è aperto, poi RIPORTA alla scheda di
+// partenza, poi ESCE: da qualunque scheda della barra, al massimo due
+// pressioni per uscire.
+// Stati: {livello, scheda, sopra?}. Livello 0 = scheda di partenza,
+// 1 = un'altra scheda della barra, 2+ = ogni cosa aperta sopra (modali)
+// e ogni salto dal contenuto (Impostazioni, Cambia PIN).
 // Login e PIN dell'Orso Solo NON entrano nella cronologia.
 // ═══════════════════════════════════════════════════════════
 
-// Registro id modale → SUA funzione di chiusura. Il tasto indietro chiude
-// sempre passando da qui, mai togliendo la classe a mano: molte chiusure
-// fanno altro (stash della chiusura mese, id in modifica...).
+// Schede della barra in basso: tutto il resto (Impostazioni) è un salto.
+var SCHEDE_BARRA = ["tana", "archivio", "fisso", "lista", "solo"];
+// Scheda con cui l'app si è aperta: ricordata per la sessione, non ricalcolata,
+// o dopo un ricaricamento il conto dei livelli non torna.
+var PARTENZA_KEY = "tana_partenza";
+var _partenza = "tana";
+
 var CHIUSURE_MODALI = {
   "modal-cestino":             function(){ closeCestino(); },
   "modal-edit-tx":             function(){ closeEditTx(); },
@@ -1487,12 +1496,17 @@ var CHIUSURE_MODALI = {
   "modal-solo-chiudi":         function(){ closeSoloChiudi(); }
 };
 
-var _navigando = false;      // alzata mentre la cronologia chiude modali: passoChiuso tace
+// _navigando: false | true mentre la cronologia chiude modali (passoChiuso tace)
+// | {livello, scheda} mentre un history.go di switchTab è in volo: il popstate
+// che ne consegue dipinge la scheda e riscrive il passo (history.go è asincrono).
+var _navigando = false;
 var _backInSospeso = null;   // timer del back rimandato da passoChiuso
 var _popDaCodice = false;    // il prossimo popstate è il back di passoChiuso, non dell'utente
-// Salti consecutivi di passi a vuoto (max 2): meglio un indietro che non cambia
-// niente che un'app che arretra da sola fino a chiudersi. Si azzera a ogni
-// popstate che cambia qualcosa di visibile.
+// Salti consecutivi di passi a vuoto (max 2). Con i livelli e la riscrittura
+// all'avvio non dovrebbe scattare quasi mai: resta la rete contro i casi non
+// previsti, perché meglio un indietro che non cambia niente che un'app che
+// arretra da sola fino a chiudersi. Si azzera a ogni popstate che cambia
+// qualcosa di visibile.
 var _saltiVuoti = 0;
 
 function _modaliAperti(){
@@ -1502,6 +1516,7 @@ function _modaliAperti(){
 }
 // Chiude i modali aperti con la loro funzione, senza che tocchino la cronologia.
 function _chiudiModali(ids){
+  var prima = _navigando;
   _navigando = true;
   try{
     ids.forEach(function(id){
@@ -1509,7 +1524,7 @@ function _chiudiModali(ids){
       if(f) f();
       else { console.warn("Modale senza chiusura registrata:", id); document.getElementById(id).classList.remove("open"); }
     });
-  } finally { _navigando = false; }
+  } finally { _navigando = prima; }
 }
 function _annullaBack(){
   if(_backInSospeso){ clearTimeout(_backInSospeso); _backInSospeso = null; }
@@ -1518,47 +1533,88 @@ function _dipingi(tab){
   mostraTab(tab);
   if(tab === "impostazioni"){ aggiornaRigaVersione(); aggiornaNotaBackup(); }
 }
+// Livello di un passo. I passi senza numero vengono dalla v99 (prima apertura
+// dopo l'aggiornamento): lo stimo dalla scheda.
+function _livello(st){
+  if(!st) return 0;
+  if(typeof st.livello === "number") return st.livello;
+  return (st.scheda && st.scheda !== _partenza ? 1 : 0) + (st.sopra ? 1 : 0);
+}
 
 // Avvio (da appStart, dopo il login): la scheda si decide PRIMA del replaceState,
 // così un ricaricamento (anche quello automatico del service worker) resta dov'era.
 function initCronologia(){
   var st = history.state;
   var scheda = (st && st.scheda) || "tana";
-  history.replaceState({ scheda: scheda }, "");
+  var partenza = null;
+  // Partenza riletta solo se è un ricaricamento (c'è uno stato): un passo nuovo è lui la partenza.
+  if(st && st.scheda){ try{ partenza = sessionStorage.getItem(PARTENZA_KEY); }catch(e){} }
+  _partenza = partenza || (SCHEDE_BARRA.indexOf(scheda) >= 0 ? scheda : "tana");
+  try{ sessionStorage.setItem(PARTENZA_KEY, _partenza); }catch(e){}
+  var livello = st && st.scheda ? _livello(st) : 0;
+  // All'avvio nessun modale è aperto: un "sopra" rimasto nello stato si riscrive
+  // senza. Quel passo però copia la scheda del passo sotto (un modale si apre
+  // sempre sopra la sua scheda): lo tolgo subito, così il passo a vuoto non nasce.
+  var sopraVecchio = !!(st && st.sopra);
+  history.replaceState({ livello: livello, scheda: scheda }, "");
   if(scheda !== currentTab) _dipingi(scheda);
   window.addEventListener("popstate", onPopState);
+  if(sopraVecchio && livello > 0){ _popDaCodice = true; history.back(); }
 }
 
-function switchTab(tab){
+// Unico punto da cui si cambia scheda.
+//   modo "salto"       → livello + 1 (Impostazioni, Cambia PIN): indietro torna da dove si era
+//   modo "sostituisci" → riscrive il passo corrente (la scheda sparisce sotto i piedi)
+//   nessun modo        → scheda della barra: partenza = livello 0, le altre livello 1
+function switchTab(tab, modo){
   var aperti = _modaliAperti();
-  var sopra = aperti.length > 0 || !!_backInSospeso;
   if(tab === currentTab){
     // Stessa scheda: se c'è un modale lo chiudo (il suo passo se ne va con lui),
     // altrimenti niente, nemmeno un passo.
     aperti.forEach(function(id){ var f = CHIUSURE_MODALI[id]; if(f) f(); });
     return;
   }
-  if(sopra){
-    // La scheda prende il posto del passo del modale.
-    _annullaBack();
-    _chiudiModali(aperti);
-    history.replaceState({ scheda: tab }, "");
-  } else if(navigator.userActivation && !navigator.userActivation.isActive){
-    // Rete: senza gesto utente Chrome salterebbe la voce all'indietro, quindi non la lascio.
-    history.replaceState({ scheda: tab }, "");
+  if(!modo && SCHEDE_BARRA.indexOf(tab) < 0) modo = "salto";
+  var st = history.state || {};
+  var livello = _livello(st);
+  // Passo di un modale (aperto o col back in sospeso): la scheda ne prende il posto.
+  var sopra = !!st.sopra;
+  var base = sopra ? livello - 1 : livello;   // livello della scheda sotto il modale
+  _annullaBack();
+  if(aperti.length) _chiudiModali(aperti);
+  // Rete: senza gesto utente Chrome salterebbe la voce all'indietro, quindi non la lascio.
+  var senzaGesto = navigator.userActivation && !navigator.userActivation.isActive;
+
+  if(modo === "sostituisci"){
+    history.replaceState({ livello: base, scheda: tab }, "");
+  } else if(modo === "salto"){
+    if(sopra) history.replaceState({ livello: livello, scheda: tab }, "");
+    else if(senzaGesto) history.replaceState({ livello: livello, scheda: tab }, "");
+    else history.pushState({ livello: livello + 1, scheda: tab }, "");
   } else {
-    history.pushState({ scheda: tab }, "");
+    var dest = tab === _partenza ? 0 : 1;
+    if(livello > dest){
+      // Torno indietro fino al livello giusto: i passi sopra devono SPARIRE,
+      // o l'indietro successivo non esce. Dipinge il popstate che ne consegue.
+      _navigando = { livello: dest, scheda: tab };
+      history.go(dest - livello);
+      return;
+    }
+    if(livello === dest || senzaGesto) history.replaceState({ livello: livello, scheda: tab }, "");
+    else history.pushState({ livello: 1, scheda: tab }, "");
   }
   _dipingi(tab);
 }
 
 // Al posto di ogni classList.add("open") sui modali.
-function apriSopra(id){
-  var st = history.state || {};
-  var giaSopra = _modaliAperti().length > 0 || !!_backInSospeso;
-  _annullaBack();
-  if(giaSopra) history.replaceState({ scheda: currentTab, sopra: id }, "");       // modale da modale
-  else if(st.sopra !== id) history.pushState({ scheda: currentTab, sopra: id }, "");
+// senzaPasso: si apre senza toccare la cronologia (benvenuto all'avvio, prima di ogni tocco).
+function apriSopra(id, senzaPasso){
+  if(!senzaPasso){
+    var st = history.state || {};
+    _annullaBack();
+    if(st.sopra) history.replaceState({ livello: _livello(st), scheda: currentTab, sopra: id }, "");   // modale da modale
+    else history.pushState({ livello: _livello(st) + 1, scheda: currentTab, sopra: id }, "");
+  }
   document.getElementById(id).classList.add("open");
 }
 
@@ -1571,7 +1627,7 @@ function passoChiuso(id){
   var st = history.state;
   if(!st || st.sopra !== id) return;
   var altri = _modaliAperti();
-  if(altri.length){ history.replaceState({ scheda: st.scheda, sopra: altri[altri.length-1] }, ""); return; }
+  if(altri.length){ history.replaceState({ livello: _livello(st), scheda: st.scheda, sopra: altri[altri.length-1] }, ""); return; }
   if(_backInSospeso) return;
   _backInSospeso = setTimeout(function(){
     _backInSospeso = null;
@@ -1583,7 +1639,18 @@ function passoChiuso(id){
 }
 
 function onPopState(e){
-  var st = e.state || { scheda: "tana" };
+  var st = e.state || { livello: 0, scheda: _partenza };
+  if(_navigando && typeof _navigando === "object"){
+    // Arrivo di un history.go di switchTab: riscrivo il passo e dipingo qui.
+    var dest = _navigando;
+    _navigando = false;
+    history.replaceState({ livello: dest.livello, scheda: dest.scheda }, "");
+    var resto = _modaliAperti();
+    if(resto.length) _chiudiModali(resto);
+    if(dest.scheda !== currentTab) _dipingi(dest.scheda);
+    _saltiVuoti = 0;
+    return;
+  }
   if(_popDaCodice){
     _popDaCodice = false;
     if(st.scheda && st.scheda !== currentTab){ _dipingi(st.scheda); _saltiVuoti = 0; }
@@ -1592,11 +1659,12 @@ function onPopState(e){
   _annullaBack();
   var aperti = _modaliAperti();
   var cambiato = false;
-  // Passo di un modale che non è più aperto (es. dopo un ricaricamento): vale come scheda.
+  // Passo di un modale che non è più aperto: si riscrive senza "sopra".
   if(st.sopra && aperti.indexOf(st.sopra) < 0){
-    st = { scheda: st.scheda };
+    st = { livello: _livello(st), scheda: st.scheda };
     history.replaceState(st, "");
   }
+  // Tutto quello che sta sopra il passo d'arrivo si chiude.
   if(!st.sopra && aperti.length){ _chiudiModali(aperti); cambiato = true; }
   if(st.scheda && st.scheda !== currentTab){ _dipingi(st.scheda); cambiato = true; }
   // Passo a vuoto (stessa scheda, niente da chiudere): lo salto.
@@ -1607,8 +1675,9 @@ function onPopState(e){
 }
 
 // ── IMPOSTAZIONI (schermata da header 🍪) ──
-// Tab senza bottone in tab-bar: vi si accede solo da qui.
-function openImpostazioni(){ switchTab("impostazioni"); }
+// Tab senza bottone in tab-bar: vi si accede solo da qui. È un salto dal
+// contenuto (livello + 1): indietro riporta alla scheda da cui si è arrivati.
+function openImpostazioni(){ switchTab("impostazioni", "salto"); }
 
 // ── RIGA VERSIONE (in fondo a Impostazioni) ──
 // Legge il VERDETTO scritto dal service worker a fine installazione ('./__stato'),
@@ -1709,8 +1778,9 @@ function toggleSoloVis(){
   var on = !soloVisibile();
   localStorage.setItem(SOLO_VIS_KEY, on ? "1" : "0");
   applySoloVis();
-  // Guard: se nascondo mentre sono dentro l'Orso Solo, torno alla Tana
-  if(!on && currentTab === "solo") switchTab("tana");
+  // Guard: se nascondo mentre sono dentro l'Orso Solo, torno alla Tana.
+  // La scheda sparisce sotto i piedi: riscrivo il passo, non ne aggiungo uno.
+  if(!on && currentTab === "solo") switchTab("tana", "sostituisci");
 }
 
 // ── GUIDA DELLA TANA ──
@@ -1740,10 +1810,21 @@ var _bvSlides=[
 ];
 var _bvIdx=0;
 
-function avviaBenvenuto(){
+// senzaPasso (avvio): Chrome salta i passi messi da una pagina mai toccata, quindi
+// il benvenuto si apre senza passo e lo prende al primo tocco sopra di lui.
+// Prima di quel tocco, indietro esce dall'app: accettato.
+function avviaBenvenuto(senzaPasso){
   _bvIdx=0;
   bvMostra();
-  apriSopra("modal-benvenuto");
+  var m=document.getElementById("modal-benvenuto");
+  m.removeEventListener("pointerup",_bvPrimoTocco);
+  if(senzaPasso) m.addEventListener("pointerup",_bvPrimoTocco,{once:true});
+  apriSopra("modal-benvenuto",senzaPasso);
+}
+function _bvPrimoTocco(){
+  var st=history.state||{};
+  if(document.getElementById("modal-benvenuto").classList.contains("open") && st.sopra!=="modal-benvenuto")
+    apriSopra("modal-benvenuto");
 }
 function bvMostra(){
   var s=_bvSlides[_bvIdx];
@@ -1774,7 +1855,7 @@ function chiudiBenvenuto(){
 }
 // Chiamata all'avvio: mostra il benvenuto solo se mai visto su questo dispositivo
 function maybeBenvenuto(){
-  if(!localStorage.getItem(BENVENUTO_KEY)) avviaBenvenuto();
+  if(!localStorage.getItem(BENVENUTO_KEY)) avviaBenvenuto(true);
 }
 
 // ── CALCOLATRICE (somma scontrini) ──
