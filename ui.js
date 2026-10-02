@@ -1535,6 +1535,9 @@ function _annullaBack(){
 function _dipingi(tab){
   // Un passo verso il Solo scritto prima che l'orso lo nascondesse: al suo posto
   // la partenza. I passi già scritti non si riscrivono, si corregge il disegno.
+  // Caso residuo noto e accettato: l'indietro dopo arriva alla partenza già
+  // dipinta e non cambia niente. Una pressione a vuoto costa meno di un giro
+  // di cronologia dentro un evento di cronologia.
   if(tab === "solo" && !soloVisibile()) tab = _partenza !== "solo" ? _partenza : "tana";
   mostraTab(tab);
   if(tab === "impostazioni"){ aggiornaRigaVersione(); aggiornaNotaBackup(); }
@@ -1547,8 +1550,10 @@ function _livello(st){
   return (st.scheda && st.scheda !== _partenza ? 1 : 0) + (st.sopra ? 1 : 0);
 }
 
-// Quanti passi ci sono davvero sotto quello corrente (Navigation API dove c'è,
-// altrimenti solo "nessuno" se la cronologia ha una voce sola). Un livello più
+// Quanti passi ci sono davvero sotto quello corrente. La Navigation API dà il
+// numero esatto; dove manca, history.length è una STIMA PER ECCESSO (conta anche
+// le voci in avanti e quelle di altre pagine): va usata solo come tetto, mai come
+// conteggio esatto, e qui dice solo "nessuno" se la voce è una sola. Un livello più
 // alto di così è una stima sbagliata: un history.go oltre l'inizio non arriva
 // mai al popstate e lascerebbe _navigando appesa.
 function _passiSotto(){
