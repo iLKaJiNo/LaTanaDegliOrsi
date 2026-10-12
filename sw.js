@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tana-v100';
+const CACHE_NAME = 'tana-v101';
 
 // ESSENZIALI: se ne manca uno l'installazione DEVE fallire (addAll è tutto-o-niente).
 const ESSENZIALI = [
