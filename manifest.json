@@ -4,7 +4,7 @@
   "description": "Cassa comune Luca & Ale",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#FDF3E7",
+  "background_color": "#4A2A0F",
   "theme_color": "#6B3F1F",
   "icons": [
     {
