@@ -12,7 +12,7 @@
 #login-screen>*{position:relative;z-index:1;}
 .login-bear{margin-bottom:12px;display:inline-block;animation:sniff 4s ease-in-out infinite;}
 .login-title{font-size:1.625rem;font-weight:800;color:var(--honey);margin-bottom:6px;text-align:center;}
-.login-paw{font-size:1.05rem;text-align:center;margin:2px 0 8px;opacity:.55;}
+.login-paw{font-size:1.6rem;text-align:center;margin:2px 0 8px;opacity:.9;}
 .login-sub{font-size:0.8125rem;color:rgba(255,255,255,.4);font-family:'Nunito',sans-serif;font-weight:600;margin-bottom:32px;text-align:center;line-height:1.5;}
 .login-form{width:100%;max-width:320px;display:flex;flex-direction:column;gap:12px;}
 .login-inp-wrap{position:relative;}
