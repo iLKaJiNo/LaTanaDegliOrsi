@@ -25,7 +25,7 @@ html{font-size:16px;}
   --shadow-lg:0 8px 32px rgba(58,30,10,.18);
   --r-sm:10px;--r-md:16px;--r-lg:22px;--r-xl:28px;
 }
-html{scroll-behavior:smooth;overflow-x:hidden;width:100%;}
+html{scroll-behavior:smooth;overflow-x:hidden;width:100%;background:#4A2A0F;}
 body{font-family:'Baloo 2',cursive;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overflow-x:hidden;width:100%;max-width:100%;}
 /* Rete di sicurezza mobile: card e contenitori principali non
    superano mai la larghezza dello schermo, qualunque contenuto
