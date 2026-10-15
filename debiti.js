@@ -44,11 +44,12 @@ async function saveEditDebito(){
   var nota=document.getElementById("ed-nota").value.trim();
   var ds=document.getElementById("ed-data").value;
   var dataISO=ds?new Date(ds+"T12:00:00").toISOString():d.data;
+  // Residuo = nuovo importo − rimborsi già fatti (stessa formula di eliminaRimborso)
+  var totRimborsato=Math.round((d.rimborsi||[]).reduce(function(a,r){return a+r.importo;},0)*100)/100;
+  if(imp<totRimborsato){alert("L'importo non può essere inferiore a quanto già rimborsato ("+eur(totRimborsato)+").");return;}
   var backup={prestatore:d.prestatore,debitore:d.debitore,importoOriginale:d.importoOriginale,importoResiduo:d.importoResiduo,nota:d.nota,data:d.data};
-  // Aggiorna importoResiduo proporzionalmente se l'importo originale cambia
-  var ratio=d.importoOriginale>0?d.importoResiduo/d.importoOriginale:1;
   d.prestatore=prestatore;d.debitore=debitore;d.importoOriginale=imp;
-  d.importoResiduo=Math.min(imp,Math.round(imp*ratio*100)/100);
+  d.importoResiduo=Math.max(0,Math.round((imp-totRimborsato)*100)/100);
   d.nota=nota;d.data=dataISO;
   closeEditDebito();render();dot("","Salvataggio...");
   try{
