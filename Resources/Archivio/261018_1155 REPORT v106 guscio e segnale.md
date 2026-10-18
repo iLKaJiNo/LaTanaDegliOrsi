@@ -76,4 +76,20 @@ Aggiornato nello stesso commit: testata, §1, §4, §6, §7, §8.
 
 ## Collaudo su testing
 
-(segue, dopo il push)
+Commit `58908a9` su `testing`; `https://testing-latanadegliorsi.skummbar.workers.dev/sw.js` serve
+`tana-v106` dalle 11:53. Chromium headless (Playwright 1.56.1), un contesto pulito per prova.
+
+| cosa | risultato |
+|---|---|
+| prova 1, installazione pulita | cache `tana-v106` sola; `__stato` = `{ versione: "tana-v106", mancanti: [] }`; 27 voci |
+| prova 2, `bear-testing-512.png` interrotto (1 richiesta del sw bloccata) | installata; `mancanti: ["./bear-testing-512.png"]` |
+| titolo | «TESTING · La Tana degli Orsi» |
+| manifest | `./manifest-testing.json` (servito: 200, «La Tana degli Orsi TESTING» / «La Tana T») |
+| fascia | «TESTING · non è l'app vera», `role=status`, `pointer-events:none` |
+| theme-color | `#C0392B` |
+| riga versione | «La Tana degli Orsi · v106 · testing» |
+| `/index.html` dalla rete, senza sw | 307 (curl) |
+| `/index.html` con il sw al comando, online | 200, login, nessun errore di pagina |
+| `/` e `/index.html` offline | 200, login, nessun errore di pagina (simulato con `setOffline`, non una PWA installata) |
+| supabase-js | `@2.118.0` nell'`index.html` servito; `window.supabase` caricato |
+| i due 404 | `/Resources/STATO.md` 404 · `/.git/config` 404 |
