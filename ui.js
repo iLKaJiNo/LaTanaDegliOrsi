@@ -1770,6 +1770,7 @@ function testoVersione(cache, reg){
   }
 
   var riga = "La Tana degli Orsi" + (attiva ? " · " + _etiVer(attiva.nome) : "");
+  if(location.hostname.indexOf("testing-") === 0) riga += " · testing";
   if(motivi.length) riga += "\n" + motivi.join("\n");
 
   // Ricaricamento automatico: due numeri separati, mai uno solo da cui dedurre l'altro.

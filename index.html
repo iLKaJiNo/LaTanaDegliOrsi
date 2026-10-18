@@ -48,6 +48,39 @@
 <link rel="stylesheet" href="./layout.css">
 <link rel="stylesheet" href="./components.css">
 <script>
+// ── IL SEGNALE DI TESTING ── skill metodo, pwa.md §12
+// Si decide dall'INDIRIZZO, non dal codice: questo blocco sta identico su testing e su main,
+// e in produzione non scatta mai. Così non c'è niente da togliere prima dell'unione, e niente
+// che possa arrivare in produzione per sbaglio (14/10/2026: una pillola tenuta solo su testing
+// sarebbe arrivata in main alla prima unione, come qualunque altro commit).
+// Si incolla dentro un <script> nel <head>, subito dopo il blocco del ricaricamento: il manifest va
+// cambiato prima che il browser proponga l'installazione. Si sostituisce <App> nel manifest di prova.
+(function () {
+  var h = location.hostname;
+  var inProva = h.indexOf("testing-") === 0 || h === "localhost" || h === "127.0.0.1";
+  if (!inProva) return;
+  document.documentElement.setAttribute("data-ambiente", "testing");
+  document.title = "TESTING · " + document.title;
+  // Installata da qui, la PWA si chiama «<App> TESTING» e ha la sua icona: sul telefono non si
+  // confonde con l'app vera.
+  var m = document.querySelector('link[rel="manifest"]');
+  if (m) m.setAttribute("href", "./manifest-testing.json");
+  var t = document.querySelector('meta[name="theme-color"]');
+  if (t) t.setAttribute("content", "#C0392B");
+  // La fascia: sempre visibile, non intercetta i tocchi.
+  document.addEventListener("DOMContentLoaded", function () {
+    var b = document.createElement("div");
+    b.textContent = "TESTING · non è l'app vera";
+    b.setAttribute("role", "status");
+    b.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:2147483647;" +
+      "padding:env(safe-area-inset-top) 0 0;background:#C0392B;color:#fff;" +
+      "font:600 11px/1.7 system-ui,sans-serif;letter-spacing:.08em;text-align:center;" +
+      "pointer-events:none";
+    document.body.appendChild(b);
+  });
+})();
+</script>
+<script>
 if("serviceWorker" in navigator){
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('./sw.js').catch(function(err){ console.log("Errore SW:", err); });
@@ -968,7 +1001,7 @@ if("serviceWorker" in navigator){
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
 <script src="./utils.js"></script>
 <script src="./frasi.js"></script>
 <script src="./api.js"></script>
