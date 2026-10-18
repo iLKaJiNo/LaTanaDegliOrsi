@@ -11,7 +11,7 @@
 // browser installa il worker nuovo e riscarica tutto insieme. La Tana, 02/10/2026: due contenuti
 // con la stessa v100. Il controllo lo fa script/prima-di-pubblicare.sh.
 // Il prefisso `tana-` è quello che la riga della versione cerca in caches.keys().
-const CACHE_NAME = 'tana-v106';
+const CACHE_NAME = 'tana-v107';
 
 // ── DUE LISTE ───────────────────────────────────────────────────────────────
 // La domanda che le divide: senza questo file, l'app esiste ancora?

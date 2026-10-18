@@ -17,7 +17,7 @@ Si riscrive, non cresce: **massimo 300 righe**. La storia sta in git e in `Resou
   su `testing`; unisce solo con autorizzazione esplicita. La sessione di Code va aperta sul ramo
   su cui deve fare il push: è l'unico che può scrivere.
 - Etichette e cancellazioni di rami: le fa iL KaJiNo da GitHub («Publish release», poi verifica in Tags).
-- Nome della cache attuale: `tana-v106`. Forma `tana-vNN` obbligata (la riga versione in Impostazioni
+- Nome della cache attuale: `tana-v107`. Forma `tana-vNN` obbligata (la riga versione in Impostazioni
   riconosce solo quella); si sale a ogni pubblicazione, mai all'indietro.
 - Etichetta di ritorno: `Backup_Pre_Metodo` (= `main` @ 102b325, v105).
 
@@ -96,6 +96,7 @@ Si riscrive, non cresce: **massimo 300 righe**. La storia sta in git e in `Resou
   e testing, repository privato) → parte B (archivio dal PC con ricerca dei segreti, `000_base.sql`
   solo `public`).
 - **`testing`:** = `main` + documenti della parte A + `wrangler.jsonc` del modello + v106.
+- v107 = solo nome della cache, per le prove 3–4 di pwa.md §11 sul telefono.
 
 ## 7. Debiti noti
 
