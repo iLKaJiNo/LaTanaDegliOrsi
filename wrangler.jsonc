@@ -1,8 +1,13 @@
 {
-  // wrangler.jsonc
-"name": "latanadegliorsi",
+  // Modello dalla skill metodo (nuova-app.md). Solo file statici, nessuna build.
+  "name": "latanadegliorsi",
   "compatibility_date": "2026-10-13",
   "assets": {
     "directory": "./"
-  }
+  },
+  "workers_dev": true,
+  // Gli indirizzi di anteprima dei rami: senza, testing non ha un indirizzo.
+  "preview_urls": true,
+  // Impostazioni delle anteprime (Worker Previews): vuoto, non ne hanno di proprie.
+  "previews": {}
 }
