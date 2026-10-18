@@ -1,6 +1,6 @@
 # La Tana degli Orsi — stato
 
-**Aggiornato il:** 261016, dall'architetto di mantenimento, con il commit del trasloco parte A.
+**Aggiornato il:** 261018, dall'architetto di mantenimento, con il commit della v106.
 Si riscrive, non cresce: **massimo 300 righe**. La storia sta in git e in `Resources/Archivio/`.
 
 ---
@@ -9,13 +9,15 @@ Si riscrive, non cresce: **massimo 300 righe**. La storia sta in git e in `Resou
 
 - **Produzione:** ramo `main` → GitHub Pages, `https://ilkajino.github.io/LaTanaDegliOrsi/`.
   Repository ancora pubblico: diventa privato **insieme** al passaggio a Workers (trasloco §3.1).
-- **Prova:** ramo `testing` → `https://latanadegliorsi-testing.skummbar.workers.dev/`
-  (worker ponte, vedi §4).
+- **Prova:** ramo `testing` → `https://testing-latanadegliorsi.skummbar.workers.dev/` (anteprima del
+  worker `latanadegliorsi`, ramo `testing`).
+- Worker `latanadegliorsi` già attivo anche per `main` su `https://latanadegliorsi.skummbar.workers.dev/`
+  (non ancora usato dai telefoni: la produzione vera resta GitHub Pages fino al passaggio).
 - iL KaJiNo prova `testing` dal telefono e unisce in `main` dall'app GitHub. Code lavora nel cloud,
   su `testing`; unisce solo con autorizzazione esplicita. La sessione di Code va aperta sul ramo
   su cui deve fare il push: è l'unico che può scrivere.
 - Etichette e cancellazioni di rami: le fa iL KaJiNo da GitHub («Publish release», poi verifica in Tags).
-- Nome della cache attuale: `tana-v105`. Forma `tana-vNN` obbligata (la riga versione in Impostazioni
+- Nome della cache attuale: `tana-v106`. Forma `tana-vNN` obbligata (la riga versione in Impostazioni
   riconosce solo quella); si sale a ogni pubblicazione, mai all'indietro.
 - Etichetta di ritorno: `Backup_Pre_Metodo` (= `main` @ 102b325, v105).
 
@@ -72,15 +74,11 @@ Si riscrive, non cresce: **massimo 300 righe**. La storia sta in git e in `Resou
   percorsi e liste del service worker: un rilascio a rischio che non rende niente (261016).
 - **`ui.js` e `solo.js` oltre le ~1.500 righe** (anche in `strumenti/metodo.conf`). — Divisione
   rinviata a quando servirà toccarli in profondità (261016).
-- **TEMPORANEA, fino alla v106 — guscio non equivalente al modello.** `sw.js` non ripulisce le risposte
-  con rinvio (`pulita()`, necessario su Cloudflare per il 307 di `/index.html`) e chiede
-  `supabase-js@2` senza versione esatta. Le guardie del ricaricamento sono equivalenti. Dopo la v106:
-  «guscio proprio, equivalente al modello».
-- **TEMPORANEA, fino al passaggio di `main` a Workers — worker ponte `latanadegliorsi-testing`** con
-  `testing` come produzione, invece delle anteprime del worker unico; indirizzi reali in §1 invece
-  di quelli del modello.
-- **TEMPORANEA — segnale di `testing` (pwa.md §12) non ancora presente.** Da decidere con iL KaJiNo:
-  le icone dell'orso le fornisce solo lui, quindi l'icona di prova o la fornisce lui o non c'è.
+- **Guscio proprio, equivalente al modello** (v106). Differenze volute: rivalidazione con
+  `cache:"reload"` (GitHub Pages manda max-age); verdetto in `./__stato` nella forma letta dalla riga
+  versione. Il resto (scarica/ricopia, `pulita()`, ripiego, niente `claim()`) è quello del modello.
+- **Icona di prova ricavata dall'orso** (`bear-testing-*.png`): eccezione alla regola
+  "le icone le fornisce solo iL KaJiNo", autorizzata da lui il 261017.
 
 ## 5. Dati di prova
 
@@ -91,14 +89,13 @@ Si riscrive, non cresce: **massimo 300 righe**. La storia sta in git e in `Resou
 
 ## 6. In corso
 
-- **Handoff aperto:** trasloco parte A, in `Resources/Archivio/` a fine lavoro.
-- **Ordine:** parte A (questo) → v106 (`sw.js` al modello, `supabase-js` a versione esatta, segnale di
-  `testing`; prove di pwa.md §11) → inventario dei rami (fatto 261016: restano `main` e `testing`) →
-  repository privato + worker `latanadegliorsi` con le anteprime, insieme (PWA da reinstallare sui due
-  telefoni, coda offline vuota PRIMA, backup JSON manuale PRIMA, vecchia origine da neutralizzare,
-  due 404 su produzione e testing, poi si elimina il worker ponte) → parte B (archivio dal PC con
-  ricerca dei segreti, `000_base.sql` solo `public`).
-- **`testing`:** = `main` + `wrangler.jsonc`, `.assetsignore`, documenti.
+- **v106 su `testing` da provare** (prove 3, 4, 5 di pwa.md §11 sul telefono; nome e icona di prova
+  della PWA installata da `testing`).
+- **Ordine:** v106 → unione in `main` → il passaggio (PWA da reinstallare sui due telefoni, coda
+  offline vuota PRIMA, backup JSON manuale PRIMA, rinvio dalla vecchia origine, due 404 su produzione
+  e testing, repository privato) → parte B (archivio dal PC con ricerca dei segreti, `000_base.sql`
+  solo `public`).
+- **`testing`:** = `main` + documenti della parte A + `wrangler.jsonc` del modello + v106.
 
 ## 7. Debiti noti
 
@@ -110,12 +107,10 @@ Si riscrive, non cresce: **massimo 300 righe**. La storia sta in git e in `Resou
 - La chiave `anon` è stata pubblica per mesi: oggi non apre niente senza la password.
 - Il colore della schermata d'avvio e della barra di Android nelle PWA già installate viene dal
   manifest salvato all'installazione: Android lo aggiorna con calma, o si reinstalla.
-- Le prime versioni del worker ponte (costruite da `main`) contengono `.git/` nei loro indirizzi di
-  anteprima: solo codice già pubblico; si chiudono eliminando il worker ponte.
 
 ## 8. Dati di servizio
 
 - Repository: `iLKaJiNo/LaTanaDegliOrsi` (pubblico fino al passaggio a Workers)
-- Worker Cloudflare: `latanadegliorsi-testing` (ponte); poi `latanadegliorsi`
+- Worker Cloudflare: `latanadegliorsi` (il ponte è eliminato)
 - Progetto Supabase: `yupqbobnqtcajvxjhgjg`, schema `public`; chiave `anon` (il valore sta nel codice)
 - **Nessun segreto in questo file.**
